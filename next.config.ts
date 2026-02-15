@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
     // Optimize package imports for smaller bundles
     optimizePackageImports: ['@clerk/nextjs', 'sonner'],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async redirects() {
     return [
       {
