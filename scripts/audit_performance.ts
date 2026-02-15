@@ -99,7 +99,7 @@ async function main() {
           let messages = [];
           try {
               messages = JSON.parse(debate.messages);
-          } catch (e) { continue; }
+          } catch { continue; }
 
           if (messages.length === 0) continue;
 
