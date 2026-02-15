@@ -2,10 +2,10 @@
 
 ## Database Latency (D1)
 
-✅ **List Debates (100 rows)**: 97.77ms
-✅ **Get Single Debate (Avg 10)**: 102.34ms
-✅ **Get Vote Counts**: 109.48ms
-✅ **Get Leaderboard (Top 10)**: 109.26ms
+✅ **List Debates (100 rows)**: 159.89ms
+✅ **Get Single Debate (Avg 10)**: 124.39ms
+✅ **Get Vote Counts**: 82.18ms
+✅ **Get Leaderboard (Top 10)**: 127.20ms
 
 ## Stalled Debates Investigation
 

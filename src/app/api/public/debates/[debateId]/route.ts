@@ -24,6 +24,7 @@ export async function GET(
     if (result.success && result.debate) {
       // Strip sensitive fields before sending the response
        
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { user_id, ...safeDebate } = result.debate as Record<string, unknown>;
 
       return NextResponse.json({
