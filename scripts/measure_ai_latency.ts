@@ -50,8 +50,10 @@ async function main() {
         continue;
       }
 
-      for await (const chunk of response.body) {
-        // Consume stream
+      const reader = response.body.getReader();
+      while (true) {
+        const { done } = await reader.read();
+        if (done) break;
       }
 
       const totalTime = performance.now() - startTime;
