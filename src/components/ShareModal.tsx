@@ -315,9 +315,9 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
                     </div>
                     
                     <div className="text-sm leading-relaxed text-gray-200 font-serif italic relative">
-                      <span className="absolute -top-2 -left-2 text-2xl text-[var(--accent)] opacity-30">"</span>
+                      <span className="absolute -top-2 -left-2 text-2xl text-[var(--accent)] opacity-30">&quot;</span>
                       {message.content.length > 180 ? message.content.substring(0, 180) + '...' : message.content}
-                      <span className="absolute -bottom-4 -right-2 text-2xl text-[var(--accent)] opacity-30">"</span>
+                      <span className="absolute -bottom-4 -right-2 text-2xl text-[var(--accent)] opacity-30">&quot;</span>
                     </div>
                   </div>
                   
