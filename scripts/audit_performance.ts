@@ -18,7 +18,11 @@ async function main() {
       process.exit(1);
   }
 
-  const reportPath = path.join(process.cwd(), 'reports/backend_performance_2026_02_14.md');
+  // Ensure tables exist
+  console.log("Ensuring schema...");
+  await d1.createTables();
+
+  const reportPath = path.join(process.cwd(), `reports/backend_performance_${new Date().toISOString().split('T')[0].replace(/-/g, '_')}.md`);
   const reportsDir = path.dirname(reportPath);
   if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
 
@@ -41,8 +45,9 @@ async function main() {
   }
 
   // 2. Measure Single Debate Fetch Latency (Avg of 10)
+  let sampleId = '';
   if (listResult.success && listResult.result && listResult.result.length > 0) {
-      const sampleId = (listResult.result[0] as any).id;
+      sampleId = (listResult.result[0] as any).id;
       console.log(`Measuring Single Fetch Latency (ID: ${sampleId})...`);
       
       let totalTime = 0;
@@ -59,10 +64,30 @@ async function main() {
       report += `✅ **Get Single Debate (Avg 10)**: ${avgTime.toFixed(2)}ms\n`;
   }
 
+  // 3. Measure Vote Counts Latency
+  if (sampleId) {
+      console.log(`Measuring Vote Counts Latency...`);
+      const startVote = performance.now();
+      await d1.getVoteCounts(sampleId);
+      const endVote = performance.now();
+      const voteTime = endVote - startVote;
+      console.log(`Get Vote Counts: ${voteTime.toFixed(2)}ms`);
+      report += `✅ **Get Vote Counts**: ${voteTime.toFixed(2)}ms\n`;
+  }
+
+  // 4. Measure Leaderboard Latency
+  console.log(`Measuring Leaderboard Latency...`);
+  const startLeaderboard = performance.now();
+  await d1.getLeaderboard(10);
+  const endLeaderboard = performance.now();
+  const leaderboardTime = endLeaderboard - startLeaderboard;
+  console.log(`Get Leaderboard: ${leaderboardTime.toFixed(2)}ms`);
+  report += `✅ **Get Leaderboard (Top 10)**: ${leaderboardTime.toFixed(2)}ms\n`;
+
   report += `\n## Stalled Debates Investigation\n\n`;
   report += `Checking for debates where the user sent the last message but AI did not respond (potential backend timeout/crash).\n\n`;
 
-  // 3. Check for Stalled Debates
+  // 5. Check for Stalled Debates
   // Fetch full details for recent debates
   const fullDebatesResult = await d1.query(`SELECT * FROM debates ORDER BY created_at DESC LIMIT 50`);
   
@@ -74,7 +99,7 @@ async function main() {
           let messages = [];
           try {
               messages = JSON.parse(debate.messages);
-          } catch (e) { continue; }
+          } catch { continue; }
 
           if (messages.length === 0) continue;
 

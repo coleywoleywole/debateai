@@ -127,6 +127,17 @@ class D1Client {
       CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
       CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
 
+      CREATE TABLE IF NOT EXISTS leaderboard (
+        user_id TEXT PRIMARY KEY,
+        username TEXT,
+        total_score INTEGER DEFAULT 0,
+        debates_won INTEGER DEFAULT 0,
+        debates_total INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_leaderboard_score ON leaderboard(total_score DESC);
+
       CREATE TABLE IF NOT EXISTS rate_limits (
         key TEXT PRIMARY KEY,
         count INTEGER DEFAULT 1,
