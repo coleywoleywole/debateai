@@ -9,6 +9,7 @@ vi.mock('@/lib/d1', () => ({
   d1: {
     vote: vi.fn(),
     getVoteCounts: vi.fn(),
+    logAnalyticsEvent: vi.fn(),
   },
 }));
 
