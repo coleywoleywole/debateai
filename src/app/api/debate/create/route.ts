@@ -108,6 +108,18 @@ export async function POST(request: Request) {
       is_guest: isGuest
     });
 
+    // Log to internal analytics table
+    await d1.logAnalyticsEvent({
+      eventType: 'debate_started',
+      debateId: saveResult.debateId || debateId,
+      userId,
+      properties: {
+        topic,
+        opponent: effectiveOpponent,
+        isGuest
+      }
+    });
+
     // Return success with rate limit headers
     const response = NextResponse.json({ 
       success: true, 

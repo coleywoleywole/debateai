@@ -17,6 +17,7 @@ import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
 import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
+import TurnCounter from "@/components/TurnCounter";
 import type { DebateScore } from "@/lib/scoring";
 
 // Lazy load modals - they're only shown on user interaction
@@ -1300,7 +1301,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner;
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg)] transition-colors duration-500">
+    <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg)] transition-colors duration-500 relative">
       <Header />
 
       {/* Topic Header - Fixed */}
@@ -1317,6 +1318,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     </span>
                   )}
                   <h1 className="font-medium text-[var(--text)] truncate hidden sm:block">{debate.topic}</h1>
+                  {!debateScore && (
+                    <div className="hidden sm:block ml-2">
+                      <TurnCounter count={Math.floor(messages.length / 2) + 1} />
+                    </div>
+                  )}
                 </div>
 
                 <h1 className="font-medium text-[var(--text)] truncate sm:hidden">{debate.topic}</h1>
@@ -1326,6 +1332,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     <span className="text-[var(--border-strong)] flex-shrink-0 hidden sm:inline mr-1">·</span>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] sm:hidden flex-shrink-0">vs</span>
                     <span className="text-[var(--text-secondary)] truncate">{debate.opponentStyle || opponent?.name}</span>
+                    {!debateScore && (
+                      <div className="sm:hidden flex-shrink-0 ml-1.5">
+                        <TurnCounter count={Math.floor(messages.length / 2) + 1} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1563,7 +1574,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       {/* Sticky Share CTA - Show when there are messages but debate not finished */}
       {!debateScore && messages.length >= 2 && (
-        <div className="absolute bottom-24 right-4 sm:bottom-8 sm:right-8 z-30 animate-fade-in">
+        <div className="absolute bottom-28 right-4 sm:fixed sm:bottom-8 sm:right-8 z-30 animate-fade-in">
           <StickyShareButton onClick={() => {
             track('share_button_clicked', { debateId, location: 'sticky' });
             setShowShareModal(true);

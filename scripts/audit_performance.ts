@@ -87,7 +87,7 @@ async function main() {
   report += `\n## Stalled Debates Investigation\n\n`;
   report += `Checking for debates where the user sent the last message but AI did not respond (potential backend timeout/crash).\n\n`;
 
-  // 3. Check for Stalled Debates
+  // 5. Check for Stalled Debates
   // Fetch full details for recent debates
   const fullDebatesResult = await d1.query(`SELECT * FROM debates ORDER BY created_at DESC LIMIT 50`);
   

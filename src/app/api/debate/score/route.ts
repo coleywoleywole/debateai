@@ -161,5 +161,17 @@ export const POST = withErrorHandler(async (request: Request) => {
     aiScore: score.aiScore,
   });
 
+  await d1.logAnalyticsEvent({
+    eventType: 'debate_ended',
+    debateId,
+    userId,
+    properties: {
+      winner: score.winner,
+      userScore: score.userScore,
+      aiScore: score.aiScore,
+      reason: 'completed'
+    }
+  });
+
   return NextResponse.json({ score, cached: false });
 });

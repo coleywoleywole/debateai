@@ -356,6 +356,17 @@ export async function POST(request: Request) {
               opponentStyle,
               promptVariant: assignedVariant,
             });
+
+            // Log analytics event
+            await d1.logAnalyticsEvent({
+              eventType: 'message_sent',
+              debateId,
+              userId,
+              properties: {
+                turnCount: Math.ceil(messages.length / 2),
+                totalMessages: messages.length
+              }
+            });
           }
 
           if (!controllerClosed) {
