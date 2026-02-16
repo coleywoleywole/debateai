@@ -77,6 +77,7 @@ export const TOPIC_CATEGORIES: TopicCategory[] = [
       { id: "algorithm-radicalization", question: "Are recommendation algorithms radicalizing society?", spicyLevel: 2 },
       { id: "digital-afterlife", question: "Should we upload our minds to achieve immortality?", spicyLevel: 3 },
       { id: "ai-jobs", question: "Should AI that replaces jobs be taxed?", spicyLevel: 2 },
+      { id: "software-assembly-line", question: "Is the end of human coding inevitable?", spicyLevel: 3 },
     ]
   },
   {
