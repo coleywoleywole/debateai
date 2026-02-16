@@ -159,7 +159,7 @@ export async function POST(request: Request) {
 
           const result = await model.generateContentStream({
             contents: [...history, { role: "user", parts: [{ text: userMessage }] }],
-            tools: [{ googleSearch: {} } as any], // Use Google Search Grounding
+            tools: [{ googleSearchRetrieval: {} } as any], // Use Google Search Grounding
           });
 
           let accumulatedContent = "";

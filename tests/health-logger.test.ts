@@ -5,6 +5,8 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { d1 } from '@/lib/d1';
 import { logger } from '@/lib/logger';
 
+vi.mock('@/lib/d1');
+
 // ── /api/health ─────────────────────────────────────────────────
 
 describe('GET /api/health', () => {
