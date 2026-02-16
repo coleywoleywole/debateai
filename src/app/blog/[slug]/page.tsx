@@ -133,7 +133,7 @@ export default async function BlogPostPage({
                 prose-headings:font-serif prose-headings:text-[var(--text)] prose-headings:font-semibold
                 prose-h2:mt-12 prose-h2:mb-6 prose-h2:pb-2 prose-h2:border-b prose-h2:border-[var(--border)]/50 prose-h2:text-2xl prose-h2:sm:text-3xl prose-h2:leading-tight
                 prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-xl prose-h3:sm:text-2xl
-                prose-p:text-[var(--text)] prose-p:opacity-90 prose-p:leading-8 prose-p:my-6
+                prose-p:text-[var(--text)] prose-p:opacity-90 prose-p:leading-relaxed prose-p:my-6
                 prose-a:text-[var(--accent)] prose-a:no-underline prose-a:font-medium hover:prose-a:underline
                 prose-strong:text-[var(--text)] prose-strong:font-bold
                 prose-code:text-[var(--accent)] prose-code:bg-[var(--bg-sunken)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
@@ -148,23 +148,36 @@ export default async function BlogPostPage({
 
             {/* Related Posts */}
             {relatedPosts.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-[var(--border)]/30">
-                <h2 className="text-lg font-semibold text-[var(--text)] mb-4">
+              <div className="mt-12 pt-8 border-t border-[var(--border)]/30 text-left">
+                <h2 className="text-lg font-semibold text-[var(--text)] mb-6">
                   Related Posts
                 </h2>
-                <div className="space-y-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {relatedPosts.map((related) => (
                     <Link
                       key={related.slug}
                       href={`/blog/${related.slug}`}
-                      className="block p-4 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border)]/30 hover:border-[var(--accent)]/30 transition-all"
+                      className="group artistic-card p-0 overflow-hidden hover:border-[var(--accent)]/30 transition-all flex flex-col"
                     >
-                      <h3 className="font-medium text-[var(--text)] text-sm mb-1 hover:text-[var(--accent)] transition-colors">
-                        {related.title}
-                      </h3>
-                      <p className="text-xs text-[var(--text-secondary)] line-clamp-1">
-                        {related.description}
-                      </p>
+                      {related.image && (
+                        <div className="aspect-[2/1] relative overflow-hidden bg-[var(--bg-sunken)]">
+                          <Image
+                            src={related.image}
+                            alt={related.title}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4 flex-1">
+                        <h3 className="font-semibold text-[var(--text)] text-sm mb-1 group-hover:text-[var(--accent)] transition-colors line-clamp-2 leading-snug">
+                          {related.title}
+                        </h3>
+                        <p className="text-xs text-[var(--text-secondary)] line-clamp-2 opacity-80">
+                          {related.description}
+                        </p>
+                      </div>
                     </Link>
                   ))}
                 </div>
