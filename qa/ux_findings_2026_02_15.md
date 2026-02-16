@@ -20,5 +20,8 @@
 
 ## Action Plan
 - [x] Document findings.
-- [ ] Fix **Quick Start Friction** in `src/app/HomeClient.tsx`.
-- [ ] Verify fix locally.
+- [x] Fix **Quick Start Friction** in `src/app/HomeClient.tsx`.
+- [x] Fix **Aggressive Onboarding Overlay** in `src/components/OnboardingOverlay.tsx`.
+- [x] Improve **Start Debate Directive** in `src/app/HomeClient.tsx`.
+- [x] Fix **Initial Auto-scroll** in `src/app/debate/[debateId]/DebateClient.tsx`.
+- [x] Verify build locally.
