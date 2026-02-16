@@ -10,6 +10,7 @@ interface DebateVotingProps {
   initialUserPercent?: number; // For SSR or if user already voted
   initialOpponentPercent?: number;
   hasVoted?: boolean;
+  variant?: 'default' | 'aggressive';
 }
 
 export default function DebateVoting({
@@ -19,6 +20,7 @@ export default function DebateVoting({
   initialUserPercent = 50,
   initialOpponentPercent = 50,
   hasVoted: initialHasVoted = false,
+  variant,
 }: DebateVotingProps) {
   const [hasVoted, setHasVoted] = useState(initialHasVoted);
   const [isVoting, setIsVoting] = useState(false);
@@ -42,12 +44,14 @@ export default function DebateVoting({
       winner,
       userSide: userSideName,
       opponentSide: opponentSideName,
+      experiment_variant: variant,
     });
 
     track("user_feedback_submitted", {
       debateId,
       rating: winner === "user" ? 5 : 1, // 5 for user win, 1 for opponent win (proxy for satisfaction?)
-      feedback: `Voted for ${winner}`
+      feedback: `Voted for ${winner}`,
+      experiment_variant: variant,
     });
 
     try {

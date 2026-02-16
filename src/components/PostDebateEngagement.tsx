@@ -14,6 +14,7 @@ interface PostDebateEngagementProps {
   topic: string;
   opponentName?: string;
   opponentId?: string;
+  variant?: 'default' | 'aggressive';
 }
 
 /**
@@ -25,6 +26,7 @@ export default function PostDebateEngagement({
   topic,
   opponentName = 'AI',
   opponentId,
+  variant,
 }: PostDebateEngagementProps) {
   const router = useRouter();
   const { isSignedIn } = useSafeUser();
@@ -80,6 +82,7 @@ export default function PostDebateEngagement({
           topic: newTopic,
           opponent: persona,
           source,
+          experiment_variant: variant,
         });
         sessionStorage.setItem('isInstantDebate', 'true');
         router.push(`/debate/${newDebateId}`);
@@ -107,7 +110,7 @@ export default function PostDebateEngagement({
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({ title: 'DebateAI Challenge', text: shareText, url: shareUrl });
-        track('debate_shared', { debateId, method: 'native_share', source: 'post_debate' });
+        track('debate_shared', { debateId, method: 'native_share', source: 'post_debate', experiment_variant: variant });
         return;
       } catch {
         // User cancelled or not supported — fall through to clipboard
@@ -117,7 +120,7 @@ export default function PostDebateEngagement({
     // Fallback: copy to clipboard
     try {
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      track('debate_shared', { debateId, method: 'copy_link', source: 'post_debate' });
+      track('debate_shared', { debateId, method: 'copy_link', source: 'post_debate', experiment_variant: variant });
       showToast('Challenge link copied!', 'success');
     } catch {
       showToast('Could not copy link', 'error');
