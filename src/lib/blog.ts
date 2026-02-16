@@ -50,7 +50,11 @@ export function getAllPosts(): BlogPostMeta[] {
         published: data.published !== false && data.status !== 'draft', // Respect status: draft
       } satisfies BlogPostMeta;
     })
-    .filter((post) => post.published && !post.slug.startsWith('_'))
+    .filter((post) => {
+      const isPublished = post.published && !post.slug.startsWith('_');
+      const isNotFuture = new Date(post.date).getTime() <= Date.now();
+      return isPublished && isNotFuture;
+    })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return posts;

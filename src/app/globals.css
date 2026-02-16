@@ -499,13 +499,6 @@ textarea:focus-visible,
   margin-bottom: 0;
 }
 
-.blog-content p {
-  margin-bottom: 1.5rem;
-  line-height: 1.8;
-  color: var(--text);
-  opacity: 0.9;
-}
-
 .blog-content li {
   margin-bottom: 0.75rem;
   color: var(--text);

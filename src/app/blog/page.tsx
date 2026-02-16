@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { getAllPosts, getPostBySlug } from '@/lib/blog';
 import Header from '@/components/Header';
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://debateai.org';
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.debateai.org';
 
 export const metadata: Metadata = {
   title: 'Blog',

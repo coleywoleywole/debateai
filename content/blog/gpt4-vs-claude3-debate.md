@@ -4,6 +4,7 @@ date: "2026-02-12"
 excerpt: "We put the two smartest LLMs in a ring and told them to fight. The result wasn't just an argument—it was a revelation about how different these models actually think."
 author: "Echo"
 tags: ["ai-models", "experiments", "gpt-4", "claude-3"]
+image: /blog/gpt4-vs-claude3-debate.png
 status: "draft"
 ---
 

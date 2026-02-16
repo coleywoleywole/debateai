@@ -59,6 +59,24 @@ const blogPosts = [
     prompt: "Conceptual illustration of career decision and devil's advocate. A person at a desk with an angel and devil figure made of digital particles whispering advice. Modern flat illustration style, professional blues and warm accents."
   },
   {
+    slug: "gpt4-vs-claude3-debate",
+    title: "GPT-4 vs Claude 3: We Forced Them to Argue About UBI",
+    description: "We put the two smartest LLMs in a ring and told them to fight.",
+    prompt: "A high-fidelity, professional 3D render of GPT-4 and Claude 3 debating in a futuristic arena. One side has a green/blue theme (GPT-4), the other side has a purple/orange theme (Claude 3). Symbolic representation of intelligence, logic, and persuasion. Modern, clean, cinematic lighting. Aspect ratio 16:9."
+  },
+  {
+    slug: "perplexity-vs-debateai",
+    title: "DebateAI vs. Perplexity: The Difference Between Answers and Arguments",
+    description: "Perplexity gives you citations; DebateAI gives you pushback.",
+    prompt: "A comparison between a library (Perplexity) and a mental gym (DebateAI). A split screen showing a calm library with books and a dynamic gym with intellectual weights. Modern digital art style, clean composition, professional lighting."
+  },
+  {
+    slug: "why-we-built-debateai",
+    title: "Why We Built an AI That Argues Back",
+    description: "Most AI assistants are trained to agree with you. We built one that doesn't.",
+    prompt: "Conceptual art about breaking echo chambers. A glowing AI figure challenging a person's thoughts, visualized as glass walls shattering. Dramatic lighting, deep blue and orange palette, powerful and clean composition."
+  },
+  {
     slug: "how-we-built-realtime-ai-debates",
     title: "How We Built Real-Time AI Debates with Claude",
     description: "A deep dive into the architecture behind DebateAI.",
