@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import LeaderboardClient from './LeaderboardClient';
+import ExploreClient from './ExploreClient';
 import Header from '@/components/Header';
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LeaderboardPage() {
+export default function ExplorePage() {
   return (
     <div className="min-h-dvh flex flex-col">
       <Header />
@@ -25,7 +25,7 @@ export default function LeaderboardPage() {
               Rankings, streaks, and top debates from the community.
             </p>
           </div>
-          <LeaderboardClient />
+          <ExploreClient />
         </div>
       </main>
     </div>

@@ -51,7 +51,7 @@ export default function ProfileClient({ initialProfile, username }: Props) {
           @{username} doesn&apos;t exist or is set to private.
         </p>
         <Link
-          href="/leaderboard"
+          href="/explore"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors"
         >
           View Leaderboard →
