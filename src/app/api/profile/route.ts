@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { d1 } from '@/lib/d1';
 import { errors, validateBody, withErrorHandler } from '@/lib/api-errors';
-import { getOrCreatePreferences } from '@/lib/email-preferences';
-import { sendEmail } from '@/lib/email';
-import { welcomeEmail } from '@/lib/email-templates';
+import { ensureWelcomeEmail } from '@/lib/email-preferences';
 
 // Schema for profile update
 const updateProfileSchema = z.object({
@@ -68,29 +66,8 @@ export const POST = withErrorHandler(async (request: Request) => {
       [userId, displayName, displayName]
     );
 
-    // Send welcome email
-    try {
-      const user = await currentUser();
-      const email = user?.emailAddresses?.[0]?.emailAddress;
-
-      if (email) {
-        const prefs = await getOrCreatePreferences(userId, email);
-        const { subject, html } = welcomeEmail({
-          name: displayName,
-          unsubscribeToken: prefs.unsubscribe_token,
-        });
-
-        await sendEmail({
-          to: email,
-          subject,
-          html,
-          tags: [{ name: 'category', value: 'welcome' }],
-        });
-      }
-    } catch (error) {
-      console.error('Failed to send welcome email:', error);
-      // Fail silently to not block profile creation
-    }
+    // Send welcome email (idempotent helper)
+    await ensureWelcomeEmail(userId);
   }
 
   return NextResponse.json({ success: true });
