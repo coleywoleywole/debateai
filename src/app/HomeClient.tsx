@@ -174,7 +174,7 @@ export default function HomeClient({
           {/* Hero — minimal */}
           <div className="text-center mb-10">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-3">
-              <h1 className="text-4xl sm:text-5xl font-serif font-bold text-[var(--text)] leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[var(--text)] leading-tight px-1 break-words">
                 The AI that fights back.
               </h1>
               <StreakIndicator />
@@ -199,7 +199,7 @@ export default function HomeClient({
               </div>
 
               {/* Topic */}
-              <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text)] mb-3 leading-snug">
+              <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text)] mb-3 leading-snug break-words">
                 {dailyDebate.topic}
               </h2>
 
@@ -302,7 +302,7 @@ export default function HomeClient({
                 </>
               ) : (
                 <>
-                  <span>Start Debate</span>
+                  <span className="whitespace-nowrap">Start Debate</span>
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

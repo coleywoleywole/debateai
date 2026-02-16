@@ -18,7 +18,7 @@ export default function LeaderboardPage() {
       <main className="flex-1 px-5 py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[var(--text)] mb-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-[var(--text)] mb-2 px-1 break-words">
               🏆 Leaderboard
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
