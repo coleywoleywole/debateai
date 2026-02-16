@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   const start = Date.now();
-  const checks: Record<string, { status: 'ok' | 'error'; latencyMs?: number; error?: string }> = {};
+  const checks: Record<string, { status: 'ok' | 'error'; latencyMs?: number; error?: string; warning?: string }> = {};
 
   // Check D1 database
   try {
@@ -37,7 +37,13 @@ export async function GET() {
   // - Removed ANTHROPIC/HELICONE (deprecated)
   // - Added GOOGLE_CREDENTIALS_JSON (new for Vertex on Coolify)
   // - Warnings only (status: degraded) so deployment doesn't fail hard
-  const requiredEnvVars = [
+  const criticalEnvVars: string[] = [
+    // Database and Auth are handled by D1/Clerk libraries, but listed here for visibility if needed
+    // 'CLERK_SECRET_KEY', 
+  ];
+
+  // These are important but not strictly critical for basic health (app can run without them, just missing features)
+  const optionalEnvVars = [
     'AGENTMAIL_API_KEY',
     'NEXT_PUBLIC_POSTHOG_KEY',
     'NEXT_PUBLIC_POSTHOG_HOST',
@@ -46,22 +52,25 @@ export async function GET() {
   // Check for either file path or JSON content for Google Auth
   const hasGoogleCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_CREDENTIALS_JSON;
   
-  const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
-  if (!hasGoogleCreds) missingVars.push('GOOGLE_CREDENTIALS_JSON');
+  const missingCritical = criticalEnvVars.filter((v) => !process.env[v]);
+  
+  const missingOptional = optionalEnvVars.filter((v) => !process.env[v]);
+  if (!hasGoogleCreds) missingOptional.push('GOOGLE_CREDENTIALS_JSON (or GOOGLE_APPLICATION_CREDENTIALS)');
 
   checks.config = {
-    status: missingVars.length === 0 ? 'ok' : 'error',
-    ...(missingVars.length > 0 && { error: `Missing: ${missingVars.join(', ')}` }),
+    status: missingCritical.length === 0 ? 'ok' : 'error',
+    ...(missingCritical.length > 0 && { error: `Missing critical: ${missingCritical.join(', ')}` }),
+    ...(missingOptional.length > 0 && { warning: `Missing optional: ${missingOptional.join(', ')}` }),
   };
 
   // Overall status
-  // Only fail hard (503) if database is down. Config errors are degraded (200).
-  const isHealthy = checks.database.status === 'ok';
-  const isConfigOk = checks.config.status === 'ok';
+  // Only fail hard (503) if database is down or critical config is missing.
+  const isHealthy = checks.database.status === 'ok' && checks.config.status === 'ok';
+
   const totalLatency = Date.now() - start;
 
   const response = {
-    status: isHealthy && isConfigOk ? 'healthy' : 'degraded',
+    status: isHealthy && !checks.config.warning ? 'healthy' : 'degraded',
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'dev',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
