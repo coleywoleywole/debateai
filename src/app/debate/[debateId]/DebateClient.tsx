@@ -14,9 +14,9 @@ import JudgeMessage from "@/components/JudgeMessage";
 import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
 import QuickReplies from "@/components/QuickReplies";
-import TurnCounter from "@/components/TurnCounter";
 import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
+import DebateProgress, { getRound } from "@/components/DebateProgress";
 import type { DebateScore } from "@/lib/scoring";
 
 // Lazy load modals - they're only shown on user interaction
@@ -957,9 +957,9 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   };
 
-  // Auto-trigger judgment after 5 rounds (10 messages)
+  // Auto-trigger judgment after 3 rounds (6 messages)
   useEffect(() => {
-    if (!debateScore && messages.length >= 10 && !isAILoading && !isUserLoading) {
+    if (!debateScore && messages.length >= 6 && !isAILoading && !isUserLoading) {
       requestJudgment();
     }
   }, [messages.length, debateScore, isAILoading, isUserLoading, requestJudgment]);
@@ -1253,9 +1253,20 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const effectiveIsOwner = isOwner || isGuestOwner;
   const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner;
 
+  // Determine placeholder based on round
+  const currentRound = getRound(messages.length);
+  let placeholderText = "Make your argument...";
+  if (currentRound === 'opening') placeholderText = "Make your opening statement...";
+  else if (currentRound === 'rebuttal') placeholderText = "Make your rebuttal...";
+  else if (currentRound === 'closing') placeholderText = "Make your closing argument...";
+  else if (currentRound === 'complete') placeholderText = "Debate complete.";
+
   return (
     <div className={`h-dvh flex flex-col overflow-hidden transition-colors duration-500 ${variant === 'aggressive' ? 'bg-red-950/5' : 'bg-[var(--bg)]'}`}>
       <Header />
+
+      {/* Progress Bar - Sticky */}
+      <DebateProgress messageCount={messages.length} />
 
       {/* Topic Header - Fixed */}
       {debate && (
@@ -1272,7 +1283,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 <h1 className="font-medium text-[var(--text)] truncate hidden sm:block">{debate.topic}</h1>
                 {!debateScore && (
                   <div className="hidden sm:block ml-2">
-                    <TurnCounter count={Math.floor(messages.length / 2) + 1} />
+                    {/* TurnCounter removed */}
                   </div>
                 )}
               </div>
@@ -1285,7 +1296,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   <span className="text-[var(--text-secondary)] truncate">{debate.opponentStyle || opponent?.name}</span>
                   {!debateScore && (
                     <div className="sm:hidden flex-shrink-0 ml-1.5">
-                      <TurnCounter count={Math.floor(messages.length / 2) + 1} />
+                      {/* TurnCounter removed */}
                     </div>
                   )}
                 </div>
@@ -1457,7 +1468,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                placeholder={effectiveIsOwner ? "Make your argument..." : "Sign in to contribute..."}
+                placeholder={effectiveIsOwner ? placeholderText : "Sign in to contribute..."}
                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl
                   px-3 sm:px-4 py-2.5 sm:py-3 resize-none text-[var(--text)] placeholder-[var(--text-secondary)]/70
                   outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20
