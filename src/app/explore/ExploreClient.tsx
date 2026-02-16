@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
-type Tab = 'rankings' | 'explore';
+type Tab = 'rankings' | 'recent';
 type Period = 'alltime' | 'weekly';
 type Sort = 'points' | 'streak' | 'debates' | 'avg_score';
 
@@ -49,7 +49,7 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
-export default function LeaderboardClient() {
+export default function ExploreClient() {
   const [activeTab, setActiveTab] = useState<Tab>('rankings');
   const [period, setPeriod] = useState<Period>('alltime');
   const [sort, setSort] = useState<Sort>('points');
@@ -63,7 +63,7 @@ export default function LeaderboardClient() {
     setError(null);
     try {
       if (activeTab === 'rankings') {
-        const res = await fetch(`/api/leaderboard?period=${period}&sort=${sort}&limit=50`);
+        const res = await fetch(`/api/explore?period=${period}&sort=${sort}&limit=50`);
         if (!res.ok) throw new Error('Failed to load');
         const data = await res.json();
         setEntries(data.entries);
@@ -99,14 +99,14 @@ export default function LeaderboardClient() {
           Rankings
         </button>
         <button
-          onClick={() => setActiveTab('explore')}
+          onClick={() => setActiveTab('recent')}
           className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-            activeTab === 'explore'
+            activeTab === 'recent'
               ? 'bg-[var(--bg)] text-[var(--accent)] shadow-sm'
               : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
           }`}
         >
-          Explore
+          Recent
         </button>
       </div>
 
@@ -200,7 +200,7 @@ export default function LeaderboardClient() {
             <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm mx-auto">
               {period === 'weekly'
                 ? 'No debates completed this week. Be the first to climb the rankings!'
-                : 'Complete a debate to appear on the leaderboard and earn points.'}
+                : 'Complete a debate to appear on the rankings and earn points.'}
             </p>
             <Link
               href="/debate"
@@ -214,8 +214,8 @@ export default function LeaderboardClient() {
           </div>
         )}
 
-        {/* Empty state Explore */}
-        {!loading && !error && activeTab === 'explore' && publicDebates.length === 0 && (
+        {/* Empty state Recent */}
+        {!loading && !error && activeTab === 'recent' && publicDebates.length === 0 && (
           <div className="text-center py-16 px-4">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-sunken)] border border-[var(--border)] flex items-center justify-center">
               <span className="text-3xl">💬</span>
@@ -236,7 +236,7 @@ export default function LeaderboardClient() {
           </div>
         )}
 
-        {/* Leaderboard entries */}
+        {/* Rankings entries */}
         {!loading && !error && activeTab === 'rankings' && entries.length > 0 && (
           <div className="space-y-2">
             {entries.map((entry) => (
@@ -314,8 +314,8 @@ export default function LeaderboardClient() {
           </div>
         )}
 
-        {/* Explore entries */}
-        {!loading && !error && activeTab === 'explore' && publicDebates.length > 0 && (
+        {/* Recent entries */}
+        {!loading && !error && activeTab === 'recent' && publicDebates.length > 0 && (
           <div className="grid grid-cols-1 gap-4">
             {publicDebates.map((debate) => (
               <Link

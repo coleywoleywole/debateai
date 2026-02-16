@@ -93,7 +93,7 @@ export default function ArenaSelectionPage() {
           Every battle in the arena earns you points and contributes to your global standing.
         </p>
         <Link 
-          href="/leaderboard"
+          href="/explore"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-slate-950 font-bold hover:bg-slate-200 transition-colors"
         >
           View Global Leaderboard
