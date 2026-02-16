@@ -166,6 +166,8 @@ export async function POST(
     );
     const duration = Date.now() - start;
 
+    console.log(`[LATENCY] Debate ${debateId}: AI response time ${duration}ms`);
+
     // Add AI message
     const aiMessage = {
       role: 'ai',
