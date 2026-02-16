@@ -126,7 +126,7 @@ export default function BlogIndex() {
                           <h2 className="text-2xl sm:text-3xl font-serif font-semibold text-[var(--text)] mb-3 group-hover:text-[var(--accent)] transition-colors leading-tight">
                             {posts[0].title}
                           </h2>
-                          <p className="text-[var(--text-secondary)] leading-relaxed mb-4 line-clamp-2">
+                          <p className="text-[var(--text-secondary)] leading-relaxed mb-4 line-clamp-3">
                             {posts[0].description}
                           </p>
 
@@ -162,38 +162,61 @@ export default function BlogIndex() {
                     >
                       <article className="relative h-full">
                         <div className="absolute -inset-1 bg-gradient-to-r from-[var(--accent)]/0 to-[var(--accent)]/0 group-hover:from-[var(--accent)]/10 group-hover:to-[var(--accent-light)]/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                        <div className="relative artistic-card p-6 hover:border-[var(--accent)]/30 transition-all duration-300 h-full flex flex-col">
-                          {/* Tags */}
-                          {post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-3">
-                              {post.tags.slice(0, 2).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] font-medium"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
+                        <div className="relative artistic-card p-0 hover:border-[var(--accent)]/30 transition-all duration-300 h-full flex flex-col overflow-hidden">
+                          {/* Card Image */}
+                          <div className="aspect-[2/1] relative overflow-hidden bg-gradient-to-br from-[var(--accent)]/10 to-[var(--accent-light)]/5">
+                            {post.image ? (
+                              <Image 
+                                src={post.image} 
+                                alt={post.title}
+                                fill
+                                sizes="(max-width: 640px) 100vw, 50vw"
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center opacity-30">
+                                <svg className="w-10 h-10 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="p-6 flex-1 flex flex-col">
+                            {/* Tags */}
+                            {post.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mb-3">
+                                {post.tags.slice(0, 2).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] font-medium uppercase tracking-wider"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            <h2 className="text-xl font-semibold text-[var(--text)] mb-2 group-hover:text-[var(--accent)] transition-colors leading-snug">
+                              {post.title}
+                            </h2>
+                            <p className="text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 flex-1">
+                              {post.description}
+                            </p>
+
+                            <div className="flex items-center gap-2 text-[10px] text-[var(--text-tertiary)] pt-4 border-t border-[var(--border)]/30 uppercase font-medium tracking-wide">
+                              <span>{post.author}</span>
+                              <span className="w-1 h-1 rounded-full bg-[var(--border-strong)]" />
+                              <time dateTime={post.date}>
+                                {new Date(post.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                              </time>
+                              <span className="w-1 h-1 rounded-full bg-[var(--border-strong)]" />
+                              <span>{post.readingTime} min read</span>
                             </div>
-                          )}
-
-                          <h2 className="text-lg font-semibold text-[var(--text)] mb-2 group-hover:text-[var(--accent)] transition-colors leading-snug">
-                            {post.title}
-                          </h2>
-                          <p className="text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 flex-1">
-                            {post.description}
-                          </p>
-
-                          <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)] pt-4 border-t border-[var(--border)]/30">
-                            <span>{post.author}</span>
-                            <span className="w-1 h-1 rounded-full bg-[var(--border-strong)]" />
-                            <time dateTime={post.date}>
-                              {new Date(post.date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </time>
                           </div>
                         </div>
                       </article>

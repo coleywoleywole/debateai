@@ -12,7 +12,7 @@ tags:
   - AI debate
   - product
 published: true
-image: "/blog/why-we-built-debateai.png"
+image: /blog/why-we-built-debateai.png
 ---
 
 
