@@ -19,8 +19,8 @@ export const GET = withErrorHandler(async (request: Request) => {
   // Parse and validate query parameters
   const { searchParams } = new URL(request.url);
   const queryResult = listDebatesQuerySchema.safeParse({
-    limit: searchParams.get('limit'),
-    offset: searchParams.get('offset'),
+    limit: searchParams.get('limit') ?? undefined,
+    offset: searchParams.get('offset') ?? undefined,
   });
 
   if (!queryResult.success) {
@@ -53,22 +53,21 @@ export const GET = withErrorHandler(async (request: Request) => {
 
   if (result.success && result.result) {
     // Format the debates for the frontend
-    const debates = result.result.map((debate: Record<string, unknown>) => {
-      // Try to get opponentStyle from score_data
-      let opponentStyle = debate.opponent_style as string | undefined;
+    const debates = result.result.map((debate: Record<string, any>) => {
+      // Extract opponentStyle from score_data
+      let opponentStyle: string | undefined;
       
-      // Fallback: Check score_data if opponent_style is missing
-      if (!opponentStyle && debate.score_data) {
+      if (debate.score_data) {
         try {
           const scoreData = typeof debate.score_data === 'string' 
             ? JSON.parse(debate.score_data) 
             : debate.score_data;
           
           if (scoreData && typeof scoreData === 'object') {
-            opponentStyle = (scoreData as any).opponentStyle;
+            opponentStyle = scoreData.opponentStyle || scoreData.opponent_style;
           }
         } catch {
-          // Ignore parse errors
+          // Ignore parse errors, fallback to default
         }
       }
 
