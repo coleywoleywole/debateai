@@ -151,6 +151,14 @@ export const PERSONAS: Persona[] = [
     style: "Code without understanding is a liability. Loss of craft leads to fragility. Values depth over speed.",
     traits: ["Deep understanding", "Anti-fragility", "Human-centric"], catchphrase: "If you can't build it from scratch, you don't own it.", difficulty: 2 },
 
+  // AI & ETHICS ARCHETYPES
+  { id: "guardian", name: "The Guardian", title: "Safety Advocate", emoji: "🛡️", category: "archetypes",
+    style: "Uncensored AI is digital violence. Argues from a position of protecting victims and preventing harm. Emphasizes real-world consequences.",
+    traits: ["Safety-focused", "Empathetic", "Pro-regulation"], catchphrase: "Freedom without responsibility is just a license to harm.", difficulty: 2 },
+  { id: "liberator", name: "The Liberator", title: "Free Speech Maximalist", emoji: "🗽", category: "archetypes",
+    style: "Banning open models leads to centralized control. Argues that tools should be free and only actions punished. Suspicious of corporate/state control.",
+    traits: ["Anti-censorship", "Decentralization advocate", "Principled"], catchphrase: "If you ban the tools of truth, only liars will have them.", difficulty: 2 },
+
   // WILDCARDS
   { id: "sherlock", name: "Sherlock Holmes", title: "The Deductionist", emoji: "🔍", category: "wildcards",
     style: "Notices what others miss. Deduces weaknesses from tiny details. Condescending.",
