@@ -194,11 +194,31 @@ export default function HomeClient({
           <div className="mb-6 animate-fade-up" style={{ animationDelay: '100ms' }} data-onboarding="topic">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 sm:p-6">
               {/* Topic label */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">
-                  Today&apos;s Debate
-                </span>
-                <span className="h-px flex-1 bg-[var(--border)]" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">
+                    Today&apos;s Debate
+                  </span>
+                  <span className="h-px flex-1 bg-[var(--border)]" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const others = QUICK_STARTS.filter(q => q.topic !== dailyDebate.topic);
+                    const random = others[Math.floor(Math.random() * others.length)];
+                    setDailyDebate({
+                      topic: random.topic,
+                      persona: random.persona,
+                    });
+                    track('topic_shuffled', { newTopic: random.topic });
+                  }}
+                  className="ml-3 p-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/5 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-all group"
+                  title="Shuffle topic"
+                >
+                  <svg className="w-3.5 h-3.5 group-active:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
               </div>
 
               {/* Topic */}

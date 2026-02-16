@@ -416,7 +416,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const hasUserInteracted = useRef(false);
 
   // Request judgment from the AI judge
-  const requestJudgment = async () => {
+  const requestJudgment = useCallback(async () => {
     if (!debate || messages.length < 2) return;
     
     track('debate_judge_requested', {
@@ -468,7 +468,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         experiment_variant: variant,
       });
     }
-  };
+  }, [debate, messages, debateId, variant]);
 
   // Highlight message logic
   const highlightedMessageId = searchParams.get('highlight_message_id');
@@ -958,6 +958,13 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   };
 
+  // Auto-trigger judgment after 5 rounds (10 messages)
+  useEffect(() => {
+    if (!debateScore && messages.length >= 10 && !isAILoading && !isUserLoading) {
+      requestJudgment();
+    }
+  }, [messages.length, debateScore, isAILoading, isUserLoading, requestJudgment]);
+
   // AI Takeover - generates an AI argument for the user
   const handleAITakeover = async () => {
     if (isAITakeoverLoading || isAILoading) {
@@ -1354,8 +1361,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
           <div ref={messagesEndRef} />
           
-          {/* Guest Mode Wall - shown after 2 messages for non-signed-in users */}
-          {!isSignedIn && messages.filter(m => m.role === 'user').length >= 2 && (
+          {/* Guest Mode Wall - shown after 5 messages for non-signed-in users */}
+          {!isSignedIn && messages.filter(m => m.role === 'user').length >= 5 && (
             <GuestModeWall 
               isOpen={true} 
               messageCount={messages.filter(m => m.role === 'user').length}
@@ -1410,6 +1417,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           <div className="pt-3 animate-fade-in">
             <QuickReplies
               onReply={(text) => handleSend(text)}
+              onJudge={messages.length >= 2 ? requestJudgment : undefined}
               disabled={isUserLoading || isAILoading || !effectiveIsOwner}
             />
           </div>
@@ -1568,7 +1576,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           <GuestLimitModal
             isOpen={showGuestLimitModal}
             onClose={() => setShowGuestLimitModal(false)}
-            turnCount={guestTurnCount}
+            turnCount={messages.filter(m => m.role === 'user').length}
           />
         </Suspense>
       )}
