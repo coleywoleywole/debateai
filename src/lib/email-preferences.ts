@@ -12,6 +12,9 @@
  */
 
 import { d1 } from './d1';
+import { currentUser } from '@clerk/nextjs/server';
+import { welcomeEmail } from './email-templates';
+import { sendEmail } from './email';
 
 export interface EmailPreferences {
   user_id: string;
@@ -19,6 +22,7 @@ export interface EmailPreferences {
   daily_digest: number;
   challenge_notify: number;
   weekly_recap: number;
+  welcome_email_sent: number;
   unsubscribe_token: string;
   unsubscribed_at: string | null;
   created_at: string;
@@ -37,6 +41,7 @@ export async function createEmailPreferencesTables() {
       daily_digest INTEGER NOT NULL DEFAULT 1,
       challenge_notify INTEGER NOT NULL DEFAULT 1,
       weekly_recap INTEGER NOT NULL DEFAULT 1,
+      welcome_email_sent INTEGER NOT NULL DEFAULT 0,
       unsubscribe_token TEXT NOT NULL UNIQUE,
       unsubscribed_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -83,8 +88,8 @@ export async function getOrCreatePreferences(userId: string, email: string): Pro
   // Create new preferences (all opted in by default)
   const token = crypto.randomUUID();
   await d1.query(
-    `INSERT INTO email_preferences (user_id, email, daily_digest, challenge_notify, weekly_recap, unsubscribe_token)
-     VALUES (?, ?, 1, 1, 1, ?)`,
+    `INSERT INTO email_preferences (user_id, email, daily_digest, challenge_notify, weekly_recap, unsubscribe_token, welcome_email_sent)
+     VALUES (?, ?, 1, 1, 1, ?, 0)`,
     [userId, email, token],
   );
 
@@ -94,11 +99,58 @@ export async function getOrCreatePreferences(userId: string, email: string): Pro
     daily_digest: 1,
     challenge_notify: 1,
     weekly_recap: 1,
+    welcome_email_sent: 0,
     unsubscribe_token: token,
     unsubscribed_at: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+}
+
+/**
+ * Ensures the welcome email is sent exactly once to a user.
+ * Call this in any common authenticated entry point (e.g. GET /api/notifications).
+ */
+export async function ensureWelcomeEmail(userId: string) {
+  if (userId.startsWith('guest_')) return;
+
+  try {
+    // 1. Get user details from Clerk (contains email + name)
+    const user = await currentUser();
+    const email = user?.emailAddresses?.[0]?.emailAddress;
+    if (!email) return;
+
+    // 2. Get or create preferences (creates record if missing)
+    const prefs = await getOrCreatePreferences(userId, email);
+
+    // 3. If already sent, skip
+    if (prefs.welcome_email_sent) return;
+
+    // 4. Send the email
+    const name = user.firstName || user.username || 'there';
+    const { subject, html } = welcomeEmail({
+      name,
+      unsubscribeToken: prefs.unsubscribe_token,
+    });
+
+    const result = await sendEmail({
+      to: email,
+      subject,
+      html,
+      tags: [{ name: 'category', value: 'welcome' }],
+    });
+
+    // 5. Mark as sent if successful
+    if (result.success) {
+      await d1.query(
+        'UPDATE email_preferences SET welcome_email_sent = 1, updated_at = datetime(\'now\') WHERE user_id = ?',
+        [userId]
+      );
+    }
+  } catch (error) {
+    console.error('Failed to ensure welcome email:', error);
+    // Silent fail — don't block the caller
+  }
 }
 
 /**

@@ -4,6 +4,7 @@ import { MIGRATION_003_SQL } from './migrations/003-arena-mode';
 import { MIGRATION_005_SQL } from './migrations/005-missing-users-cols';
 import { MIGRATION_006_SQL } from './migrations/006-content-review';
 import { MIGRATION_007_SQL } from './migrations/007-analytics';
+import { MIGRATION_008_SQL } from './migrations/008-welcome-email';
 import { ArenaState } from './arena-schema';
 
 interface D1Response {
@@ -217,7 +218,7 @@ class D1Client {
     `;
 
     // Combine base schema with migrations
-    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL;
+    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL + '\n' + MIGRATION_008_SQL;
 
     const queries = fullSchema.split(';').filter(q => q.trim());
     const results = [];
