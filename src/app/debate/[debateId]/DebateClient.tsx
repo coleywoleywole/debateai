@@ -1,29 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, memo, lazy, Suspense, useCallback } from "react";
 import React from "react";
 import { useSafeUser } from "@/lib/useSafeClerk";
 import { useParams, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { getOpponentById } from "@/lib/opponents";
 import Header from "@/components/Header";
-import Spinner from "@/components/Spinner";
 import { track } from "@/lib/analytics";
 import { useToast } from "@/components/Toast";
 import ShareButtons from "@/components/ShareButtons";
-import StickyShareButton from "@/components/StickyShareButton";
+import DebateScoreCard from "@/components/DebateScoreCard";
 import JudgeMessage from "@/components/JudgeMessage";
 import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
-import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
-import TurnCounter from "@/components/TurnCounter";
 import type { DebateScore } from "@/lib/scoring";
 
 // Lazy load modals - they're only shown on user interaction
 const UpgradeModal = lazy(() => import("@/components/UpgradeModal"));
 const ShareModal = lazy(() => import("@/components/ShareModal"));
-const GuestLimitModal = lazy(() => import("@/components/GuestLimitModal"));
 
 export interface DebateClientProps {
   initialDebate?: {
@@ -32,7 +27,6 @@ export interface DebateClientProps {
     opponent?: string;
     character?: string;
     opponentStyle?: string;
-    promptVariant?: 'default' | 'aggressive';
     messages?: Array<{ role: string; content: string; aiAssisted?: boolean; citations?: Array<{ id: number; url: string; title: string }> }>;
     score_data?: Record<string, unknown>;
     [key: string]: unknown;
@@ -54,7 +48,10 @@ StreamingIndicator.displayName = "StreamingIndicator";
 // Search indicator
 const SearchIndicator = memo(({ message }: { message: string }) => (
   <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-    <Spinner className="w-3.5 h-3.5" />
+    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+    </svg>
     <span>{message}</span>
   </div>
 ));
@@ -108,8 +105,6 @@ const Message = memo(
     messageIndex,
     isHighlighted,
     debateId,
-    variant,
-    onShare,
   }: {
     msg: {
       role: string;
@@ -128,8 +123,6 @@ const Message = memo(
     messageIndex: number;
     isHighlighted?: boolean;
     debateId?: string;
-    variant?: 'default' | 'aggressive';
-    onShare?: (msg: any, index: number) => void;
   }) => {
     const isUser = msg.role === "user";
     const isStreaming = (isUser && isUserLoading) || (!isUser && isAILoading);
@@ -148,19 +141,19 @@ const Message = memo(
       }
     }, [isHighlighted]);
 
-    const handleShare = () => {
-      if (onShare) {
-        onShare(msg, messageIndex);
-      } else if (debateId) {
-        const url = `${window.location.origin}/debate/${debateId}?highlight_message_id=${messageIndex}`;
-        navigator.clipboard.writeText(url).then(() => {
-          setShowShareToast(true);
-          setTimeout(() => setShowShareToast(false), 2000);
-        }).catch(() => {});
+    const handleShare = async () => {
+      if (!debateId) return;
+      const url = `${window.location.origin}/debate/${debateId}?highlight_message_id=${messageIndex}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        setShowShareToast(true);
+        setTimeout(() => setShowShareToast(false), 2000);
+      } catch {
+        // Silent fail
       }
     };
 
-    const handleCitationClick = (citationId: number) => {
+    const handleCitationClick = useCallback((citationId: number) => {
       // Open citations panel if not already open
       if (!showCitations) {
         setShowCitations(true);
@@ -181,13 +174,13 @@ const Message = memo(
       setTimeout(() => {
         setHighlightedCitation(null);
       }, 2000);
-    };
+    }, [showCitations]);
 
     return (
       <div 
         ref={messageRef}
         id={`message-${messageIndex}`}
-        className={`py-5 relative group ${isUser ? '' : (variant === 'aggressive' ? 'bg-red-900/5 border-y border-red-500/10' : 'bg-[var(--bg-elevated)]/60 border-y border-[var(--border)]/30')} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
+        className={`py-5 relative group ${isUser ? '' : 'bg-[var(--bg-elevated)]/60 border-y border-[var(--border)]/30'} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
       >
         {/* Highlight overlay */}
         {isHighlighted && (
@@ -209,9 +202,7 @@ const Message = memo(
                 ? 'bg-[var(--error)]/10 text-[var(--error)] border border-[var(--error)]/30'
                 : isUser
                   ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : variant === 'aggressive'
-                    ? 'bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.2)]'
-                    : 'bg-[var(--bg-sunken)] border border-[var(--border)]/50'
+                  : 'bg-[var(--bg-sunken)] border border-[var(--border)]/50'
               }`}
             >
               {isUser ? (
@@ -262,7 +253,7 @@ const Message = memo(
                   )
                 ) : (
                   <div className="whitespace-pre-wrap">
-                    {/* eslint-disable-next-line */}
+                    {/* eslint-disable-next-line react-hooks/refs */}
                     {renderContentWithCitations(msg.content, msg.citations, handleCitationClick)}
                     {isStreaming && (
                       <span className="inline-block w-2 h-4 ml-0.5 bg-[var(--accent)] animate-pulse rounded-sm" />
@@ -374,6 +365,14 @@ const Message = memo(
 );
 Message.displayName = "Message";
 
+// Search messages
+const SEARCH_MESSAGES = [
+  "🔍 Searching for evidence...",
+  "📚 Analyzing sources...",
+  "🧠 Formulating argument...",
+  "💡 Building counterpoints...",
+];
+
 export default function DebateClient({ initialDebate = null, initialMessages = [], initialIsOwner = false }: DebateClientProps = {}) {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -396,21 +395,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [activeShareMessage, setActiveShareMessage] = useState<{message: any, index: number} | null>(null);
   const [rateLimitData, setRateLimitData] = useState<{ current: number; limit: number } | undefined>();
   const [debateScore, setDebateScore] = useState<DebateScore | null>(null);
-  const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
-  const [guestTurnCount, setGuestTurnCount] = useState(0);
-  const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
-  const [isGuestOwner, setIsGuestOwner] = useState(false);
-  const isDevMode = searchParams.get('dev') === 'true';
-
-  // Set guest owner if this is a new debate and user is not signed in
-  useEffect(() => {
-    if (!isSignedIn && (isDevMode || (debateId && sessionStorage.getItem('guest_debate_id') === debateId))) {
-      setIsGuestOwner(true);
-    }
-  }, [debateId, isSignedIn, isDevMode]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hasUserInteracted = useRef(false);
@@ -429,7 +415,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          debateId,
           topic: debate.topic,
           messages: messages.filter(m => m.role === 'user' || m.role === 'ai'),
         }),
@@ -457,18 +442,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         aiScore: data.aiScore,
         winner: data.winner,
       });
-
-      track('debate_finished', {
-        debateId,
-        winner: data.winner,
-        turnCount: messages.length,
-      });
-
-      track('debate_ended', {
-        debateId,
-        reason: 'completed',
-        turnCount: messages.length,
-      });
     } catch (error: any) {
       console.error('Failed to request judgment:', error);
       track('debate_error', {
@@ -479,7 +452,9 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   };
 
-  // Dev mode check moved up
+  // Dev mode check from URL
+  const isDevMode = searchParams.get('dev') === 'true';
+// Duplicate removed
 
   // Highlight message logic
   const highlightedMessageId = searchParams.get('highlight_message_id');
@@ -552,34 +527,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     // Always revalidate to ensure fresh data (fixes back button issues)
     revalidateDebate();
   }, [debateId, isDevMode]);
-
-  // Track debate view
-  useEffect(() => {
-    if (debateId) {
-      track('debate_viewed', { debateId });
-    }
-  }, [debateId]);
-
-  // Determine variant (A/B Test)
-  useEffect(() => {
-    if (debate?.promptVariant) {
-      setVariant(debate.promptVariant as 'aggressive' | 'default');
-    } else if (user?.id && !debate) {
-      // Replicate backend A/B logic for immediate UI feedback on new debates
-      const lastChar = user.id.slice(-1);
-      if (lastChar.charCodeAt(0) % 2 === 0) {
-        setVariant('aggressive');
-      } else {
-        setVariant('default');
-      }
-    } else if (isDevMode) {
-       // Allow testing via URL param
-       const variantParam = searchParams.get('variant');
-       if (variantParam === 'aggressive') {
-         setVariant('aggressive');
-       }
-    }
-  }, [debate, user, isDevMode, searchParams]);
 
   // Handle instant debate from landing page
   useEffect(() => {
@@ -753,11 +700,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   // Only scroll after the user starts interacting (sending messages).
   useEffect(() => {
     if (!hasUserInteracted.current) return;
-    
-    // Don't auto-scroll if we only have the initial exchange (system + user + AI response starting)
-    // this ensures the user sees the start of the debate on load.
-    if (messages.length <= 2 && instantDebateActiveRef.current) return;
-
     if (isAutoScrollEnabled && messagesEndRef.current) {
       // Use 'instant' scroll during AI streaming to prevent layout bouncing
       const behavior = isAILoading ? 'instant' : 'smooth';
@@ -791,26 +733,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
       });
       return;
     }
-
-    if (!isSignedIn) {
-      // Guest limit removed to improve completion rate
-      // if (guestTurnCount >= 15) {
-      //   setShowGuestLimitModal(true);
-      //   track('guest_limit_reached', { debateId, turnCount: guestTurnCount });
-      //   return;
-      // }
-      setGuestTurnCount(prev => prev + 1);
-    }
-
     if (!userInput.trim() || isUserLoading || isAILoading) return;
 
     const startTime = Date.now();
     const messageText = userInput.trim();
     hasUserInteracted.current = true;
-
-    if (messages.length === 0) {
-      track('debate_started', { debateId, topic: debate?.topic, source: 'manual' });
-    }
 
     // Add user message immediately
     const userMessage = {
@@ -828,7 +755,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     track('debate_message_sent', {
       debateId,
       messageIndex: messages.length,
-      turnCount: messages.length + 1,
       aiAssisted: false,
     });
 
@@ -911,7 +837,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         const decoder = new TextDecoder();
         let accumulatedContent = '';
         let citations: Array<{ id: number; url: string; title: string }> = [];
-        let hasReceivedFirstToken = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -925,14 +850,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               try {
                 const data = JSON.parse(line.substring(6));
                 if (data.type === 'chunk') {
-                  if (!hasReceivedFirstToken) {
-                    hasReceivedFirstToken = true;
-                    track('debate_ai_ttft', {
-                      debateId,
-                      messageIndex: messages.length + 1,
-                      latencyMs: Date.now() - startTime
-                    });
-                  }
                   accumulatedContent += data.content;
                   setMessages(prev => {
                     const newMessages = [...prev];
@@ -959,13 +876,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   const latencyMs = Date.now() - startTime;
                   track('debate_ai_response_latency', {
                     debateId,
-                    messageIndex: messages.length + 1,
+                    messageIndex: messages.length,
                     latencyMs,
-                  });
-                  track('debate_ai_message_sent', {
-                    debateId,
-                    messageIndex: messages.length + 2,
-                    turnCount: messages.length + 2
                   });
                   setMessages(prev => {
                     const newMessages = [...prev];
@@ -1017,10 +929,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     hasUserInteracted.current = true;
     setIsAITakeoverLoading(true);
     setIsAutoScrollEnabled(true);
-
-    if (messages.length === 0) {
-      track('debate_started', { debateId, topic: debate?.topic, source: 'ai_takeover' });
-    }
 
     // Track AI takeover used
     track('debate_ai_takeover', {
@@ -1164,7 +1072,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
       const debateDecoder = new TextDecoder();
       let debateAccumulatedContent = '';
       let debateCitations: Array<{ id: number; url: string; title: string }> = [];
-      let hasReceivedFirstToken = false;
 
       while (true) {
         const { done, value } = await debateReader.read();
@@ -1178,14 +1085,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             try {
               const data = JSON.parse(line.substring(6));
               if (data.type === 'chunk') {
-                if (!hasReceivedFirstToken) {
-                  hasReceivedFirstToken = true;
-                  track('debate_ai_ttft', {
-                    debateId,
-                    messageIndex: messages.length + 1,
-                    latencyMs: Date.now() - startTime
-                  });
-                }
                 debateAccumulatedContent += data.content;
                 setMessages(prev => {
                   const newMessages = [...prev];
@@ -1202,13 +1101,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 const latencyMs = Date.now() - startTime;
                 track('debate_ai_response_latency', {
                   debateId,
-                  messageIndex: messages.length + 1,
+                  messageIndex: messages.length,
                   latencyMs,
-                });
-                track('debate_ai_message_sent', {
-                  debateId,
-                  messageIndex: messages.length + 2,
-                  turnCount: messages.length + 2
                 });
                 setMessages(prev => {
                   const newMessages = [...prev];
@@ -1303,11 +1197,10 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     );
   }
 
-  const effectiveIsOwner = isOwner || isGuestOwner;
-  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner;
+  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && isOwner;
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg)] transition-colors duration-500 relative">
+    <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg)]">
       <Header />
 
       {/* Topic Header - Fixed */}
@@ -1315,50 +1208,17 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         <div className="flex-shrink-0 z-10 border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg)]/80">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 text-sm flex-1 min-w-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)] flex-shrink-0">Topic</span>
-                  {variant === 'aggressive' && (
-                    <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 text-[10px] font-bold border border-red-500/20 uppercase tracking-wider">
-                      Hard Mode
-                    </span>
-                  )}
-                  <h1 className="font-medium text-[var(--text)] truncate hidden sm:block">{debate.topic}</h1>
-                  {!debateScore && (
-                    <div className="hidden sm:block ml-2">
-                      <TurnCounter count={Math.floor(messages.length / 2) + 1} />
-                    </div>
-                  )}
-                </div>
-
-                <h1 className="font-medium text-[var(--text)] truncate sm:hidden">{debate.topic}</h1>
-
+              <div className="flex items-center gap-2 text-sm flex-1 min-w-0">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)] flex-shrink-0">Topic</span>
+                <h1 className="font-medium text-[var(--text)] truncate">{debate.topic}</h1>
                 {(debate.opponentStyle || opponent) && (
-                  <div className="flex items-center gap-1 min-w-0 sm:ml-0">
-                    <span className="text-[var(--border-strong)] flex-shrink-0 hidden sm:inline mr-1">·</span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] sm:hidden flex-shrink-0">vs</span>
-                    <span className="text-[var(--text-secondary)] truncate">{debate.opponentStyle || opponent?.name}</span>
-                    {!debateScore && (
-                      <div className="sm:hidden flex-shrink-0 ml-1.5">
-                        <TurnCounter count={Math.floor(messages.length / 2) + 1} />
-                      </div>
-                    )}
-                  </div>
+                  <>
+                    <span className="text-[var(--border-strong)] flex-shrink-0">·</span>
+                    <span className="text-[var(--text-secondary)] truncate">vs {debate.opponentStyle || opponent?.name}</span>
+                  </>
                 )}
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <ShareButtons debateId={debateId} topic={debate.topic} onOpenModal={() => setShowShareModal(true)} />
-                <Link
-                  href="/"
-                  onClick={() => track('debate_ended', { debateId, reason: 'abandoned', turnCount: messages.length })}
-                  className="p-2 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--bg-sunken)] hover:text-[var(--text)] transition-colors"
-                  title="End Debate"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </Link>
-              </div>
+              <ShareButtons debateId={debateId} topic={debate.topic} onOpenModal={() => setShowShareModal(true)} />
             </div>
           </div>
         </div>
@@ -1377,7 +1237,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               msg={msg}
               opponent={opponent}
               debate={debate}
-              variant={variant}
               isAILoading={isAILoading && idx === messages.length - 1}
               isUserLoading={isUserLoading && idx === messages.length - 1}
               onRetry={msg.failed ? () => {
@@ -1392,7 +1251,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               messageIndex={idx}
               isHighlighted={highlightedMessageIndex === idx}
               debateId={debateId}
-              onShare={(msg, index) => setActiveShareMessage({ message: msg, index })}
             />
           ))}
 
@@ -1425,34 +1283,37 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
           <div ref={messagesEndRef} />
           
-          {/* Guest Mode Wall - shown after 2 messages for non-signed-in users */}
-          {!isSignedIn && messages.filter(m => m.role === 'user').length >= 2 && (
-            <GuestModeWall 
-              isOpen={true} 
-              messageCount={messages.filter(m => m.role === 'user').length}
-              onClose={() => {
-                // Allow 1 more message then show again
-                track('guest_mode_wall_dismissed', { 
-                  messageCount: messages.filter(m => m.role === 'user').length 
-                });
-              }}
-            />
-          )}
-          
           {/* Request Judgment Button - shown when enough messages but no score */}
           {!debateScore && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 2 && (
-            <div className="flex justify-center my-4 animate-fade-in">
-              <button
-                onClick={requestJudgment}
-                disabled={isAILoading || isUserLoading}
-                className="group flex items-center gap-2 px-3 py-1.5 rounded-lg
-                  text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-sunken)]
-                  transition-all disabled:opacity-50"
-              >
-                <span className="opacity-70 group-hover:scale-110 transition-transform">⚖️</span>
-                <span>Get Verdict</span>
-                <span className="text-[var(--accent)] font-medium group-hover:underline ml-0.5">Ask Judge</span>
-              </button>
+            <div className="max-w-xl mx-auto px-4 py-8">
+              <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl p-6 text-center shadow-sm relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/5 to-transparent opacity-50" />
+                
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mb-1 text-2xl">
+                    ⚖️
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-[var(--text)]">
+                    Ready for the verdict?
+                  </h3>
+                  
+                  <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto mb-2">
+                    The debate has reached a good length. Ask the AI judge to analyze the arguments and declare a winner.
+                  </p>
+                  
+                  <button
+                    onClick={requestJudgment}
+                    disabled={isAILoading || isUserLoading}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all transform active:scale-95 font-medium shadow-md shadow-[var(--accent)]/20"
+                  >
+                    <span>Request Verdict</span>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1465,7 +1326,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           <div className="flex gap-2">
             {/* Textarea Container */}
             <div className="flex-1 min-w-0 relative">
-              {!effectiveIsOwner && (
+              {!isOwner && (
                 <div className="absolute inset-0 bg-[var(--bg)]/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
                   <span className="text-sm text-[var(--text-secondary)] flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1491,23 +1352,19 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   }
                 }}
                 onFocus={() => {
-                  document.body.classList.add('input-focused');
                   // Scroll to bottom on mobile when focusing input
                   setTimeout(() => {
                     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                onBlur={() => {
-                  document.body.classList.remove('input-focused');
-                }}
-                placeholder={effectiveIsOwner ? "Make your argument..." : "Sign in to contribute..."}
+                placeholder={isOwner ? "Make your argument..." : "Sign in to contribute..."}
                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl
                   px-3 sm:px-4 py-2.5 sm:py-3 resize-none text-[var(--text)] placeholder-[var(--text-tertiary)]
                   outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20
-                  transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] text-base sm:text-[15px] leading-relaxed overflow-hidden
+                  transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] text-[15px] leading-relaxed overflow-hidden
                   touch-manipulation disabled:opacity-50"
                 rows={1}
-                disabled={isUserLoading || isAILoading || !effectiveIsOwner}
+                disabled={isUserLoading || isAILoading || !isOwner}
               />
             </div>
 
@@ -1517,7 +1374,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               <button
                 type="button"
                 onClick={handleAITakeover}
-                disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner}
+                disabled={isAITakeoverLoading || isAILoading || !isOwner}
                 className={`
                   w-10 h-10 rounded-lg border flex items-center justify-center
                   transition-all duration-200 flex-shrink-0
@@ -1527,7 +1384,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   }
                   disabled:opacity-40 disabled:cursor-not-allowed
                 `}
-                title={effectiveIsOwner ? "Let AI argue for you" : "Sign in to contribute to this debate"}
+                title={isOwner ? "Let AI argue for you" : "Sign in to contribute to this debate"}
               >
                 {isAITakeoverLoading ? (
                   <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -1578,16 +1435,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         </div>
       </div>
 
-      {/* Sticky Share CTA - Show when there are messages but debate not finished */}
-      {!debateScore && messages.length >= 2 && (
-        <div className="absolute bottom-28 right-4 sm:fixed sm:bottom-8 sm:right-8 z-30 animate-fade-in">
-          <StickyShareButton onClick={() => {
-            track('share_button_clicked', { debateId, location: 'sticky' });
-            setShowShareModal(true);
-          }} />
-        </div>
-      )}
-
       {/* Lazy-loaded modals - only loaded when shown */}
       {showUpgradeModal && (
         <Suspense fallback={null}>
@@ -1600,29 +1447,14 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         </Suspense>
       )}
 
-      {showGuestLimitModal && (
-        <Suspense fallback={null}>
-          <GuestLimitModal
-            isOpen={showGuestLimitModal}
-            onClose={() => setShowGuestLimitModal(false)}
-            turnCount={guestTurnCount}
-          />
-        </Suspense>
-      )}
-
-      {(showShareModal || activeShareMessage) && (
+      {showShareModal && (
         <Suspense fallback={null}>
           <ShareModal
-            isOpen={showShareModal || !!activeShareMessage}
-            onClose={() => {
-              setShowShareModal(false);
-              setActiveShareMessage(null);
-            }}
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
             debateId={debateId}
             topic={debate?.topic || ''}
             opponentName={opponent?.name || debate?.opponentStyle}
-            message={activeShareMessage?.message}
-            messageIndex={activeShareMessage?.index}
           />
         </Suspense>
       )}
