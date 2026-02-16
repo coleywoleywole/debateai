@@ -9,16 +9,20 @@ import Header from "@/components/Header";
 import { track } from "@/lib/analytics";
 import { useToast } from "@/components/Toast";
 import ShareButtons from "@/components/ShareButtons";
+import StickyShareButton from "@/components/StickyShareButton";
 import JudgeMessage from "@/components/JudgeMessage";
 import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
 import QuickReplies from "@/components/QuickReplies";
+import TurnCounter from "@/components/TurnCounter";
+import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
 import type { DebateScore } from "@/lib/scoring";
 
 // Lazy load modals - they're only shown on user interaction
 const UpgradeModal = lazy(() => import("@/components/UpgradeModal"));
 const ShareModal = lazy(() => import("@/components/ShareModal"));
+const GuestLimitModal = lazy(() => import("@/components/GuestLimitModal"));
 
 export interface DebateClientProps {
   initialDebate?: {
@@ -396,6 +400,17 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [rateLimitData, setRateLimitData] = useState<{ current: number; limit: number } | undefined>();
   const [debateScore, setDebateScore] = useState<DebateScore | null>(null);
   const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
+  const [guestTurnCount, setGuestTurnCount] = useState(0);
+  const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
+  const [isGuestOwner, setIsGuestOwner] = useState(false);
+  const isDevMode = searchParams.get('dev') === 'true';
+
+  // Set guest owner if this is a new debate and user is not signed in
+  useEffect(() => {
+    if (!isSignedIn && (isDevMode || (debateId && sessionStorage.getItem('guest_debate_id') === debateId))) {
+      setIsGuestOwner(true);
+    }
+  }, [debateId, isSignedIn, isDevMode]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hasUserInteracted = useRef(false);
@@ -450,10 +465,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
       });
     }
   };
-
-  // Dev mode check from URL
-  const isDevMode = searchParams.get('dev') === 'true';
-// Duplicate removed
 
   // Highlight message logic
   const highlightedMessageId = searchParams.get('highlight_message_id');
@@ -1219,7 +1230,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     );
   }
 
-  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && isOwner;
+  const effectiveIsOwner = isOwner || isGuestOwner;
+  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner;
 
   return (
     <div className={`h-dvh flex flex-col overflow-hidden transition-colors duration-500 ${variant === 'aggressive' ? 'bg-red-950/5' : 'bg-[var(--bg)]'}`}>
@@ -1237,14 +1249,28 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                      Hard Mode
                    </span>
                 )}
-                <h1 className="font-medium text-[var(--text)] truncate">{debate.topic}</h1>
-                {(debate.opponentStyle || opponent) && (
-                  <>
-                    <span className="text-[var(--border-strong)] flex-shrink-0">·</span>
-                    <span className="text-[var(--text-secondary)] truncate">vs {debate.opponentStyle || opponent?.name}</span>
-                  </>
+                <h1 className="font-medium text-[var(--text)] truncate hidden sm:block">{debate.topic}</h1>
+                {!debateScore && (
+                  <div className="hidden sm:block ml-2">
+                    <TurnCounter count={Math.floor(messages.length / 2) + 1} />
+                  </div>
                 )}
               </div>
+
+              <h1 className="font-medium text-[var(--text)] truncate sm:hidden">{debate.topic}</h1>
+
+              {(debate.opponentStyle || opponent) && (
+                <div className="flex items-center gap-1 min-w-0 sm:ml-0">
+                  <span className="text-[var(--border-strong)] flex-shrink-0 hidden sm:inline mr-1">·</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] sm:hidden flex-shrink-0">vs</span>
+                  <span className="text-[var(--text-secondary)] truncate">{debate.opponentStyle || opponent?.name}</span>
+                  {!debateScore && (
+                    <div className="sm:hidden flex-shrink-0 ml-1.5">
+                      <TurnCounter count={Math.floor(messages.length / 2) + 1} />
+                    </div>
+                  )}
+                </div>
+              )}
               <ShareButtons debateId={debateId} topic={debate.topic} onOpenModal={() => setShowShareModal(true)} />
             </div>
           </div>
@@ -1311,6 +1337,20 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
           <div ref={messagesEndRef} />
           
+          {/* Guest Mode Wall - shown after 2 messages for non-signed-in users */}
+          {!isSignedIn && messages.filter(m => m.role === 'user').length >= 2 && (
+            <GuestModeWall 
+              isOpen={true} 
+              messageCount={messages.filter(m => m.role === 'user').length}
+              onClose={() => {
+                // Allow 1 more message then show again
+                track('guest_mode_wall_dismissed', { 
+                  messageCount: messages.filter(m => m.role === 'user').length 
+                });
+              }}
+            />
+          )}
+          
           {/* Request Judgment Button - shown when enough messages but no score */}
           {!debateScore && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 2 && (
             <div className="max-w-xl mx-auto px-4 py-8">
@@ -1353,7 +1393,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           <div className="pt-3 animate-fade-in">
             <QuickReplies
               onReply={(text) => handleSend(text)}
-              disabled={isUserLoading || isAILoading || !isOwner}
+              disabled={isUserLoading || isAILoading || !effectiveIsOwner}
             />
           </div>
         )}
@@ -1362,7 +1402,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           <div className="flex gap-2">
             {/* Textarea Container */}
             <div className="flex-1 min-w-0 relative">
-              {!isOwner && (
+              {!effectiveIsOwner && (
                 <div className="absolute inset-0 bg-[var(--bg)]/80 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
                   <span className="text-sm text-[var(--text-secondary)] flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1393,14 +1433,14 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                placeholder={isOwner ? "Make your argument..." : "Sign in to contribute..."}
+                placeholder={effectiveIsOwner ? "Make your argument..." : "Sign in to contribute..."}
                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl
                   px-3 sm:px-4 py-2.5 sm:py-3 resize-none text-[var(--text)] placeholder-[var(--text-tertiary)]
                   outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20
                   transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] text-[15px] leading-relaxed overflow-hidden
                   touch-manipulation disabled:opacity-50"
                 rows={1}
-                disabled={isUserLoading || isAILoading || !isOwner}
+                disabled={isUserLoading || isAILoading || !effectiveIsOwner}
               />
             </div>
 
@@ -1410,7 +1450,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               <button
                 type="button"
                 onClick={handleAITakeover}
-                disabled={isAITakeoverLoading || isAILoading || !isOwner}
+                disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner}
                 className={`
                   w-10 h-10 rounded-lg border flex items-center justify-center
                   transition-all duration-200 flex-shrink-0
@@ -1420,7 +1460,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   }
                   disabled:opacity-40 disabled:cursor-not-allowed
                 `}
-                title={isOwner ? "Let AI argue for you" : "Sign in to contribute to this debate"}
+                title={effectiveIsOwner ? "Let AI argue for you" : "Sign in to contribute to this debate"}
               >
                 {isAITakeoverLoading ? (
                   <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -1491,6 +1531,26 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             debateId={debateId}
             topic={debate?.topic || ''}
             opponentName={opponent?.name || debate?.opponentStyle}
+          />
+        </Suspense>
+      )}
+
+      {/* Sticky Share CTA - Show when there are messages but debate not finished */}
+      {!debateScore && messages.length >= 2 && (
+        <div className="absolute bottom-28 right-4 sm:fixed sm:bottom-8 sm:right-8 z-30 animate-fade-in">
+          <StickyShareButton onClick={() => {
+            track('share_button_clicked', { debateId, location: 'sticky' });
+            setShowShareModal(true);
+          }} />
+        </div>
+      )}
+
+      {showGuestLimitModal && (
+        <Suspense fallback={null}>
+          <GuestLimitModal
+            isOpen={showGuestLimitModal}
+            onClose={() => setShowGuestLimitModal(false)}
+            turnCount={guestTurnCount}
           />
         </Suspense>
       )}
