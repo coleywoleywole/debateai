@@ -160,7 +160,7 @@ export async function POST(request: Request) {
     const isFirstResponse = !previousMessages || previousMessages.length === 0;
 
     if (assignedVariant === 'aggressive') {
-      systemPrompt = getAggressiveDebatePrompt(topic, isFirstResponse);
+      systemPrompt = getAggressiveDebatePrompt(topic, previousMessages.length);
     } else {
       const persona = opponentStyle || getDailyPersona();
       systemPrompt = getDebatePrompt(persona, topic, isFirstResponse);
