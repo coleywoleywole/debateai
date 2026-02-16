@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, memo, lazy, Suspense, useCallback } from "react";
 import React from "react";
 import { useSafeUser } from "@/lib/useSafeClerk";
 import { useParams, useSearchParams } from "next/navigation";
@@ -153,7 +153,7 @@ const Message = memo(
       }
     };
 
-    const handleCitationClick = (citationId: number) => {
+    const handleCitationClick = useCallback((citationId: number) => {
       // Open citations panel if not already open
       if (!showCitations) {
         setShowCitations(true);
@@ -174,7 +174,7 @@ const Message = memo(
       setTimeout(() => {
         setHighlightedCitation(null);
       }, 2000);
-    };
+    }, [showCitations]);
 
     return (
       <div 
@@ -253,6 +253,7 @@ const Message = memo(
                   )
                 ) : (
                   <div className="whitespace-pre-wrap">
+                    {/* eslint-disable-next-line react-hooks/refs */}
                     {renderContentWithCitations(msg.content, msg.citations, handleCitationClick)}
                     {isStreaming && (
                       <span className="inline-block w-2 h-4 ml-0.5 bg-[var(--accent)] animate-pulse rounded-sm" />
@@ -1258,9 +1259,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             <JudgeMessage
               score={debateScore}
               opponentName={opponent?.name || debate?.opponentStyle || "AI"}
-              messageCount={messages.filter(m => m.role === 'user').length}
-              messages={messages}
-              topic={debate?.topic || ""}
             />
           )}
 
