@@ -55,7 +55,7 @@ function analyzeDebates(debates) {
     let messages = [];
     try {
       messages = typeof d.messages === 'string' ? JSON.parse(d.messages) : d.messages;
-    } catch (e) {
+    } catch {
       console.warn('Failed to parse messages for debate', i);
       return { error: 'Parse Error' };
     }
@@ -95,7 +95,7 @@ function checkRepetition(aiMessages) {
 
 function generateMockData() {
   return {
-    abandoned: Array(10).fill(0).map((_, i) => ({
+    abandoned: Array(10).fill(0).map(() => ({
       topic: "Universal Basic Income",
       messages: JSON.stringify([
         { role: "user", content: "UBI is necessary." },
@@ -104,7 +104,7 @@ function generateMockData() {
         { role: "ai", content: "While UBI addresses poverty, it may cause inflation. Think about the economy." } // Repetitive
       ])
     })),
-    completed: Array(5).fill(0).map((_, i) => ({
+    completed: Array(5).fill(0).map(() => ({
       topic: "AI Safety",
       messages: JSON.stringify(Array(12).fill({ role: "ai", content: "Valid point. However, consider the risks. How do we mitigate them?" }))
     }))

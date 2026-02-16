@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     // Suppress warnings about critical dependencies in Sentry/Prisma/OpenTelemetry
     // We don't use Prisma, but Sentry tries to load its instrumentation
     config.ignoreWarnings = [
