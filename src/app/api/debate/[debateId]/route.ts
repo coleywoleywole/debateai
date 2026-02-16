@@ -206,11 +206,26 @@ export async function POST(
     // After pushing AI message, length is msgCount + 2
     const finalMsgCount = (debate.messages as Array<unknown>).length;
     let newStatus = debate.status as string;
+    let winner: string | undefined;
     
     if (isDebateCompleted(finalMsgCount)) {
       newStatus = 'completed';
       debate.status = 'completed';
+      
+      // Determine winner based on scores
+      const userScore = (debate.user_score as number) || 0;
+      const aiScore = (debate.ai_score as number) || 0;
+      
+      if (userScore > aiScore) winner = 'user';
+      else if (aiScore > userScore) winner = 'ai';
+      else winner = 'tie';
+      
+      (debate as any).winner = winner;
     }
+
+    // Calculate next round for DB state
+    const nextRound = calculateRound(finalMsgCount);
+    debate.current_round = nextRound;
 
     // Track AI response
     await trackEvent(userId, 'debate_ai_response_generated', {
@@ -221,12 +236,17 @@ export async function POST(
       topic: debate.topic,
       opponent: debate.opponentStyle || debate.opponent || 'default',
       round: currentRound,
-      status: newStatus
+      status: newStatus,
+      winner
     });
 
     // Try to save AI message to D1 with status update
     try {
-      await d1.addMessage(debateId, aiMessage, { status: newStatus });
+      await d1.addMessage(debateId, aiMessage, { 
+        status: newStatus,
+        currentRound: nextRound,
+        winner
+      });
     } catch {
       console.log('D1 save failed for AI message, using memory only');
     }
@@ -235,9 +255,10 @@ export async function POST(
       success: true,
       userMessage,
       aiMessage,
-      currentRound,
+      currentRound: nextRound,
       status: newStatus,
-      totalRounds: 3
+      totalRounds: 3,
+      winner
     });
   } catch (error) {
     // If it's already a NextResponse (from our error helpers), return it

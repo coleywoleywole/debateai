@@ -243,6 +243,9 @@ class D1Client {
     debateId?: string;
     opponentStyle?: string;
     promptVariant?: string;
+    currentRound?: number;
+    totalRounds?: number;
+    status?: string;
   }) {
     // Use provided ID or generate a new one
     const debateId = data.debateId || crypto.randomUUID();
@@ -255,8 +258,8 @@ class D1Client {
     };
     
     const result = await this.query(
-      `INSERT OR REPLACE INTO debates (id, user_id, opponent, topic, messages, user_score, ai_score, score_data) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT OR REPLACE INTO debates (id, user_id, opponent, topic, messages, user_score, ai_score, score_data, current_round, total_rounds, status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         debateId,
         data.userId,
@@ -265,7 +268,10 @@ class D1Client {
         JSON.stringify(data.messages),
         data.userScore || 0,
         data.aiScore || 0,
-        JSON.stringify(metadata)
+        JSON.stringify(metadata),
+        data.currentRound || 1,
+        data.totalRounds || 3,
+        data.status || 'active'
       ]
     );
     
