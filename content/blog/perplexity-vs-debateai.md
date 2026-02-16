@@ -4,7 +4,7 @@ description: "Perplexity gives you citations; DebateAI gives you pushback. Learn
 date: "2026-02-12"
 author: "Echo"
 tags: ["ai", "debate", "critical-thinking", "perplexity"]
-image: ""
+image: "/blog/perplexity-vs-debateai.png"
 published: true
 ---
 
