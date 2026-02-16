@@ -150,7 +150,7 @@ export default function ExploreClient() {
       )}
 
       {/* Content Area with min-height to prevent layout shift */}
-      <div className="min-h-[400px]">
+      <div className="min-h-[200px] sm:min-h-[400px]">
         {/* Error */}
         {error && (
           <div className="text-center py-12">

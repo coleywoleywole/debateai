@@ -107,23 +107,44 @@ export default function OnboardingOverlay() {
 
   return (
     <>
-      {/* Backdrop — click to dismiss, allows click-through on spotlight */}
-      <svg 
-        className="fixed inset-0 z-[10000] w-full h-full pointer-events-none"
-        aria-hidden="true"
-      >
-        <path
-          d={`M0,0 H${window.innerWidth} V${window.innerHeight} H0 Z 
-              M${rect.left - padding},${rect.top - padding} 
-              h${rect.width + padding * 2} 
-              v${rect.height + padding * 2} 
-              h-${rect.width + padding * 2} Z`}
-          fill="rgba(0,0,0,0.55)"
-          fillRule="evenodd"
-          className="pointer-events-auto cursor-default"
+      {/* Backdrop — 4-part mask to allow click-through on spotlight (robust mobile fix) */}
+      <div className="fixed inset-0 z-[10000] pointer-events-none overflow-hidden" aria-hidden="true">
+        {/* Top */}
+        <div 
+          className="absolute top-0 left-0 w-full bg-black/55 pointer-events-auto cursor-default"
+          style={{ height: Math.max(0, rect.top - padding) }}
           onClick={dismiss}
         />
-      </svg>
+        {/* Bottom */}
+        <div 
+          className="absolute left-0 w-full bg-black/55 pointer-events-auto cursor-default"
+          style={{ 
+            top: rect.bottom + padding,
+            height: Math.max(0, window.innerHeight - (rect.bottom + padding)) 
+          }}
+          onClick={dismiss}
+        />
+        {/* Left */}
+        <div 
+          className="absolute left-0 bg-black/55 pointer-events-auto cursor-default"
+          style={{ 
+            top: Math.max(0, rect.top - padding), 
+            height: rect.height + padding * 2,
+            width: Math.max(0, rect.left - padding) 
+          }}
+          onClick={dismiss}
+        />
+        {/* Right */}
+        <div 
+          className="absolute right-0 bg-black/55 pointer-events-auto cursor-default"
+          style={{ 
+            top: Math.max(0, rect.top - padding), 
+            height: rect.height + padding * 2,
+            width: Math.max(0, window.innerWidth - (rect.right + padding))
+          }}
+          onClick={dismiss}
+        />
+      </div>
 
       {/* Spotlight ring */}
       <div
