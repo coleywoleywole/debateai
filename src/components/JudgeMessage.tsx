@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import type { DebateScore } from "@/lib/scoring";
-import FirstDebateCelebration from "@/components/FirstDebateCelebration";
 
 interface JudgeMessageProps {
   score: DebateScore;
   opponentName?: string;
   onViewFullAnalysis?: () => void;
-  experiment_variant?: 'aggressive' | 'default';
+  // Share Image feature props
+  messageCount?: number;
+  messages?: Array<{ role: string; content: string }>;
+  topic?: string;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -31,7 +33,9 @@ export default function JudgeMessage({
   score,
   opponentName = "AI",
   onViewFullAnalysis,
-  experiment_variant,
+  messageCount,
+  messages,
+  topic,
 }: JudgeMessageProps) {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -46,12 +50,6 @@ export default function JudgeMessage({
   return (
     <div className="py-5 bg-[var(--bg-elevated)]/30 border-y border-[var(--accent)]/20">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        <FirstDebateCelebration
-          winner={score.winner}
-          userScore={score.userScore}
-          aiScore={score.aiScore}
-          experiment_variant={experiment_variant}
-        />
         <div className="flex gap-3">
           {/* Judge Avatar */}
           <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-500 border border-amber-500/30">

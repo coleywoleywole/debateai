@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from './Toast';
 import { track } from '@/lib/analytics';
-import { toPng } from 'html-to-image';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -11,26 +10,15 @@ interface ShareModalProps {
   debateId: string;
   topic: string;
   opponentName?: string;
-  message?: {
-    role: string;
-    content: string;
-    aiAssisted?: boolean;
-    citations?: Array<{ id: number; url: string; title: string }>;
-  };
-  messageIndex?: number;
-  variant?: 'default' | 'aggressive';
 }
 
-export default function ShareModal({ isOpen, onClose, debateId, topic, opponentName, message, messageIndex, variant }: ShareModalProps) {
+export default function ShareModal({ isOpen, onClose, debateId, topic, opponentName }: ShareModalProps) {
   const { showToast } = useToast();
   const [isCopying, setIsCopying] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // Store previously focused element and handle body scroll
   useEffect(() => {
@@ -38,36 +26,13 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
       document.body.style.overflow = 'hidden';
-      
-      // Generate image if sharing a message
-      if (message && !generatedImage) {
-        // Wait for render
-        setTimeout(async () => {
-          if (cardRef.current) {
-            try {
-              const dataUrl = await toPng(cardRef.current, {
-                cacheBust: true,
-                backgroundColor: '#0a0a0a', // Dark background
-                style: {
-                  transform: 'scale(1)', // Reset any transforms
-                }
-              });
-              setGeneratedImage(dataUrl);
-            } catch {
-              // Ignore error
-            }
-          }
-        }, 500);
-      }
     } else {
       document.body.style.overflow = '';
-      // Reset generated image on close
-      setTimeout(() => setGeneratedImage(null), 300);
     }
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen, message, generatedImage]);
+  }, [isOpen]);
 
   // Return focus to trigger when modal closes
   useEffect(() => {
@@ -119,15 +84,9 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
   if (!mounted || !isOpen) return null;
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://debateai.org';
-  const debateUrl = message && messageIndex !== undefined
-    ? `${baseUrl}/debate/${debateId}?highlight_message_id=${messageIndex}`
-    : `${baseUrl}/debate/${debateId}`;
-    
-  const shareText = message 
-    ? `Check out this argument on "${topic}" from DebateAI:`
-    : `I just debated "${topic}" on DebateAI — can you do better?`;
-    
-  const shareTextWithOpponent = opponentName && !message
+  const debateUrl = `${baseUrl}/debate/${debateId}`;
+  const shareText = `I just debated "${topic}" on DebateAI — can you do better?`;
+  const shareTextWithOpponent = opponentName 
     ? `I just debated "${topic}" against ${opponentName} on DebateAI — can you do better?`
     : shareText;
 
@@ -140,7 +99,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'twitter', source: 'modal', experiment_variant: variant });
+        track('debate_shared', { debateId, method: 'twitter', source: 'modal' });
         const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank', 'width=550,height=420');
       },
@@ -154,7 +113,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'reddit', source: 'modal', experiment_variant: variant });
+        track('debate_shared', { debateId, method: 'reddit', source: 'modal' });
         const url = `https://www.reddit.com/submit?title=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank');
       },
@@ -168,7 +127,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'linkedin', source: 'modal', experiment_variant: variant });
+        track('debate_shared', { debateId, method: 'linkedin', source: 'modal' });
         const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank');
       },
@@ -182,7 +141,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'facebook', source: 'modal', experiment_variant: variant });
+        track('debate_shared', { debateId, method: 'facebook', source: 'modal' });
         const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank', 'width=626,height=436');
       },
@@ -196,23 +155,13 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
     try {
       setIsCopying(true);
       await navigator.clipboard.writeText(debateUrl);
-      track('debate_shared', { debateId, method: 'copy_link', source: 'modal', experiment_variant: variant });
+      track('debate_shared', { debateId, method: 'copy_link', source: 'modal' });
       showToast('Link copied to clipboard!', 'success');
     } catch (err) {
       console.error('Failed to copy:', err);
       showToast('Failed to copy link', 'error');
     } finally {
       setTimeout(() => setIsCopying(false), 500);
-    }
-  };
-
-  const handleDownloadImage = () => {
-    if (generatedImage) {
-      const link = document.createElement('a');
-      link.download = `debate-moment-${debateId}.png`;
-      link.href = generatedImage;
-      link.click();
-      track('debate_shared', { debateId, method: 'native_share', source: 'modal', experiment_variant: variant });
     }
   };
 
@@ -224,9 +173,9 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
           text: shareTextWithOpponent,
           url: debateUrl,
         });
-        track('debate_shared', { debateId, method: 'native_share', source: 'modal', experiment_variant: variant });
+        track('debate_shared', { debateId, method: 'native_share', source: 'modal' });
         onClose();
-      } catch {
+      } catch (err) {
         console.log('Share cancelled');
       }
     }
@@ -257,11 +206,9 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
           <div className="px-6 py-5 border-b border-[var(--border)]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 id="share-modal-title" className="text-lg font-semibold text-[var(--text)]">
-                  {message ? "Share this argument" : "Share this debate"}
-                </h2>
+                <h2 id="share-modal-title" className="text-lg font-semibold text-[var(--text)]">Share this debate</h2>
                 <p className="text-sm text-[var(--text-secondary)] mt-0.5" id="share-modal-desc">
-                  {message ? "Share this specific moment as an image" : "Invite others to see your debate"}
+                  Invite others to see your debate
                 </p>
               </div>
               
@@ -278,120 +225,30 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
             </div>
           </div>
 
-          {/* Preview Card Area */}
-          <div className="px-6 py-4 bg-[var(--bg-sunken)]/50 relative">
-            {message ? (
-              <div className="flex flex-col gap-4">
-                {/* The card to be captured (rendered but potentially hidden if image generated) */}
-                <div 
-                  ref={cardRef} 
-                  className={`
-                    ${variant === 'aggressive' ? 'bg-red-950 border-red-500/30' : 'bg-[#0a0a0a] border-[#333]'} p-6 rounded-xl shadow-xl relative overflow-hidden
-                    ${generatedImage ? 'absolute opacity-0 pointer-events-none' : ''}
-                  `}
-                  style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}
-                >
-                  {/* Watermark/Logo */}
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5 opacity-50">
-                    <div className="w-4 h-4 bg-[var(--accent)] rounded-full"></div>
-                    <span className="text-xs font-bold text-white tracking-wide">DEBATEAI</span>
-                  </div>
-                  
-                  {/* Topic */}
-                  <div className="mb-6 pr-16">
-                    <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-wider mb-1 block">Topic</span>
-                    <h3 className="text-sm font-semibold text-white leading-tight">{topic}</h3>
-                  </div>
-                  
-                  {/* Message Content */}
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold
-                        ${message.role === 'user' ? 'bg-[var(--accent)] text-white' : 'bg-[#333] text-gray-300'}`}>
-                        {message.role === 'user' ? 'Y' : 'AI'}
-                      </div>
-                      <span className="text-xs font-medium text-gray-400">
-                        {message.role === 'user' ? 'You' : (opponentName || 'AI Opponent')}
-                      </span>
-                    </div>
-                    
-                    <div className="text-sm leading-relaxed text-gray-200 font-serif italic relative">
-                      <span className="absolute -top-2 -left-2 text-2xl text-[var(--accent)] opacity-30">&quot;</span>
-                      {message.content.length > 180 ? message.content.substring(0, 180) + '...' : message.content}
-                      <span className="absolute -bottom-4 -right-2 text-2xl text-[var(--accent)] opacity-30">&quot;</span>
-                    </div>
-                  </div>
-                  
-                  {/* Footer */}
-                  <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                    <div className="text-[10px] text-gray-500">debateai.org</div>
-                    <div className="flex gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/20"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-white/20"></div>
-                    </div>
-                  </div>
-                  
-                  {/* Background Accents */}
-                  <div className="absolute -top-10 -left-10 w-32 h-32 bg-[var(--accent)]/10 blur-3xl rounded-full pointer-events-none"></div>
-                  <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-[var(--accent)]/10 blur-3xl rounded-full pointer-events-none"></div>
+          {/* Preview Card */}
+          <div className="px-6 py-4 bg-[var(--bg-sunken)]/50">
+            <div className="p-4 rounded-xl bg-[var(--bg)] border border-[var(--border)]/50">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-light)] flex items-center justify-center" aria-hidden="true">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
                 </div>
-
-                {/* Display generated image */}
-                {generatedImage ? (
-                  <div className="relative group">
-                    <img 
-                      src={generatedImage} 
-                      alt="Share card" 
-                      className="w-full rounded-xl shadow-lg border border-[var(--border)]/30" 
-                    />
-                    <button
-                      onClick={handleDownloadImage}
-                      className="absolute bottom-3 right-3 p-2 bg-black/70 backdrop-blur-sm text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
-                      title="Download Image"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-full h-[250px] flex items-center justify-center bg-[var(--bg)]/50 rounded-xl border border-[var(--border)]/30">
-                    <div className="flex flex-col items-center gap-2 text-[var(--text-tertiary)]">
-                      <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span className="text-xs">Generating preview...</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Existing Debate Preview
-              <div className="p-4 rounded-xl bg-[var(--bg)] border border-[var(--border)]/50">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-light)] flex items-center justify-center" aria-hidden="true">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[var(--text)] text-sm line-clamp-2">
-                      {topic}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-[var(--text)] text-sm line-clamp-2">
+                    {topic}
+                  </p>
+                  {opponentName && (
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      vs {opponentName}
                     </p>
-                    {opponentName && (
-                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                        vs {opponentName}
-                      </p>
-                    )}
-                    <p className="text-xs text-[var(--text-tertiary)] mt-2 truncate">
-                      debateai.org
-                    </p>
-                  </div>
+                  )}
+                  <p className="text-xs text-[var(--text-tertiary)] mt-2 truncate">
+                    debateai.org
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Share Options */}
@@ -456,14 +313,22 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
                 {isCopying ? 'Copied!' : 'Copy'}
               </button>
             </div>
-
+            
             {/* Native Share (Mobile) */}
             {showNativeShare && (
               <button
                 onClick={handleNativeShare}
-                className="w-full mt-3 px-4 py-3 rounded-xl font-medium text-sm bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 hover:bg-[var(--accent)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="
+                  w-full mt-3 px-4 py-3 rounded-xl font-medium text-sm
+                  bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20
+                  hover:bg-[var(--accent)]/20 hover:scale-[1.02] hover:shadow-md hover:shadow-[var(--accent)]/10
+                  active:scale-[0.98]
+                  transition-all duration-150 ease-out
+                  flex items-center justify-center gap-2
+                  focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50
+                "
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
                 Share via...

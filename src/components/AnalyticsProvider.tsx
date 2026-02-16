@@ -1,41 +1,18 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 import { track as vercelTrack } from '@vercel/analytics';
 import { registerProvider, track } from '@/lib/analytics';
 import { captureUtmParams, getAttributionContext } from '@/lib/utm';
 import posthog from '@/lib/posthog';
 
 const SESSION_KEY = 'debateai_session_tracked';
-const DEBUG = process.env.NEXT_PUBLIC_POSTHOG_DEBUG === 'true';
 
 /**
- * Inner component that uses search params and pathname.
- * Must be wrapped in Suspense to avoid de-opting static pages.
+ * Wires our custom analytics abstraction to Vercel Analytics and PostHog.
+ * Also captures UTM parameters on first page load.
  */
-function AnalyticsContent() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // Track pageviews on route change
-  useEffect(() => {
-    if (pathname && posthog) {
-      let url = window.origin + pathname;
-      if (searchParams?.toString()) {
-        url = url + `?${searchParams.toString()}`;
-      }
-      
-      if (DEBUG) {
-        console.log('[PostHog] Capturing $pageview:', url);
-      }
-      
-      posthog.capture('$pageview', {
-        $current_url: url,
-      });
-    }
-  }, [pathname, searchParams]);
-
+export default function AnalyticsProvider() {
   useEffect(() => {
     // Capture UTM params from URL on mount
     const utm = captureUtmParams();
@@ -60,29 +37,11 @@ function AnalyticsContent() {
       }
 
       // Dispatch to Vercel
-      if (process.env.NODE_ENV === 'production') {
-        vercelTrack(event, cleanProps);
-      }
-
-      // Dispatch to Internal API
-      fetch('/api/analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event, properties: cleanProps }),
-      }).catch(() => {});
+      vercelTrack(event, cleanProps);
 
       // Dispatch to PostHog
       if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-        if (DEBUG) {
-          console.log('[PostHog] Capturing event:', event, cleanProps);
-        }
-        if (event === 'page_viewed') {
-          posthog.capture('$pageview', cleanProps);
-        } else {
-          posthog.capture(event, cleanProps);
-        }
-      } else if (DEBUG) {
-        console.log('[PostHog] Skipped capture - no API key:', event, cleanProps);
+        posthog.capture(event, cleanProps);
       }
     });
 
@@ -96,16 +55,4 @@ function AnalyticsContent() {
   }, []);
 
   return null;
-}
-
-/**
- * Wires our custom analytics abstraction to Vercel Analytics and PostHog.
- * Also captures UTM parameters on first page load.
- */
-export default function AnalyticsProvider() {
-  return (
-    <Suspense fallback={null}>
-      <AnalyticsContent />
-    </Suspense>
-  );
 }

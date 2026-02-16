@@ -10,22 +10,17 @@ interface ShareImageCardProps {
   winner?: 'user' | 'ai' | 'draw';
   userScore?: number;
   aiScore?: number;
-  variant?: 'default' | 'aggressive';
 }
 
 const ShareImageCard = forwardRef<HTMLDivElement, ShareImageCardProps>(
-  ({ topic, userArgument, aiArgument, opponentName, winner, userScore, aiScore, variant }, ref) => {
+  ({ topic, userArgument, aiArgument, opponentName, winner, userScore, aiScore }, ref) => {
     const winnerEmoji = winner === 'user' ? '🏆' : winner === 'ai' ? '😤' : '🤝';
     const winnerText = winner === 'user' ? 'You won!' : winner === 'ai' ? `${opponentName} wins` : "It's a draw!";
-
-    const bgGradient = variant === 'aggressive'
-      ? "bg-gradient-to-br from-red-950 via-slate-900 to-red-950"
-      : "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900";
 
     return (
       <div
         ref={ref}
-        className={`w-[600px] ${bgGradient} p-8 rounded-2xl shadow-2xl`}
+        className="w-[600px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-2xl shadow-2xl"
         style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
       >
         {/* Header / Logo */}

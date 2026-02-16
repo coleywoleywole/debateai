@@ -14,7 +14,6 @@ interface PostDebateEngagementProps {
   topic: string;
   opponentName?: string;
   opponentId?: string;
-  variant?: 'default' | 'aggressive';
 }
 
 /**
@@ -26,7 +25,6 @@ export default function PostDebateEngagement({
   topic,
   opponentName = 'AI',
   opponentId,
-  variant,
 }: PostDebateEngagementProps) {
   const router = useRouter();
   const { isSignedIn } = useSafeUser();
@@ -82,7 +80,6 @@ export default function PostDebateEngagement({
           topic: newTopic,
           opponent: persona,
           source,
-          experiment_variant: variant,
         });
         sessionStorage.setItem('isInstantDebate', 'true');
         router.push(`/debate/${newDebateId}`);
@@ -110,7 +107,7 @@ export default function PostDebateEngagement({
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({ title: 'DebateAI Challenge', text: shareText, url: shareUrl });
-        track('debate_shared', { debateId, method: 'native_share', source: 'post_debate', experiment_variant: variant });
+        track('debate_shared', { debateId, method: 'native_share', source: 'post_debate' });
         return;
       } catch {
         // User cancelled or not supported — fall through to clipboard
@@ -120,7 +117,7 @@ export default function PostDebateEngagement({
     // Fallback: copy to clipboard
     try {
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      track('debate_shared', { debateId, method: 'copy_link', source: 'post_debate', experiment_variant: variant });
+      track('debate_shared', { debateId, method: 'copy_link', source: 'post_debate' });
       showToast('Challenge link copied!', 'success');
     } catch {
       showToast('Could not copy link', 'error');
@@ -231,16 +228,16 @@ export default function PostDebateEngagement({
         </div>
       )}
 
-      {/* Leaderboard link */}
+      {/* Explore link */}
       <div className="mt-4 text-center">
         <Link
           href="/explore"
           className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
-          View Leaderboard →
+          Browse more debates →
         </Link>
       </div>
     </div>

@@ -18,7 +18,6 @@ interface ShareImageModalProps {
     userScore: number;
     aiScore: number;
   } | null;
-  variant?: 'default' | 'aggressive';
 }
 
 export default function ShareImageModal({
@@ -29,7 +28,6 @@ export default function ShareImageModal({
   opponentName,
   messages,
   score,
-  variant,
 }: ShareImageModalProps) {
   const { showToast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -49,10 +47,11 @@ export default function ShareImageModal({
   // Store previously focused element and handle body scroll
   useEffect(() => {
     setMounted(true);
-
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
       document.body.style.overflow = 'hidden';
+      // Generate image when modal opens
+      generateImage();
     } else {
       document.body.style.overflow = '';
     }
@@ -60,29 +59,6 @@ export default function ShareImageModal({
       document.body.style.overflow = '';
     };
   }, [isOpen]);
-
-  // Generate image when ready
-  useEffect(() => {
-    if (isOpen && mounted && cardRef.current && !imageUrl && !isGenerating) {
-      const generate = async () => {
-        setIsGenerating(true);
-        try {
-          const dataUrl = await toPng(cardRef.current!, {
-            quality: 0.95,
-            pixelRatio: 2,
-          });
-          setImageUrl(dataUrl);
-          track('share_image_generated', { debateId, experiment_variant: variant });
-        } catch (error) {
-          console.error('Failed to generate image:', error);
-          showToast('Failed to generate image', 'error');
-        } finally {
-          setIsGenerating(false);
-        }
-      };
-      generate();
-    }
-  }, [isOpen, mounted, imageUrl, isGenerating, debateId, showToast, variant]);
 
   // Return focus to trigger when modal closes
   useEffect(() => {
@@ -134,6 +110,25 @@ export default function ShareImageModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleKeyDown]);
 
+  const generateImage = async () => {
+    if (!cardRef.current || isGenerating) return;
+
+    setIsGenerating(true);
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        quality: 0.95,
+        pixelRatio: 2,
+      });
+      setImageUrl(dataUrl);
+      track('share_image_generated', { debateId });
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      showToast('Failed to generate image', 'error');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleDownload = () => {
     if (!imageUrl) return;
 
@@ -141,7 +136,7 @@ export default function ShareImageModal({
     link.download = `debate-${debateId}.png`;
     link.href = imageUrl;
     link.click();
-    track('share_image_downloaded', { debateId, experiment_variant: variant });
+    track('share_image_downloaded', { debateId });
     showToast('Image downloaded!', 'success');
   };
 
@@ -152,14 +147,14 @@ export default function ShareImageModal({
     const debateUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://debateai.org'}/debate/${debateId}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
     window.open(twitterUrl, '_blank', 'width=550,height=420');
-    track('share_image_shared', { debateId, method: 'twitter', experiment_variant: variant });
+    track('share_image_shared', { debateId, method: 'twitter' });
   };
 
   const handleCopyLink = async () => {
     const debateUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://debateai.org'}/debate/${debateId}`;
     try {
       await navigator.clipboard.writeText(debateUrl);
-      track('share_image_copied', { debateId, experiment_variant: variant });
+      track('share_image_copied', { debateId });
       showToast('Link copied to clipboard!', 'success');
     } catch {
       showToast('Failed to copy link', 'error');
@@ -249,7 +244,6 @@ export default function ShareImageModal({
                 winner={score?.winner}
                 userScore={score?.userScore}
                 aiScore={score?.aiScore}
-                variant={variant}
               />
             </div>
           </div>

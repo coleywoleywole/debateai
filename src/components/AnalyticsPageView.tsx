@@ -40,7 +40,7 @@ export default function AnalyticsPageView(props: AnalyticsPageViewProps) {
         referrer: typeof document !== 'undefined' ? document.referrer : undefined,
       });
     }
-  }, [props]);  
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 }

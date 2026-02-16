@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, memo, lazy, Suspense, useCallback } from "react";
+import { useState, useEffect, useRef, memo, lazy, Suspense } from "react";
 import React from "react";
 import { useSafeUser } from "@/lib/useSafeClerk";
 import { useParams, useSearchParams } from "next/navigation";
@@ -9,10 +9,10 @@ import Header from "@/components/Header";
 import { track } from "@/lib/analytics";
 import { useToast } from "@/components/Toast";
 import ShareButtons from "@/components/ShareButtons";
+import DebateScoreCard from "@/components/DebateScoreCard";
 import JudgeMessage from "@/components/JudgeMessage";
 import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
-import QuickReplies from "@/components/QuickReplies";
 import { DebatePageSkeleton } from "@/components/Skeleton";
 import type { DebateScore } from "@/lib/scoring";
 
@@ -27,7 +27,6 @@ export interface DebateClientProps {
     opponent?: string;
     character?: string;
     opponentStyle?: string;
-    promptVariant?: 'default' | 'aggressive';
     messages?: Array<{ role: string; content: string; aiAssisted?: boolean; citations?: Array<{ id: number; url: string; title: string }> }>;
     score_data?: Record<string, unknown>;
     [key: string]: unknown;
@@ -106,7 +105,6 @@ const Message = memo(
     messageIndex,
     isHighlighted,
     debateId,
-    variant,
   }: {
     msg: {
       role: string;
@@ -125,7 +123,6 @@ const Message = memo(
     messageIndex: number;
     isHighlighted?: boolean;
     debateId?: string;
-    variant?: 'default' | 'aggressive';
   }) => {
     const isUser = msg.role === "user";
     const isStreaming = (isUser && isUserLoading) || (!isUser && isAILoading);
@@ -156,7 +153,7 @@ const Message = memo(
       }
     };
 
-    const handleCitationClick = useCallback((citationId: number) => {
+    const handleCitationClick = (citationId: number) => {
       // Open citations panel if not already open
       if (!showCitations) {
         setShowCitations(true);
@@ -177,13 +174,13 @@ const Message = memo(
       setTimeout(() => {
         setHighlightedCitation(null);
       }, 2000);
-    }, [showCitations]);
+    };
 
     return (
       <div 
         ref={messageRef}
         id={`message-${messageIndex}`}
-        className={`py-5 relative group ${isUser ? '' : (variant === 'aggressive' ? 'bg-red-900/5 border-y border-red-500/10' : 'bg-[var(--bg-elevated)]/60 border-y border-[var(--border)]/30')} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
+        className={`py-5 relative group ${isUser ? '' : 'bg-[var(--bg-elevated)]/60 border-y border-[var(--border)]/30'} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
       >
         {/* Highlight overlay */}
         {isHighlighted && (
@@ -205,9 +202,7 @@ const Message = memo(
                 ? 'bg-[var(--error)]/10 text-[var(--error)] border border-[var(--error)]/30'
                 : isUser
                   ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : variant === 'aggressive'
-                    ? 'bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.2)]'
-                    : 'bg-[var(--bg-sunken)] border border-[var(--border)]/50'
+                  : 'bg-[var(--bg-sunken)] border border-[var(--border)]/50'
               }`}
             >
               {isUser ? (
@@ -258,8 +253,7 @@ const Message = memo(
                   )
                 ) : (
                   <div className="whitespace-pre-wrap">
-                    {/* eslint-disable-next-line react-hooks/refs */}
-                    {renderContentWithCitations(msg.content, msg.citations, handleCitationClick)}
+                    {renderContentWithCitations(msg.content, msg.citations, (id) => handleCitationClick(id))}
                     {isStreaming && (
                       <span className="inline-block w-2 h-4 ml-0.5 bg-[var(--accent)] animate-pulse rounded-sm" />
                     )}
@@ -298,8 +292,7 @@ const Message = memo(
                         if (debateId) {
                           track('debate_friction_event', {
                             debateId,
-                            type: 'upgrade_clicked_limit',
-                            experiment_variant: variant,
+                            type: 'upgrade_clicked_limit'
                           });
                         }
                         document.querySelector<HTMLButtonElement>('[data-upgrade-trigger]')?.click();
@@ -371,6 +364,13 @@ const Message = memo(
 );
 Message.displayName = "Message";
 
+// Search messages
+const SEARCH_MESSAGES = [
+  "🔍 Searching for evidence...",
+  "📚 Analyzing sources...",
+  "🧠 Formulating argument...",
+  "💡 Building counterpoints...",
+];
 
 export default function DebateClient({ initialDebate = null, initialMessages = [], initialIsOwner = false }: DebateClientProps = {}) {
   const params = useParams();
@@ -396,7 +396,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [showShareModal, setShowShareModal] = useState(false);
   const [rateLimitData, setRateLimitData] = useState<{ current: number; limit: number } | undefined>();
   const [debateScore, setDebateScore] = useState<DebateScore | null>(null);
-  const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hasUserInteracted = useRef(false);
@@ -408,7 +407,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     track('debate_judge_requested', {
       debateId,
       messageCount: messages.length,
-      experiment_variant: variant,
     });
 
     try {
@@ -429,7 +427,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           source: 'requestJudgment',
           message: errorText,
           code: response.status.toString(),
-          experiment_variant: variant,
         });
         return;
       }
@@ -443,7 +440,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         userScore: data.userScore,
         aiScore: data.aiScore,
         winner: data.winner,
-        experiment_variant: variant,
       });
     } catch (error: any) {
       console.error('Failed to request judgment:', error);
@@ -451,7 +447,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         debateId,
         source: 'requestJudgment',
         message: error.message || 'Unknown error',
-        experiment_variant: variant,
       });
     }
   };
@@ -490,7 +485,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             source: 'revalidateDebate',
             message: `HTTP ${response.status}`,
             code: response.status.toString(),
-            experiment_variant: variant,
           });
         }
       } catch (error: any) {
@@ -499,7 +493,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           debateId,
           source: 'revalidateDebate',
           message: error.message || 'Unknown error',
-          experiment_variant: variant,
         });
         // Don't show error on revalidation - keep existing data
       } finally {
@@ -532,28 +525,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
     // Always revalidate to ensure fresh data (fixes back button issues)
     revalidateDebate();
-  }, [debateId, isDevMode, variant]);
-
-  // Determine variant (A/B Test)
-  useEffect(() => {
-    if (debate?.promptVariant) {
-      setVariant(debate.promptVariant as 'aggressive' | 'default');
-    } else if (user?.id && !debate) {
-      // Replicate backend A/B logic for immediate UI feedback on new debates
-      const lastChar = user.id.slice(-1);
-      if (lastChar.charCodeAt(0) % 2 === 0) {
-        setVariant('aggressive');
-      } else {
-        setVariant('default');
-      }
-    } else if (isDevMode) {
-       // Allow testing via URL param
-       const variantParam = searchParams.get('variant');
-       if (variantParam === 'aggressive') {
-         setVariant('aggressive');
-       }
-    }
-  }, [debate, user, isDevMode, searchParams]);
+  }, [debateId, isDevMode]);
 
   // Handle instant debate from landing page
   useEffect(() => {
@@ -721,7 +693,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       sendFirstMessage();
     }
-  }, [debate, isLoadingDebate, debateId, isDevMode, showToast, variant]);
+  }, [debate, isLoadingDebate, debateId, isDevMode, showToast]);
 
   // Auto-scroll - skip on initial SSR render so the page doesn't load scrolled past the top.
   // Only scroll after the user starts interacting (sending messages).
@@ -752,21 +724,18 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   };
 
   // Send message handler
-  const handleSend = async (textOverride?: string) => {
-    const textToSubmit = typeof textOverride === 'string' ? textOverride.trim() : userInput.trim();
-    
-    if (textToSubmit && (isUserLoading || isAILoading)) {
+  const handleSend = async () => {
+    if (userInput.trim() && (isUserLoading || isAILoading)) {
       track('debate_friction_event', {
         debateId,
-        type: 'send_while_loading',
-        experiment_variant: variant,
+        type: 'send_while_loading'
       });
       return;
     }
-    if (!textToSubmit || isUserLoading || isAILoading) return;
+    if (!userInput.trim() || isUserLoading || isAILoading) return;
 
     const startTime = Date.now();
-    const messageText = textToSubmit;
+    const messageText = userInput.trim();
     hasUserInteracted.current = true;
 
     // Add user message immediately
@@ -786,7 +755,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
       debateId,
       messageIndex: messages.length,
       aiAssisted: false,
-      experiment_variant: variant,
     });
 
     // Reset textarea height
@@ -909,7 +877,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     debateId,
                     messageIndex: messages.length,
                     latencyMs,
-                    experiment_variant: variant,
                   });
                   setMessages(prev => {
                     const newMessages = [...prev];
@@ -931,7 +898,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           debateId,
           source: 'handleSend',
           message: error.message || 'Unknown error',
-          experiment_variant: variant,
         });
         showToast("Failed to send message. Please try again.", "error");
         // Remove placeholder if there was an error and it's empty
@@ -953,8 +919,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     if (isAITakeoverLoading || isAILoading) {
       track('debate_friction_event', {
         debateId,
-        type: 'send_while_loading',
-        experiment_variant: variant,
+        type: 'send_while_loading'
       });
       return;
     }
@@ -968,7 +933,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     track('debate_ai_takeover', {
       debateId,
       messageIndex: messages.length,
-      experiment_variant: variant,
     });
 
     try {
@@ -1138,7 +1102,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   debateId,
                   messageIndex: messages.length,
                   latencyMs,
-                  experiment_variant: variant,
                 });
                 setMessages(prev => {
                   const newMessages = [...prev];
@@ -1161,7 +1124,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         debateId,
         source: 'handleAITakeover',
         message: error.message || 'Unknown error',
-        experiment_variant: variant,
       });
       showToast("Failed to generate AI argument. Please try again.", "error");
       // Remove any empty placeholder messages (both AI opponent and AI-assisted user)
@@ -1237,7 +1199,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && isOwner;
 
   return (
-    <div className={`h-dvh flex flex-col overflow-hidden transition-colors duration-500 ${variant === 'aggressive' ? 'bg-red-950/5' : 'bg-[var(--bg)]'}`}>
+    <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg)]">
       <Header />
 
       {/* Topic Header - Fixed */}
@@ -1247,11 +1209,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-sm flex-1 min-w-0">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)] flex-shrink-0">Topic</span>
-                {variant === 'aggressive' && (
-                   <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 text-[10px] font-bold border border-red-500/20 uppercase tracking-wider">
-                     Hard Mode
-                   </span>
-                )}
                 <h1 className="font-medium text-[var(--text)] truncate">{debate.topic}</h1>
                 {(debate.opponentStyle || opponent) && (
                   <>
@@ -1260,7 +1217,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   </>
                 )}
               </div>
-              <ShareButtons debateId={debateId} topic={debate.topic} onOpenModal={() => setShowShareModal(true)} variant={variant} />
+              <ShareButtons debateId={debateId} topic={debate.topic} onOpenModal={() => setShowShareModal(true)} />
             </div>
           </div>
         </div>
@@ -1279,14 +1236,12 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               msg={msg}
               opponent={opponent}
               debate={debate}
-              variant={variant}
               isAILoading={isAILoading && idx === messages.length - 1}
               isUserLoading={isUserLoading && idx === messages.length - 1}
               onRetry={msg.failed ? () => {
                 track('debate_friction_event', {
                   debateId,
-                  type: 'retry_clicked',
-                  experiment_variant: variant,
+                  type: 'retry_clicked'
                 });
                 // Remove the failed message and restore input for retry
                 setMessages(prev => prev.filter((_, i) => i !== idx));
@@ -1303,7 +1258,9 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             <JudgeMessage
               score={debateScore}
               opponentName={opponent?.name || debate?.opponentStyle || "AI"}
-              experiment_variant={variant}
+              messageCount={messages.filter(m => m.role === 'user').length}
+              messages={messages}
+              topic={debate?.topic || ""}
             />
           )}
 
@@ -1313,7 +1270,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               debateId={debateId}
               userSideName="You"
               opponentSideName={opponent?.name || debate?.opponentStyle || "AI"}
-              variant={variant}
             />
           )}
 
@@ -1324,7 +1280,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               topic={debate?.topic || ""}
               opponentName={opponent?.name || debate?.opponentStyle || "AI"}
               opponentId={opponent?.id}
-              variant={variant}
             />
           )}
 
@@ -1368,14 +1323,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       {/* Input Area - Fixed at bottom with mobile keyboard handling */}
       <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)] z-50 relative">
-        {!debateScore && messages.length > 0 && messages[messages.length - 1].role === 'ai' && !isAILoading && (
-          <div className="pt-3 animate-fade-in">
-            <QuickReplies
-              onReply={(text) => handleSend(text)}
-              disabled={isUserLoading || isAILoading || !isOwner}
-            />
-          </div>
-        )}
         <div className="max-w-3xl mx-auto px-3 sm:px-6 py-2 sm:py-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {/* Input Row */}
           <div className="flex gap-2">
@@ -1457,7 +1404,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               {/* Send Button */}
               <button
                 type="button"
-                onClick={() => handleSend()}
+                onClick={handleSend}
                 disabled={!canSend}
                 className={`
                   w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
@@ -1510,7 +1457,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             debateId={debateId}
             topic={debate?.topic || ''}
             opponentName={opponent?.name || debate?.opponentStyle}
-            variant={variant}
           />
         </Suspense>
       )}

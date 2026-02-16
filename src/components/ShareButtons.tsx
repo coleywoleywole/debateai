@@ -9,10 +9,9 @@ interface ShareButtonsProps {
   topic: string;
   className?: string;
   onOpenModal?: () => void;
-  variant?: 'default' | 'aggressive';
 }
 
-export default function ShareButtons({ debateId, topic, className = '', onOpenModal, variant }: ShareButtonsProps) {
+export default function ShareButtons({ debateId, topic, className = '', onOpenModal }: ShareButtonsProps) {
   const { showToast } = useToast();
   const [isCopying, setIsCopying] = useState(false);
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -26,9 +25,10 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
     try {
       setIsCopying(true);
       await navigator.clipboard.writeText(debateUrl);
-      track('debate_shared', { debateId, method: 'copy_link', experiment_variant: variant });
+      track('debate_shared', { debateId, method: 'copy_link' });
       showToast('Link copied to clipboard!', 'success');
-    } catch {
+    } catch (err) {
+      console.error('Failed to copy:', err);
       showToast('Failed to copy link', 'error');
     } finally {
       setTimeout(() => setIsCopying(false), 500);
@@ -36,7 +36,7 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
   };
   
   const handleTwitterShare = () => {
-    track('debate_shared', { debateId, method: 'twitter', experiment_variant: variant });
+    track('debate_shared', { debateId, method: 'twitter' });
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
     window.open(twitterUrl, '_blank', 'width=550,height=420');
   };
@@ -51,8 +51,8 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
           text: shareText,
           url: debateUrl,
         });
-        track('debate_shared', { debateId, method: 'native_share', experiment_variant: variant });
-      } catch {
+        track('debate_shared', { debateId, method: 'native_share' });
+      } catch (err) {
         // User cancelled or share failed
         console.log('Share cancelled');
       }
@@ -61,12 +61,11 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
 
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
-      {/* Native Share Button (Mobile Only) */}
+      {/* Native Share Button (Mobile) */}
       {showNativeShare && (
         <button
           onClick={handleNativeShare}
           className="
-            sm:hidden
             inline-flex items-center justify-center w-8 h-8 rounded-lg 
             bg-[var(--accent)]/10 border border-[var(--accent)]/20 
             text-[var(--accent)] 
@@ -83,13 +82,12 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
         </button>
       )}
       
-      {/* Copy Link Button (Desktop Only) */}
+      {/* Copy Link Button */}
       <button
         onClick={handleCopyLink}
         disabled={isCopying}
         className={`
-          hidden sm:inline-flex
-          items-center justify-center w-8 h-8 rounded-lg 
+          inline-flex items-center justify-center w-8 h-8 rounded-lg 
           bg-[var(--bg-elevated)] border border-[var(--border)]/30 
           text-[var(--text-secondary)] 
           hover:text-[var(--text)] hover:border-[var(--border)]/60 hover:bg-[var(--bg-sunken)] hover:scale-110 hover:shadow-md
@@ -107,12 +105,11 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
         </svg>
       </button>
       
-      {/* Twitter/X Share (Desktop Only) */}
+      {/* Twitter/X Share */}
       <button
         onClick={handleTwitterShare}
         className="
-          hidden sm:inline-flex
-          items-center justify-center w-8 h-8 rounded-lg 
+          inline-flex items-center justify-center w-8 h-8 rounded-lg 
           bg-[var(--bg-elevated)] border border-[var(--border)]/30 
           text-[var(--text-secondary)] 
           hover:text-[var(--text)] hover:border-[var(--border)]/60 hover:bg-[var(--bg-sunken)] hover:scale-110 hover:shadow-md
@@ -128,20 +125,18 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
       </button>
       
       {/* More Options Button (opens modal) */}
-      {/* On mobile: Show if Native Share is NOT available. On desktop: Always show. */}
       {onOpenModal && (
         <button
           onClick={onOpenModal}
-          className={`
-            items-center justify-center w-8 h-8 rounded-lg 
+          className="
+            inline-flex items-center justify-center w-8 h-8 rounded-lg 
             bg-[var(--accent)]/10 border border-[var(--accent)]/20 
             text-[var(--accent)] 
             hover:bg-[var(--accent)]/20 hover:scale-110 hover:shadow-md hover:shadow-[var(--accent)]/10
             active:scale-95
             transition-all duration-150 ease-out
             focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50
-            ${showNativeShare ? 'hidden sm:inline-flex' : 'inline-flex'}
-          `}
+          "
           aria-label="More sharing options"
           aria-haspopup="dialog"
           aria-expanded="false"
