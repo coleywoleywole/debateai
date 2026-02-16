@@ -8,6 +8,7 @@ interface Props {
   winner: 'user' | 'ai' | 'draw';
   userScore: number;
   aiScore: number;
+  experiment_variant?: 'aggressive' | 'default';
 }
 
 // Lightweight confetti — creates 40 particles with CSS-only animation
@@ -52,16 +53,16 @@ function Confetti() {
  * Celebration banner shown the first time a user completes a debate (gets scored).
  * Shows confetti, a congratulatory message, and hype copy based on the result.
  */
-export default function FirstDebateCelebration({ winner, userScore, aiScore }: Props) {
+export default function FirstDebateCelebration({ winner, userScore, aiScore, experiment_variant }: Props) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
     if (isFirstCompletion()) {
       setShow(true);
       markFirstCompletion();
-      track('onboarding_completed', { winner, userScore, aiScore });
+      track('onboarding_completed', { winner, userScore, aiScore, experiment_variant });
     }
-  }, [winner, userScore, aiScore]);
+  }, [winner, userScore, aiScore, experiment_variant]);
 
   if (!show) return null;
 

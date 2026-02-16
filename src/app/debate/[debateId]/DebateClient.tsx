@@ -302,7 +302,8 @@ const Message = memo(
                         if (debateId) {
                           track('debate_friction_event', {
                             debateId,
-                            type: 'upgrade_clicked_limit'
+                            type: 'upgrade_clicked_limit',
+                            experiment_variant: variant,
                           });
                         }
                         document.querySelector<HTMLButtonElement>('[data-upgrade-trigger]')?.click();
@@ -422,6 +423,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     track('debate_judge_requested', {
       debateId,
       messageCount: messages.length,
+      experiment_variant: variant,
     });
 
     try {
@@ -442,6 +444,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           source: 'requestJudgment',
           message: errorText,
           code: response.status.toString(),
+          experiment_variant: variant,
         });
         return;
       }
@@ -455,6 +458,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         userScore: data.userScore,
         aiScore: data.aiScore,
         winner: data.winner,
+        experiment_variant: variant,
       });
     } catch (error: any) {
       console.error('Failed to request judgment:', error);
@@ -462,6 +466,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         debateId,
         source: 'requestJudgment',
         message: error.message || 'Unknown error',
+        experiment_variant: variant,
       });
     }
   };
@@ -496,6 +501,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             source: 'revalidateDebate',
             message: `HTTP ${response.status}`,
             code: response.status.toString(),
+            experiment_variant: variant,
           });
         }
       } catch (error: any) {
@@ -504,6 +510,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           debateId,
           source: 'revalidateDebate',
           message: error.message || 'Unknown error',
+          experiment_variant: variant,
         });
         // Don't show error on revalidation - keep existing data
       } finally {
@@ -536,7 +543,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
     // Always revalidate to ensure fresh data (fixes back button issues)
     revalidateDebate();
-  }, [debateId, isDevMode]);
+  }, [debateId, isDevMode, variant]);
 
   // Determine variant (A/B Test)
   useEffect(() => {
@@ -725,7 +732,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       sendFirstMessage();
     }
-  }, [debate, isLoadingDebate, debateId, isDevMode, showToast]);
+  }, [debate, isLoadingDebate, debateId, isDevMode, showToast, variant]);
 
   // Auto-scroll - skip on initial SSR render so the page doesn't load scrolled past the top.
   // Only scroll after the user starts interacting (sending messages).
@@ -762,7 +769,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     if (textToSubmit && (isUserLoading || isAILoading)) {
       track('debate_friction_event', {
         debateId,
-        type: 'send_while_loading'
+        type: 'send_while_loading',
+        experiment_variant: variant,
       });
       return;
     }
@@ -789,6 +797,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
       debateId,
       messageIndex: messages.length,
       aiAssisted: false,
+      experiment_variant: variant,
     });
 
     // Reset textarea height
@@ -911,6 +920,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     debateId,
                     messageIndex: messages.length,
                     latencyMs,
+                    experiment_variant: variant,
                   });
                   setMessages(prev => {
                     const newMessages = [...prev];
@@ -932,6 +942,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           debateId,
           source: 'handleSend',
           message: error.message || 'Unknown error',
+          experiment_variant: variant,
         });
         showToast("Failed to send message. Please try again.", "error");
         // Remove placeholder if there was an error and it's empty
@@ -953,7 +964,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     if (isAITakeoverLoading || isAILoading) {
       track('debate_friction_event', {
         debateId,
-        type: 'send_while_loading'
+        type: 'send_while_loading',
+        experiment_variant: variant,
       });
       return;
     }
@@ -967,6 +979,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     track('debate_ai_takeover', {
       debateId,
       messageIndex: messages.length,
+      experiment_variant: variant,
     });
 
     try {
@@ -1136,6 +1149,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   debateId,
                   messageIndex: messages.length,
                   latencyMs,
+                  experiment_variant: variant,
                 });
                 setMessages(prev => {
                   const newMessages = [...prev];
@@ -1158,6 +1172,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         debateId,
         source: 'handleAITakeover',
         message: error.message || 'Unknown error',
+        experiment_variant: variant,
       });
       showToast("Failed to generate AI argument. Please try again.", "error");
       // Remove any empty placeholder messages (both AI opponent and AI-assisted user)
@@ -1256,7 +1271,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   </div>
                 )}
               </div>
-
               <h1 className="font-medium text-[var(--text)] truncate sm:hidden">{debate.topic}</h1>
 
               {(debate.opponentStyle || opponent) && (
@@ -1271,7 +1285,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   )}
                 </div>
               )}
-              <ShareButtons debateId={debateId} topic={debate.topic} onOpenModal={() => setShowShareModal(true)} />
+              <ShareButtons debateId={debateId} topic={debate.topic} onOpenModal={() => setShowShareModal(true)} variant={variant} />
             </div>
           </div>
         </div>
@@ -1296,7 +1310,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               onRetry={msg.failed ? () => {
                 track('debate_friction_event', {
                   debateId,
-                  type: 'retry_clicked'
+                  type: 'retry_clicked',
+                  experiment_variant: variant,
                 });
                 // Remove the failed message and restore input for retry
                 setMessages(prev => prev.filter((_, i) => i !== idx));
@@ -1313,6 +1328,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             <JudgeMessage
               score={debateScore}
               opponentName={opponent?.name || debate?.opponentStyle || "AI"}
+              experiment_variant={variant}
             />
           )}
 
@@ -1322,6 +1338,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               debateId={debateId}
               userSideName="You"
               opponentSideName={opponent?.name || debate?.opponentStyle || "AI"}
+              variant={variant}
             />
           )}
 
@@ -1332,6 +1349,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               topic={debate?.topic || ""}
               opponentName={opponent?.name || debate?.opponentStyle || "AI"}
               opponentId={opponent?.id}
+              variant={variant}
             />
           )}
 
@@ -1531,6 +1549,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             debateId={debateId}
             topic={debate?.topic || ''}
             opponentName={opponent?.name || debate?.opponentStyle}
+            variant={variant}
           />
         </Suspense>
       )}

@@ -9,9 +9,10 @@ interface ShareButtonsProps {
   topic: string;
   className?: string;
   onOpenModal?: () => void;
+  variant?: 'default' | 'aggressive';
 }
 
-export default function ShareButtons({ debateId, topic, className = '', onOpenModal }: ShareButtonsProps) {
+export default function ShareButtons({ debateId, topic, className = '', onOpenModal, variant }: ShareButtonsProps) {
   const { showToast } = useToast();
   const [isCopying, setIsCopying] = useState(false);
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
@@ -25,7 +26,7 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
     try {
       setIsCopying(true);
       await navigator.clipboard.writeText(debateUrl);
-      track('debate_shared', { debateId, method: 'copy_link' });
+      track('debate_shared', { debateId, method: 'copy_link', experiment_variant: variant });
       showToast('Link copied to clipboard!', 'success');
     } catch {
       showToast('Failed to copy link', 'error');
@@ -35,7 +36,7 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
   };
   
   const handleTwitterShare = () => {
-    track('debate_shared', { debateId, method: 'twitter' });
+    track('debate_shared', { debateId, method: 'twitter', experiment_variant: variant });
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
     window.open(twitterUrl, '_blank', 'width=550,height=420');
   };
@@ -50,7 +51,7 @@ export default function ShareButtons({ debateId, topic, className = '', onOpenMo
           text: shareText,
           url: debateUrl,
         });
-        track('debate_shared', { debateId, method: 'native_share' });
+        track('debate_shared', { debateId, method: 'native_share', experiment_variant: variant });
       } catch {
         // User cancelled or share failed
         console.log('Share cancelled');
