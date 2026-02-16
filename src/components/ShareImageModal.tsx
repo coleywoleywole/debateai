@@ -18,6 +18,7 @@ interface ShareImageModalProps {
     userScore: number;
     aiScore: number;
   } | null;
+  variant?: 'default' | 'aggressive';
 }
 
 export default function ShareImageModal({
@@ -28,6 +29,7 @@ export default function ShareImageModal({
   opponentName,
   messages,
   score,
+  variant,
 }: ShareImageModalProps) {
   const { showToast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -70,7 +72,7 @@ export default function ShareImageModal({
             pixelRatio: 2,
           });
           setImageUrl(dataUrl);
-          track('share_image_generated', { debateId });
+          track('share_image_generated', { debateId, experiment_variant: variant });
         } catch (error) {
           console.error('Failed to generate image:', error);
           showToast('Failed to generate image', 'error');
@@ -80,7 +82,7 @@ export default function ShareImageModal({
       };
       generate();
     }
-  }, [isOpen, mounted, imageUrl, isGenerating, debateId, showToast]);
+  }, [isOpen, mounted, imageUrl, isGenerating, debateId, showToast, variant]);
 
   // Return focus to trigger when modal closes
   useEffect(() => {
@@ -139,7 +141,7 @@ export default function ShareImageModal({
     link.download = `debate-${debateId}.png`;
     link.href = imageUrl;
     link.click();
-    track('share_image_downloaded', { debateId });
+    track('share_image_downloaded', { debateId, experiment_variant: variant });
     showToast('Image downloaded!', 'success');
   };
 
@@ -150,14 +152,14 @@ export default function ShareImageModal({
     const debateUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://debateai.org'}/debate/${debateId}`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
     window.open(twitterUrl, '_blank', 'width=550,height=420');
-    track('share_image_shared', { debateId, method: 'twitter' });
+    track('share_image_shared', { debateId, method: 'twitter', experiment_variant: variant });
   };
 
   const handleCopyLink = async () => {
     const debateUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://debateai.org'}/debate/${debateId}`;
     try {
       await navigator.clipboard.writeText(debateUrl);
-      track('share_image_copied', { debateId });
+      track('share_image_copied', { debateId, experiment_variant: variant });
       showToast('Link copied to clipboard!', 'success');
     } catch {
       showToast('Failed to copy link', 'error');
@@ -247,6 +249,7 @@ export default function ShareImageModal({
                 winner={score?.winner}
                 userScore={score?.userScore}
                 aiScore={score?.aiScore}
+                variant={variant}
               />
             </div>
           </div>

@@ -18,9 +18,10 @@ interface ShareModalProps {
     citations?: Array<{ id: number; url: string; title: string }>;
   };
   messageIndex?: number;
+  variant?: 'default' | 'aggressive';
 }
 
-export default function ShareModal({ isOpen, onClose, debateId, topic, opponentName, message, messageIndex }: ShareModalProps) {
+export default function ShareModal({ isOpen, onClose, debateId, topic, opponentName, message, messageIndex, variant }: ShareModalProps) {
   const { showToast } = useToast();
   const [isCopying, setIsCopying] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -139,7 +140,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'twitter', source: 'modal' });
+        track('debate_shared', { debateId, method: 'twitter', source: 'modal', experiment_variant: variant });
         const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank', 'width=550,height=420');
       },
@@ -153,7 +154,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'reddit', source: 'modal' });
+        track('debate_shared', { debateId, method: 'reddit', source: 'modal', experiment_variant: variant });
         const url = `https://www.reddit.com/submit?title=${encodeURIComponent(shareText)}&url=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank');
       },
@@ -167,7 +168,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'linkedin', source: 'modal' });
+        track('debate_shared', { debateId, method: 'linkedin', source: 'modal', experiment_variant: variant });
         const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank');
       },
@@ -181,7 +182,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
         </svg>
       ),
       action: () => {
-        track('debate_shared', { debateId, method: 'facebook', source: 'modal' });
+        track('debate_shared', { debateId, method: 'facebook', source: 'modal', experiment_variant: variant });
         const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(debateUrl)}`;
         window.open(url, '_blank', 'width=626,height=436');
       },
@@ -195,7 +196,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
     try {
       setIsCopying(true);
       await navigator.clipboard.writeText(debateUrl);
-      track('debate_shared', { debateId, method: 'copy_link', source: 'modal' });
+      track('debate_shared', { debateId, method: 'copy_link', source: 'modal', experiment_variant: variant });
       showToast('Link copied to clipboard!', 'success');
     } catch (err) {
       console.error('Failed to copy:', err);
@@ -211,7 +212,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
       link.download = `debate-moment-${debateId}.png`;
       link.href = generatedImage;
       link.click();
-      track('debate_shared', { debateId, method: 'native_share', source: 'modal' });
+      track('debate_shared', { debateId, method: 'native_share', source: 'modal', experiment_variant: variant });
     }
   };
 
@@ -223,7 +224,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
           text: shareTextWithOpponent,
           url: debateUrl,
         });
-        track('debate_shared', { debateId, method: 'native_share', source: 'modal' });
+        track('debate_shared', { debateId, method: 'native_share', source: 'modal', experiment_variant: variant });
         onClose();
       } catch {
         console.log('Share cancelled');
@@ -285,7 +286,7 @@ export default function ShareModal({ isOpen, onClose, debateId, topic, opponentN
                 <div 
                   ref={cardRef} 
                   className={`
-                    bg-[#0a0a0a] border border-[#333] p-6 rounded-xl shadow-xl relative overflow-hidden
+                    ${variant === 'aggressive' ? 'bg-red-950 border-red-500/30' : 'bg-[#0a0a0a] border-[#333]'} p-6 rounded-xl shadow-xl relative overflow-hidden
                     ${generatedImage ? 'absolute opacity-0 pointer-events-none' : ''}
                   `}
                   style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}
