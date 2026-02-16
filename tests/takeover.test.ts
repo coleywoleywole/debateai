@@ -93,7 +93,7 @@ describe('POST /api/debate/takeover', () => {
     // Verify generateContentStream was called
     expect(generateContentStreamMock).toHaveBeenCalledWith(expect.objectContaining({
       contents: [{ role: 'user', parts: [{ text: expect.stringContaining('Generate my response') }] }],
-      tools: [{ googleSearch: {} }]
+      tools: [{ googleSearchRetrieval: {} }]
     }));
   });
 });
