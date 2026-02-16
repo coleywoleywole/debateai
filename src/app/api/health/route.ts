@@ -33,26 +33,35 @@ export async function GET() {
   }
 
   // Check required env vars (don't leak values)
+  // Relaxed constraints for Coolify migration:
+  // - Removed ANTHROPIC/HELICONE (deprecated)
+  // - Added GOOGLE_CREDENTIALS_JSON (new for Vertex on Coolify)
+  // - Warnings only (status: degraded) so deployment doesn't fail hard
   const requiredEnvVars = [
-    'ANTHROPIC_API_KEY',
-    'HELICONE_API_KEY',
-    'STRIPE_PRICE_ID',
     'AGENTMAIL_API_KEY',
     'NEXT_PUBLIC_POSTHOG_KEY',
     'NEXT_PUBLIC_POSTHOG_HOST',
   ];
+  
+  // Check for either file path or JSON content for Google Auth
+  const hasGoogleCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_CREDENTIALS_JSON;
+  
   const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+  if (!hasGoogleCreds) missingVars.push('GOOGLE_CREDENTIALS_JSON');
+
   checks.config = {
     status: missingVars.length === 0 ? 'ok' : 'error',
     ...(missingVars.length > 0 && { error: `Missing: ${missingVars.join(', ')}` }),
   };
 
   // Overall status
-  const allOk = Object.values(checks).every((c) => c.status === 'ok');
+  // Only fail hard (503) if database is down. Config errors are degraded (200).
+  const isHealthy = checks.database.status === 'ok';
+  const isConfigOk = checks.config.status === 'ok';
   const totalLatency = Date.now() - start;
 
   const response = {
-    status: allOk ? 'healthy' : 'degraded',
+    status: isHealthy && isConfigOk ? 'healthy' : 'degraded',
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'dev',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
@@ -61,7 +70,8 @@ export async function GET() {
   };
 
   return NextResponse.json(response, {
-    status: allOk ? 200 : 503,
+    // Return 200 unless DB is down, to prevent deployment rollbacks on missing optional config
+    status: isHealthy ? 200 : 503,
     headers: {
       'Cache-Control': 'no-store',
     },

@@ -69,3 +69,4 @@ process.env.HELICONE_API_KEY = 'test-helicone-key';
 process.env.AGENTMAIL_API_KEY = 'test-agentmail-key';
 process.env.NEXT_PUBLIC_POSTHOG_KEY = 'test-ph-key';
 process.env.NEXT_PUBLIC_POSTHOG_HOST = 'https://us.i.posthog.com';
+process.env.GOOGLE_CREDENTIALS_JSON = '{"project_id":"test-project"}';

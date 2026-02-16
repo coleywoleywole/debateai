@@ -43,6 +43,7 @@ export default clerkMiddleware(async (auth, req) => {
   const host = req.headers.get('host')
   if (host === 'debateai.org' && !req.nextUrl.pathname.startsWith('/api')) {
     const url = new URL(req.url)
+    url.protocol = 'https'
     url.hostname = 'www.debateai.org'
     url.port = ''
     return NextResponse.redirect(url, 308)
