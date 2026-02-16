@@ -332,7 +332,11 @@ export default function HomeClient({
                       topic: option.topic,
                       persona: option.persona,
                     });
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Focus input and bring it into view so user can start typing immediately
+                    if (inputRef.current) {
+                      inputRef.current.focus();
+                      inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                   }}
                   className="group flex items-center justify-between p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition-all text-left w-full cursor-pointer"
                 >
