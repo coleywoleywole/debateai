@@ -12,6 +12,7 @@ import ShareButtons from "@/components/ShareButtons";
 import JudgeMessage from "@/components/JudgeMessage";
 import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
+import QuickReplies from "@/components/QuickReplies";
 import { DebatePageSkeleton } from "@/components/Skeleton";
 import type { DebateScore } from "@/lib/scoring";
 
@@ -744,18 +745,20 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   };
 
   // Send message handler
-  const handleSend = async () => {
-    if (userInput.trim() && (isUserLoading || isAILoading)) {
+  const handleSend = async (textOverride?: string) => {
+    const textToSubmit = typeof textOverride === 'string' ? textOverride.trim() : userInput.trim();
+    
+    if (textToSubmit && (isUserLoading || isAILoading)) {
       track('debate_friction_event', {
         debateId,
         type: 'send_while_loading'
       });
       return;
     }
-    if (!userInput.trim() || isUserLoading || isAILoading) return;
+    if (!textToSubmit || isUserLoading || isAILoading) return;
 
     const startTime = Date.now();
-    const messageText = userInput.trim();
+    const messageText = textToSubmit;
     hasUserInteracted.current = true;
 
     // Add user message immediately
@@ -1346,6 +1349,14 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       {/* Input Area - Fixed at bottom with mobile keyboard handling */}
       <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)] z-50 relative">
+        {!debateScore && messages.length > 0 && messages[messages.length - 1].role === 'ai' && !isAILoading && (
+          <div className="pt-3 animate-fade-in">
+            <QuickReplies
+              onReply={(text) => handleSend(text)}
+              disabled={isUserLoading || isAILoading || !isOwner}
+            />
+          </div>
+        )}
         <div className="max-w-3xl mx-auto px-3 sm:px-6 py-2 sm:py-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {/* Input Row */}
           <div className="flex gap-2">
@@ -1427,7 +1438,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               {/* Send Button */}
               <button
                 type="button"
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 disabled={!canSend}
                 className={`
                   w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0

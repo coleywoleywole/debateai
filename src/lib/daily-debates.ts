@@ -21,11 +21,11 @@ export const CURATED_DAILY_DEBATES: DailyDebate[] = [
   { personaId: "diogenes", persona: "Diogenes", topicId: "experience-machine", topic: "Would you plug into a machine that simulates a perfect life?", category: "philosophy" },
 
   // Ethics + Intellectuals  
-  { personaId: "hitchens", persona: "Christopher Hitchens", topicId: "euthanasia", topic: "Should people have the right to end their own lives?", category: "ethics" },
-  { personaId: "carl-sagan", persona: "Carl Sagan", topicId: "animal-testing", topic: "Is animal testing justified to save human lives?", category: "ethics" },
-  { personaId: "hannah-arendt", persona: "Hannah Arendt", topicId: "vigilante-justice", topic: "Is vigilante justice ever morally justified?", category: "ethics" },
-  { personaId: "chomsky", persona: "Noam Chomsky", topicId: "wealth-immoral", topic: "Is being a billionaire inherently immoral?", category: "ethics" },
-  { personaId: "feynman", persona: "Richard Feynman", topicId: "trolley-problem", topic: "Would you kill one person to save five?", category: "ethics" },
+  { personaId: "hitchens", persona: "Christopher Hitchens", topicId: "euthanasia", topic: "Should people have the right to end their own lives?", category: "ethics", description: "Writer and polemicist known for his sharp wit and confrontational style." },
+  { personaId: "carl-sagan", persona: "Carl Sagan", topicId: "animal-testing", topic: "Is animal testing justified to save human lives?", category: "ethics", description: "Astronomer and science communicator who championed critical thinking." },
+  { personaId: "hannah-arendt", persona: "Hannah Arendt", topicId: "vigilante-justice", topic: "Is vigilante justice ever morally justified?", category: "ethics", description: "Political philosopher who studied power and the 'banality of evil'." },
+  { personaId: "chomsky", persona: "Noam Chomsky", topicId: "wealth-immoral", topic: "Is being a billionaire inherently immoral?", category: "ethics", description: "Linguist and social critic known for his analysis of power structures." },
+  { personaId: "feynman", persona: "Richard Feynman", topicId: "trolley-problem", topic: "Would you kill one person to save five?", category: "ethics", description: "Physicist known for his ability to simplify complex concepts." },
 
   // Technology + Modern Voices
   { personaId: "sam-harris", persona: "Sam Harris", topicId: "ai-consciousness", topic: "Can AI ever be truly conscious?", category: "technology" },
@@ -85,7 +85,7 @@ export const CURATED_DAILY_DEBATES: DailyDebate[] = [
   { personaId: "bernie", persona: "Bernie Sanders", topicId: "billionaire-immoral", topic: "It is immoral to be a billionaire while poverty exists", category: "economics" },
   { personaId: "haidt", persona: "Jonathan Haidt", topicId: "smartphones-gen-alpha", topic: "Smartphones have ruined Gen Alpha childhood", category: "society" },
   { personaId: "thiel", persona: "Peter Thiel", topicId: "university-scam", topic: "University is a scam and you should just learn from AI", category: "education" },
-  { personaId: "peter-singer", persona: "Peter Singer", topicId: "meat-illegal", topic: "Eating meat will be illegal in 50 years", category: "ethics" },
+  { personaId: "peter-singer", persona: "Peter Singer", topicId: "meat-illegal", topic: "Eating meat will be illegal in 50 years", category: "ethics", description: "Moral philosopher and pioneer of the animal liberation movement." },
 
   // Extra combos for variety
   { personaId: "hitchens", persona: "Christopher Hitchens", topicId: "cultural-relativism", topic: "Are all cultures equally valid morally?", category: "ethics" },
