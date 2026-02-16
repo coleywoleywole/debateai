@@ -33,29 +33,22 @@ export async function GET() {
   }
 
   // Check required env vars (don't leak values)
-  // Relaxed constraints for Coolify migration:
-  // - Removed ANTHROPIC/HELICONE (deprecated)
-  // - Added GOOGLE_CREDENTIALS_JSON (new for Vertex on Coolify)
-  // - Warnings only (status: degraded) so deployment doesn't fail hard
   const criticalEnvVars: string[] = [
-    // Database and Auth are handled by D1/Clerk libraries, but listed here for visibility if needed
-    // 'CLERK_SECRET_KEY', 
+    'CLOUDFLARE_D1_DATABASE_ID',
+    'CLOUDFLARE_API_TOKEN',
+    'CLERK_SECRET_KEY',
   ];
 
-  // These are important but not strictly critical for basic health (app can run without them, just missing features)
+  // These are important but not strictly critical for basic health
   const optionalEnvVars = [
     'AGENTMAIL_API_KEY',
     'NEXT_PUBLIC_POSTHOG_KEY',
     'NEXT_PUBLIC_POSTHOG_HOST',
+    'GOOGLE_CREDENTIALS_JSON',
   ];
   
-  // Check for either file path or JSON content for Google Auth
-  const hasGoogleCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_CREDENTIALS_JSON;
-  
   const missingCritical = criticalEnvVars.filter((v) => !process.env[v]);
-  
   const missingOptional = optionalEnvVars.filter((v) => !process.env[v]);
-  if (!hasGoogleCreds) missingOptional.push('GOOGLE_CREDENTIALS_JSON (or GOOGLE_APPLICATION_CREDENTIALS)');
 
   checks.config = {
     status: missingCritical.length === 0 ? 'ok' : 'error',
@@ -64,7 +57,6 @@ export async function GET() {
   };
 
   // Overall status
-  // Only fail hard (503) if database is down or critical config is missing.
   const isHealthy = checks.database.status === 'ok' && checks.config.status === 'ok';
 
   const totalLatency = Date.now() - start;

@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         try {
           const result = await model.generateContentStream({
             contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-            tools: [{ googleSearchRetrieval: {} }],
+            tools: [{ googleSearch: {} }],
           });
 
           let buffer = "";
