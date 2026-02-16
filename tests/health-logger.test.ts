@@ -1,15 +1,31 @@
 /**
  * Tests for /api/health endpoint and structured logger.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { d1 } from '@/lib/d1';
 import { logger } from '@/lib/logger';
 
 // ── /api/health ─────────────────────────────────────────────────
 
 describe('GET /api/health', () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     vi.resetAllMocks();
+    process.env = {
+      ...originalEnv,
+      CLOUDFLARE_D1_DATABASE_ID: 'test-db-id',
+      CLOUDFLARE_API_TOKEN: 'test-token',
+      CLERK_SECRET_KEY: 'test-clerk-key',
+      AGENTMAIL_API_KEY: 'test-agentmail-key',
+      NEXT_PUBLIC_POSTHOG_KEY: 'test-posthog-key',
+      NEXT_PUBLIC_POSTHOG_HOST: 'test-posthog-host',
+      GOOGLE_CREDENTIALS_JSON: '{}',
+    };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   it('returns healthy status when all checks pass', async () => {

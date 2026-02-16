@@ -260,6 +260,10 @@ export interface AnalyticsEvents {
     source: 'explore';
   };
 
+  topic_shuffled: {
+    newTopic: string;
+  };
+
   // Blog
   blog_post_viewed: {
     slug: string;
