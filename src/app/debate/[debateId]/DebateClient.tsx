@@ -1450,7 +1450,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   transition-all disabled:opacity-50"
               >
                 <span className="opacity-70 group-hover:scale-110 transition-transform">⚖️</span>
-                <span>Ready for the verdict?</span>
+                <span>Get Verdict</span>
                 <span className="text-[var(--accent)] font-medium group-hover:underline ml-0.5">Ask Judge</span>
               </button>
             </div>
