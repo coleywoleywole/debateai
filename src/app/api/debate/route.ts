@@ -164,7 +164,6 @@ export async function POST(request: Request) {
 
     // Always use streaming response
     const encoder = new TextEncoder();
-    // eslint-disable-next-line prefer-const
     let controllerClosed = false; // Track if controller is closed
 
     const streamResponse = new ReadableStream({
