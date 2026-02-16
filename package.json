@@ -54,7 +54,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "convex": "^1.17.0",
     "eslint": "^9.39.2",
-    "eslint-config-next": "^16.1.6",
+    "eslint-config-next": "15.5.12",
     "tailwindcss": "^4",
     "typescript": "5.9.3",
     "vitest": "^4.0.18",
