@@ -92,13 +92,19 @@ export const GET = withErrorHandler(async (request: Request) => {
         }
       }
 
+      // Ensure created_at is strictly ISO formatted (Safari compat)
+      let createdAt = String(debate.created_at || new Date().toISOString());
+      if (createdAt.includes(' ') && !createdAt.includes('T')) {
+        createdAt = createdAt.replace(' ', 'T') + 'Z';
+      }
+
       return {
         id: String(debate.id || ''),
         opponent: String(debate.opponent || ''),
         opponentStyle: opponentStyle || 'Default',
         topic: String(debate.topic || 'Untitled Debate'),
         messageCount: Number(debate.message_count || 0),
-        createdAt: String(debate.created_at || new Date().toISOString()),
+        createdAt,
       };
     });
 
