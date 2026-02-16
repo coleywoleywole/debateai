@@ -19,37 +19,26 @@ export const GET = withErrorHandler(async (request: Request) => {
   // Parse and validate query parameters
   const { searchParams } = new URL(request.url);
   
-  // Robust parameter parsing: handle null, undefined, "", and string "null"/"undefined"
+  // Robust parameter parsing for Zod coercion
   const rawLimit = searchParams.get('limit');
   const rawOffset = searchParams.get('offset');
   
-  const cleanLimit = (rawLimit === null || rawLimit === '' || rawLimit === 'null' || rawLimit === 'undefined') 
-    ? undefined 
-    : rawLimit;
-  const cleanOffset = (rawOffset === null || rawOffset === '' || rawOffset === 'null' || rawOffset === 'undefined') 
-    ? undefined 
-    : rawOffset;
-
   const queryResult = listDebatesQuerySchema.safeParse({
-    limit: cleanLimit,
-    offset: cleanOffset,
+    limit: (rawLimit === null || rawLimit === '' || rawLimit === 'null' || rawLimit === 'undefined') 
+      ? undefined 
+      : rawLimit,
+    offset: (rawOffset === null || rawOffset === '' || rawOffset === 'null' || rawOffset === 'undefined') 
+      ? undefined 
+      : rawOffset,
   });
 
   if (!queryResult.success) {
-    throw errors.badRequest('Invalid query parameters', {
-      fields: queryResult.error.issues.map((i) => ({
-        path: i.path.join('.'),
-        message: i.message,
-      })),
-    });
+    throw errors.badRequest('Invalid query parameters');
   }
 
   const { limit, offset } = queryResult.data;
 
-  console.log(`[History] Fetching debates for user: ${userId}, limit: ${limit}, offset: ${offset}`);
-
   // Fetch debates from database
-  // Using CASE WHEN json_valid and json_type to avoid SQL errors on malformed messages JSON
   const result = await d1.query(
     `SELECT 
       id,
@@ -70,34 +59,26 @@ export const GET = withErrorHandler(async (request: Request) => {
   );
 
   if (result.success && result.result) {
-    console.log(`[History] Found ${result.result.length} debates for user: ${userId}`);
-    // Log for debugging (only in development or if results are unexpected)
-    if (result.result.length === 0) {
-      console.log(`No debates found for user: ${userId}`);
-    }
-
-    // Format the debates for the frontend
-    const debates = result.result.map((debate: Record<string, any>) => {
-      // Extract opponentStyle from score_data
-      let opponentStyle: string | undefined;
+    // Format the debates for the frontend with extreme robustness
+    const debates = result.result.map((row: any) => {
+      const debate = row as Record<string, any>;
       
+      // 1. Extract opponentStyle safely
+      let opponentStyle: string | undefined;
       if (debate.score_data) {
         try {
-          const scoreData = typeof debate.score_data === 'string' 
+          const sd = typeof debate.score_data === 'string' 
             ? JSON.parse(debate.score_data) 
             : debate.score_data;
           
-          if (scoreData && typeof scoreData === 'object') {
-            opponentStyle = scoreData.opponentStyle || scoreData.opponent_style;
+          if (sd && typeof sd === 'object') {
+            opponentStyle = sd.opponentStyle || sd.opponent_style;
           }
-        } catch {
-          // Ignore parse errors, fallback to default
-        }
+        } catch { /* ignore parse errors */ }
       }
 
-      // If still no style, fallback to opponent name if it's a known character
+      // 2. Fallback for opponent style
       if (!opponentStyle && debate.opponent) {
-        // Simple mapping for common characters if opponents list isn't easily accessible
         const charMap: Record<string, string> = {
           'socratic': 'The Socratic',
           'logical': 'The Logician',
@@ -105,22 +86,28 @@ export const GET = withErrorHandler(async (request: Request) => {
           'academic': 'The Scholar',
           'pragmatist': 'The Pragmatist'
         };
-        opponentStyle = charMap[debate.opponent.toLowerCase()] || 
-                        debate.opponent.charAt(0).toUpperCase() + debate.opponent.slice(1);
+        const opp = String(debate.opponent).toLowerCase();
+        opponentStyle = charMap[opp] || (opp.charAt(0).toUpperCase() + opp.slice(1));
       }
 
-      // Ensure created_at is a proper ISO string for the frontend
-      // D1 returns 'YYYY-MM-DD HH:MM:SS' in UTC
-      let formattedDate = new Date().toISOString();
+      // 3. Format date robustly for cross-browser support
+      let createdAt = new Date().toISOString();
       if (debate.created_at) {
         try {
-          // Append 'Z' to tell JS it's UTC
-          const dateStr = String(debate.created_at).includes('T') 
-            ? debate.created_at 
-            : `${debate.created_at.replace(' ', 'T')}Z`;
-          formattedDate = new Date(dateStr).toISOString();
+          const d = new Date(debate.created_at);
+          if (!isNaN(d.getTime())) {
+            createdAt = d.toISOString();
+          } else {
+            // Try SQLite format fix
+            const fixedDate = new Date(String(debate.created_at).replace(' ', 'T') + 'Z');
+            if (!isNaN(fixedDate.getTime())) {
+              createdAt = fixedDate.toISOString();
+            } else {
+              createdAt = String(debate.created_at);
+            }
+          }
         } catch {
-          formattedDate = String(debate.created_at);
+          createdAt = String(debate.created_at);
         }
       }
 
@@ -130,7 +117,7 @@ export const GET = withErrorHandler(async (request: Request) => {
         opponentStyle: opponentStyle || 'Default',
         topic: String(debate.topic || 'Untitled Debate'),
         messageCount: Number(debate.message_count || 0),
-        createdAt: formattedDate,
+        createdAt,
       };
     });
 
@@ -153,11 +140,7 @@ export const GET = withErrorHandler(async (request: Request) => {
     });
   }
 
-  // Log error if query failed
-  if (!result.success) {
-    console.error('Debates history query failed:', result.error, { userId });
-  }
-
+  // Fallback for failed queries
   return NextResponse.json({
     debates: [],
     pagination: { total: 0, limit, offset, hasMore: false },
