@@ -160,7 +160,7 @@ export async function POST(request: Request) {
     const isFirstResponse = !previousMessages || previousMessages.length === 0;
 
     if (assignedVariant === 'aggressive') {
-      systemPrompt = getAggressiveDebatePrompt(topic, isFirstResponse);
+      systemPrompt = getAggressiveDebatePrompt(topic, previousMessages.length);
     } else {
       const persona = opponentStyle || getDailyPersona();
       systemPrompt = getDebatePrompt(persona, topic, isFirstResponse);
@@ -209,6 +209,18 @@ export async function POST(request: Request) {
         lastMessages: previousMessages?.slice(-5) || [],
         topic: topic?.slice(0, 50)
       });
+      
+      // Track abandonment in PostHog (server-side)
+      // Since trackEvent is async and we're in an event listener, we fire and forget
+      import('@/lib/posthog-server').then(({ trackEvent }) => {
+        trackEvent(userId, 'debate_abandoned', {
+          debateId: debateId || 'unknown',
+          reason: 'client_disconnect',
+          turnCount: previousMessages?.length || 0,
+          topic: topic?.slice(0, 50),
+          variant: assignedVariant
+        });
+      }).catch(() => {});
     });
 
     const encoder = new TextEncoder();

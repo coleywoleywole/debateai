@@ -76,6 +76,10 @@ export const CURATED_DAILY_DEBATES: DailyDebate[] = [
   { personaId: "frederick-douglass", persona: "Frederick Douglass", topicId: "lobbying-corruption", topic: "Is lobbying just legalized corruption?", category: "politics" },
   { personaId: "lincoln", persona: "Abraham Lincoln", topicId: "two-party-system", topic: "Is the two-party system destroying America?", category: "politics" },
 
+  // New Additions (2026-02-15)
+  { personaId: "industrialist", persona: "The Industrialist", topicId: "software-assembly-line", topic: "Is the end of human coding inevitable?", category: "technology" },
+  { personaId: "liberator", persona: "The Liberator", topicId: "uncensored-ai-illegal", topic: "Should uncensored AI image generators be made illegal?", category: "technology" },
+
   // New Additions (2026-02-13)
   { personaId: "snowden", persona: "Edward Snowden", topicId: "parents-location", topic: "Your parents should have access to your location 24/7", category: "society" },
   { personaId: "bernie", persona: "Bernie Sanders", topicId: "billionaire-immoral", topic: "It is immoral to be a billionaire while poverty exists", category: "economics" },

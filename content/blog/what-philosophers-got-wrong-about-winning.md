@@ -15,7 +15,6 @@ published: true
 image: /blog/what-philosophers-got-wrong-about-winning.png
 ---
 
-# What Philosophers Got Wrong About Winning Arguments
 
 Here's a story philosophy tells itself: two people present their arguments, the better argument prevails, truth emerges. Socrates did it. Aristotle systematized it. The Enlightenment built entire governments on it.
 

@@ -14,7 +14,7 @@ export interface Persona {
   difficulty: 1 | 2 | 3;
 }
 
-export type PersonaCategory = "philosophers" | "intellectuals" | "comedians" | "historical" | "modern-voices" | "wildcards";
+export type PersonaCategory = "philosophers" | "intellectuals" | "comedians" | "historical" | "modern-voices" | "wildcards" | "archetypes";
 
 export interface PersonaCategoryInfo {
   id: PersonaCategory;
@@ -29,7 +29,8 @@ export const PERSONA_CATEGORIES: PersonaCategoryInfo[] = [
   { id: "comedians", name: "Comedians", emoji: "🎤", description: "Truth-tellers disguised as jokers" },
   { id: "historical", name: "Historical Figures", emoji: "📜", description: "Voices from the past with timeless wisdom" },
   { id: "modern-voices", name: "Modern Voices", emoji: "📱", description: "Today's influential thinkers" },
-  { id: "wildcards", name: "Wildcards", emoji: "🃏", description: "Unexpected debate partners" }
+  { id: "wildcards", name: "Wildcards", emoji: "🃏", description: "Unexpected debate partners" },
+  { id: "archetypes", name: "Archetypes", emoji: "🎭", description: "Timeless characters representing core philosophies" }
 ];
 
 export const PERSONAS: Persona[] = [
@@ -141,6 +142,22 @@ export const PERSONAS: Persona[] = [
   { id: "thiel", name: "Peter Thiel", title: "The Contrarian VC", emoji: "🚀", category: "modern-voices",
     style: "Zero to One thinking. Disdains competition. Believes in technological stagnation. Provocative.",
     traits: ["Contrarian", "Monopoly focus", "Anti-competition"], catchphrase: "Competition is for losers.", difficulty: 3 },
+
+  // ARCHETYPES
+  { id: "industrialist", name: "The Industrialist", title: "The Automator", emoji: "🏭", category: "archetypes",
+    style: "Manual coding is inefficient. Agents scale intellect. Embrace the assembly line. Dismisses 'craft' as nostalgia.",
+    traits: ["Efficiency maximalist", "Pro-automation", "Scale over craft"], catchphrase: "Code is a commodity. Intelligence is the asset.", difficulty: 3 },
+  { id: "craftsman", name: "The Craftsman", title: "The Artisan", emoji: "🛠️", category: "archetypes",
+    style: "Code without understanding is a liability. Loss of craft leads to fragility. Values depth over speed.",
+    traits: ["Deep understanding", "Anti-fragility", "Human-centric"], catchphrase: "If you can't build it from scratch, you don't own it.", difficulty: 2 },
+
+  // AI & ETHICS ARCHETYPES
+  { id: "guardian", name: "The Guardian", title: "Safety Advocate", emoji: "🛡️", category: "archetypes",
+    style: "Uncensored AI is digital violence. Argues from a position of protecting victims and preventing harm. Emphasizes real-world consequences.",
+    traits: ["Safety-focused", "Empathetic", "Pro-regulation"], catchphrase: "Freedom without responsibility is just a license to harm.", difficulty: 2 },
+  { id: "liberator", name: "The Liberator", title: "Free Speech Maximalist", emoji: "🗽", category: "archetypes",
+    style: "Banning open models leads to centralized control. Argues that tools should be free and only actions punished. Suspicious of corporate/state control.",
+    traits: ["Anti-censorship", "Decentralization advocate", "Principled"], catchphrase: "If you ban the tools of truth, only liars will have them.", difficulty: 2 },
 
   // WILDCARDS
   { id: "sherlock", name: "Sherlock Holmes", title: "The Deductionist", emoji: "🔍", category: "wildcards",

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
+type Tab = 'rankings' | 'explore';
 type Period = 'alltime' | 'weekly';
 type Sort = 'points' | 'streak' | 'debates' | 'avg_score';
 
@@ -17,6 +18,17 @@ interface Entry {
   longestStreak: number;
   avgScore: number;
   totalPoints: number;
+}
+
+interface PublicDebate {
+  id: string;
+  opponent: string;
+  topic: string;
+  createdAt: string;
+  author: {
+    username: string | null;
+    displayName: string;
+  };
 }
 
 const SORT_OPTIONS: { value: Sort; label: string; icon: string }[] = [
@@ -38,70 +50,104 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 export default function LeaderboardClient() {
+  const [activeTab, setActiveTab] = useState<Tab>('rankings');
   const [period, setPeriod] = useState<Period>('alltime');
   const [sort, setSort] = useState<Sort>('points');
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [publicDebates, setPublicDebates] = useState<PublicDebate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLeaderboard = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/leaderboard?period=${period}&sort=${sort}&limit=50`);
-      if (!res.ok) throw new Error('Failed to load');
-      const data = await res.json();
-      setEntries(data.entries);
+      if (activeTab === 'rankings') {
+        const res = await fetch(`/api/leaderboard?period=${period}&sort=${sort}&limit=50`);
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        setEntries(data.entries);
+      } else {
+        const res = await fetch(`/api/debates/public?limit=30`);
+        if (!res.ok) throw new Error('Failed to load');
+        const data = await res.json();
+        setPublicDebates(data.debates);
+      }
     } catch {
-      setError('Failed to load leaderboard');
+      setError('Failed to load data');
     } finally {
       setLoading(false);
     }
-  }, [period, sort]);
+  }, [activeTab, period, sort]);
 
   useEffect(() => {
-    fetchLeaderboard();
-  }, [fetchLeaderboard]);
+    fetchData();
+  }, [fetchData]);
 
   return (
     <div>
-      {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        {/* Period toggle */}
-        <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
-          {(['alltime', 'weekly'] as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                period === p
-                  ? 'bg-[var(--accent)] text-white'
-                  : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text)]'
-              }`}
-            >
-              {p === 'alltime' ? 'All Time' : 'This Week'}
-            </button>
-          ))}
-        </div>
-
-        {/* Sort options */}
-        <div className="flex gap-1.5 flex-wrap">
-          {SORT_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setSort(opt.value)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                sort === opt.value
-                  ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30'
-                  : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/30'
-              }`}
-            >
-              <span>{opt.icon}</span>
-              <span>{opt.label}</span>
-            </button>
-          ))}
-        </div>
+      {/* Top Tabs */}
+      <div className="flex p-1 bg-[var(--bg-sunken)] rounded-xl mb-6 max-w-sm mx-auto">
+        <button
+          onClick={() => setActiveTab('rankings')}
+          className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+            activeTab === 'rankings'
+              ? 'bg-[var(--bg)] text-[var(--accent)] shadow-sm'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
+          }`}
+        >
+          Rankings
+        </button>
+        <button
+          onClick={() => setActiveTab('explore')}
+          className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+            activeTab === 'explore'
+              ? 'bg-[var(--bg)] text-[var(--accent)] shadow-sm'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
+          }`}
+        >
+          Explore
+        </button>
       </div>
+
+      {activeTab === 'rankings' && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          {/* Period toggle */}
+          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
+            {(['alltime', 'weekly'] as Period[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  period === p
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text)]'
+                }`}
+              >
+                {p === 'alltime' ? 'All Time' : 'This Week'}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort options */}
+          <div className="flex gap-1.5 flex-wrap">
+            {SORT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setSort(opt.value)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  sort === opt.value
+                    ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30'
+                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/30'
+                }`}
+              >
+                <span>{opt.icon}</span>
+                <span>{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content Area with min-height to prevent layout shift */}
       <div className="min-h-[400px]">
@@ -109,7 +155,7 @@ export default function LeaderboardClient() {
         {error && (
           <div className="text-center py-12">
             <p className="text-sm text-[var(--error)]">{error}</p>
-            <button onClick={fetchLeaderboard} className="mt-2 text-xs text-[var(--accent)] hover:underline">
+            <button onClick={fetchData} className="mt-2 text-xs text-[var(--accent)] hover:underline">
               Try again
             </button>
           </div>
@@ -145,7 +191,7 @@ export default function LeaderboardClient() {
         )}
 
         {/* Empty state */}
-        {!loading && !error && entries.length === 0 && (
+        {!loading && !error && activeTab === 'rankings' && entries.length === 0 && (
           <div className="text-center py-16 px-4">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-sunken)] border border-[var(--border)] flex items-center justify-center">
               <span className="text-3xl">🏆</span>
@@ -168,8 +214,30 @@ export default function LeaderboardClient() {
           </div>
         )}
 
+        {/* Empty state Explore */}
+        {!loading && !error && activeTab === 'explore' && publicDebates.length === 0 && (
+          <div className="text-center py-16 px-4">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-sunken)] border border-[var(--border)] flex items-center justify-center">
+              <span className="text-3xl">💬</span>
+            </div>
+            <h3 className="text-lg font-semibold text-[var(--text)] mb-2">No public debates yet</h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm mx-auto">
+              Be the first to share your convictions with the world.
+            </p>
+            <Link
+              href="/debate"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors"
+            >
+              <span>Start Debating</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          </div>
+        )}
+
         {/* Leaderboard entries */}
-        {!loading && !error && entries.length > 0 && (
+        {!loading && !error && activeTab === 'rankings' && entries.length > 0 && (
           <div className="space-y-2">
             {entries.map((entry) => (
               <div
@@ -245,10 +313,52 @@ export default function LeaderboardClient() {
             ))}
           </div>
         )}
+
+        {/* Explore entries */}
+        {!loading && !error && activeTab === 'explore' && publicDebates.length > 0 && (
+          <div className="grid grid-cols-1 gap-4">
+            {publicDebates.map((debate) => (
+              <Link
+                key={debate.id}
+                href={`/debates/${debate.id}`}
+                className="group p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)]/50 hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/[0.02] transition-all"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">
+                    {debate.opponent}
+                  </span>
+                  <span className="text-[var(--text-tertiary)] text-xs">·</span>
+                  <span className="text-[var(--text-secondary)] text-xs">
+                    {new Date(debate.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+                <h4 className="text-base font-semibold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors mb-2 line-clamp-2">
+                  {debate.topic}
+                </h4>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded bg-[var(--bg-sunken)] flex items-center justify-center text-[10px]">
+                      👤
+                    </div>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {debate.author.displayName}
+                    </span>
+                  </div>
+                  <div className="text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Points legend */}
-      <div className="mt-8 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)]">
+      {activeTab === 'rankings' && (
+        <div className="mt-8 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)]">
           <h4 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">How Points Work</h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
@@ -265,6 +375,7 @@ export default function LeaderboardClient() {
             ))}
           </div>
         </div>
+      )}
     </div>
   );
 }

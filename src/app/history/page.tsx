@@ -20,7 +20,7 @@ interface Debate {
 
 export default function HistoryPage() {
   const router = useRouter();
-  const { isSignedIn } = useSafeUser();
+  const { isSignedIn, isLoaded } = useSafeUser();
   const { openSignIn } = useSafeClerk();
   const { isPremium, debatesUsed, debatesLimit } = useSubscription();
   const [debates, setDebates] = useState<Debate[]>([]);
@@ -30,22 +30,10 @@ export default function HistoryPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
-    if (isSignedIn === false) {
-      // Don't redirect immediately - let them see the page design
-      setIsLoading(false);
-    } else if (isSignedIn === true) {
+    if (isLoaded) {
       fetchDebates();
-    } else {
-      // isSignedIn is undefined (Clerk still loading)
-      // Set a timeout to avoid infinite loading skeleton
-      const timeout = setTimeout(() => {
-        if (isSignedIn === undefined) {
-          setIsLoading(false);
-        }
-      }, 5000);
-      return () => clearTimeout(timeout);
     }
-  }, [isSignedIn]);
+  }, [isLoaded]);
 
   const fetchDebates = async () => {
     try {
@@ -57,11 +45,11 @@ export default function HistoryPage() {
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('Failed to fetch debates:', response.status, errorData);
-        setError(
-          response.status === 401
-            ? 'Please sign in to view your debate history.'
-            : 'Unable to load your debates. Please try again.'
-        );
+        
+        // Only show error message if it's not a 401 (we handle signed-out separately)
+        if (response.status !== 401) {
+          setError('Unable to load your debates. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error fetching debates:', error);
@@ -71,22 +59,30 @@ export default function HistoryPage() {
     }
   };
 
-  const filteredDebates = debates.filter(debate => 
-    debate.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (debate.opponentStyle && debate.opponentStyle.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredDebates = debates.filter(debate => {
+    const topic = String(debate.topic || '').toLowerCase();
+    const style = String(debate.opponentStyle || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return topic.includes(query) || style.includes(query);
+  });
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Unknown date';
+      
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffHours < 1) return 'Just now';
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (diffHours < 1) return 'Just now';
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch {
+      return 'Recent';
+    }
   };
 
   const handleSignIn = () => {
@@ -156,7 +152,7 @@ export default function HistoryPage() {
           )}
 
           {/* Search */}
-          {isSignedIn && (
+          {(isSignedIn || debates.length > 0) && (
             <div className="relative mb-5">
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -171,8 +167,11 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {/* Not Signed In State */}
-          {!isSignedIn && !isLoading && (
+          {/* Loading State */}
+          {isLoading && <HistoryPageSkeleton />}
+
+          {/* Signed Out & No Debates State */}
+          {!isSignedIn && !isLoading && !error && debates.length === 0 && (
             <div className="relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--accent)]/20 to-[var(--accent-light)]/20 rounded-2xl blur-lg opacity-50" />
               <div className="relative artistic-card p-8 text-center">
@@ -195,9 +194,6 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {/* Loading State */}
-          {isLoading && <HistoryPageSkeleton />}
-
           {/* Error State */}
           {!isLoading && error && (
             <div className="text-center py-12">
@@ -216,8 +212,8 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {/* Empty State */}
-          {isSignedIn && !isLoading && !error && filteredDebates.length === 0 && (
+          {/* Empty State (Signed In or Guest with No Debates) */}
+          {!isLoading && !error && debates.length === 0 && isSignedIn && (
             <div className="text-center py-16">
               <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)]/30 flex items-center justify-center">
                 <svg className="w-6 h-6 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -225,24 +221,29 @@ export default function HistoryPage() {
                 </svg>
               </div>
               <h3 className="text-base font-medium text-[var(--text)] mb-1">
-                {debates.length === 0 ? "No debates yet" : "No matches found"}
+                No debates yet
               </h3>
               <p className="text-sm text-[var(--text-secondary)] mb-5">
-                {debates.length === 0 ? "Start your first debate to see it here" : "Try a different search term"}
+                Start your first debate to see it here
               </p>
-              {debates.length === 0 && (
-                <Link 
-                  href="/" 
-                  className="h-9 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium inline-flex items-center gap-2 shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/40 transition-all"
-                >
-                  Start Your First Debate
-                </Link>
-              )}
+              <Link 
+                href="/" 
+                className="h-9 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium inline-flex items-center gap-2 shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/40 transition-all"
+              >
+                Start Your First Debate
+              </Link>
+            </div>
+          )}
+
+          {/* No Matches Search Result */}
+          {!isLoading && !error && debates.length > 0 && filteredDebates.length === 0 && (
+            <div className="text-center py-16 text-[var(--text-secondary)]">
+              <p className="text-sm">No matches found for "{searchQuery}"</p>
             </div>
           )}
 
           {/* Debates List */}
-          {isSignedIn && !isLoading && filteredDebates.length > 0 && (
+          {!isLoading && filteredDebates.length > 0 && (
             <div className="space-y-3">
               {filteredDebates.map((debate, index) => (
                 <div
@@ -298,7 +299,7 @@ export default function HistoryPage() {
           )}
 
           {/* Footer Stats */}
-          {isSignedIn && debates.length > 0 && !isLoading && (
+          {debates.length > 0 && !isLoading && (
             <div className="mt-6 pt-4 border-t border-[var(--border)]/30 text-center">
               <p className="text-xs text-[var(--text-secondary)]">
                 {debates.length} debate{debates.length !== 1 ? 's' : ''}

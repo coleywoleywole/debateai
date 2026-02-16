@@ -35,7 +35,7 @@ export const GET = withErrorHandler(async (request: Request) => {
   const { limit, offset } = queryResult.data;
 
   // Fetch debates from database
-  // Using CASE WHEN json_valid(messages) to avoid errors if messages is not a valid JSON array
+  // Using CASE WHEN json_valid to avoid SQL errors on malformed messages JSON
   const result = await d1.query(
     `SELECT 
       id,
@@ -72,12 +72,12 @@ export const GET = withErrorHandler(async (request: Request) => {
       }
 
       return {
-        id: debate.id,
-        opponent: debate.opponent,
+        id: String(debate.id || ''),
+        opponent: String(debate.opponent || ''),
         opponentStyle: opponentStyle || 'Default',
-        topic: debate.topic,
-        messageCount: debate.message_count || 0,
-        createdAt: debate.created_at,
+        topic: String(debate.topic || 'Untitled Debate'),
+        messageCount: Number(debate.message_count || 0),
+        createdAt: String(debate.created_at || new Date().toISOString()),
       };
     });
 
@@ -98,6 +98,11 @@ export const GET = withErrorHandler(async (request: Request) => {
         hasMore: offset + limit < total,
       },
     });
+  }
+
+  // Log error if query failed
+  if (!result.success) {
+    console.error('Debates history query failed:', result.error, { userId });
   }
 
   return NextResponse.json({

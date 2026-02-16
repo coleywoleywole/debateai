@@ -753,6 +753,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   // Only scroll after the user starts interacting (sending messages).
   useEffect(() => {
     if (!hasUserInteracted.current) return;
+    
+    // Don't auto-scroll if we only have the initial exchange (system + user + AI response starting)
+    // this ensures the user sees the start of the debate on load.
+    if (messages.length <= 2 && instantDebateActiveRef.current) return;
+
     if (isAutoScrollEnabled && messagesEndRef.current) {
       // Use 'instant' scroll during AI streaming to prevent layout bouncing
       const behavior = isAILoading ? 'instant' : 'smooth';
@@ -1445,7 +1450,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   transition-all disabled:opacity-50"
               >
                 <span className="opacity-70 group-hover:scale-110 transition-transform">⚖️</span>
-                <span>Ready for the verdict?</span>
+                <span>Get Verdict</span>
                 <span className="text-[var(--accent)] font-medium group-hover:underline ml-0.5">Ask Judge</span>
               </button>
             </div>

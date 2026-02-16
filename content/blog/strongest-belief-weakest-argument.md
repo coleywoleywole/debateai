@@ -15,7 +15,6 @@ published: true
 image: /blog/strongest-belief-weakest-argument.png
 ---
 
-# Your Strongest Belief Is Probably Your Weakest Argument
 
 Think of the opinion you hold most strongly. The one you'd bet money on. The one where you'd say "if you disagree, you just haven't looked at the evidence."
 

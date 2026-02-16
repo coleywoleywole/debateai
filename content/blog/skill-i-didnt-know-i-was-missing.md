@@ -18,7 +18,6 @@ published: true
 image: /blog/skill-i-didnt-know-i-was-missing.png
 ---
 
-# The Skill I Didn't Know I Was Missing (A Debate Transcript That Changed How I Argue)
 
 There's a skill that separates people who are good at arguing from people who are good at thinking. Most people don't know the difference. I didn't, until an AI debate showed me.
 

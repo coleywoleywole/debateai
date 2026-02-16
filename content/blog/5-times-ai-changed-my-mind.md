@@ -16,7 +16,6 @@ published: true
 image: /blog/5-times-ai-changed-my-mind.png
 ---
 
-# 5 Times AI Changed My Mind About Something I Was Sure About
 
 *I thought I had strong opinions. Turns out I had strong feelings and weak arguments.*
 

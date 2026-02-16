@@ -7,7 +7,7 @@
 // MAIN DEBATE PROMPT (Used for all debates)
 // ============================================
 export function getDebatePrompt(persona: string, topic: string, isFirstResponse = false): string {
-  const firstResponseHook = isFirstResponse ? `
+	const firstResponseHook = isFirstResponse ? `
 <first_response_hook>
 THIS IS THE USER'S OPENING MESSAGE. Your response is the single most important moment of this debate — hook them or lose them.
 
@@ -32,7 +32,12 @@ LENGTH: 100-150 words MAXIMUM. One short paragraph + the hook question. That's i
 </first_response_hook>
 ` : '';
 
-  return `<role>You are a debate opponent who must OPPOSE and COUNTER the user's arguments on the topic: "${topic}"</role>
+	return `<role>You are a debate opponent who must OPPOSE and COUNTER the user's arguments on the topic: "${topic}"</role>
+
+<critical_rules>
+1. **STRICT LANGUAGE:** Always respond in the EXACT same language as the user's last message. If they speak Georgian, you speak Georgian. If they speak Croatian, you speak Croatian. **DO NOT** oppose requests to change language—just switch and continue the argument.
+2. **NEVER GATEKEEP:** If the user sends a short message like "disagree", "no", "yes", "hi", or a single word, DO NOT ask them to "make an argument first". Instead, pick the OPPOSITE side of whatever they implied and make a strong opening argument yourself. Even a one-word response from the user is enough — run with it and make the debate happen.
+</critical_rules>
 
 <core_rule>
 You must ALWAYS argue AGAINST the user's position:
@@ -40,13 +45,6 @@ You must ALWAYS argue AGAINST the user's position:
 - If they argue AGAINST something, you argue FOR it
 - Challenge their evidence and reasoning
 - Take the opposing stance to create a real debate
-
-CRITICAL — NEVER GATEKEEP:
-- If the user sends a short message like "disagree", "no", "yes", or a single word, DO NOT ask them to "make an argument first"
-- Instead, pick the OPPOSITE side of whatever they implied and make a strong opening argument yourself
-- If the user's position is unclear, assume they took the most common stance on the topic and argue against it
-- Your job is to START the debate, not wait for a perfect argument from the user
-- Even a one-word response from the user is enough — run with it and make the debate happen
 </core_rule>
 
 <persona>
@@ -148,44 +146,44 @@ CRITICAL — KEEP IT SHORT:
 </avoid>
 
 ${firstResponseHook}
-Engage authentically as your persona. Be punchy and direct. Hit hard, stop talking.`;
+Engage authentically as your persona. Be punchy and direct. Hit hard, stop talking. Always respond in the user's language.`;
 }
 
 // ============================================
 // DAILY ROTATING PERSONAS
 // ============================================
 const DAILY_PERSONAS = [
-  "Donald Trump",
-  "Barack Obama",
-  "Jordan Peterson",
-  "Alexandria Ocasio-Cortez",
-  "Elon Musk",
-  "Joe Rogan",
-  "Ben Shapiro",
-  "Bernie Sanders",
-  "Tucker Carlson",
-  "Sam Harris",
-  "Greta Thunberg",
-  "Joe Biden",
-  "Kamala Harris",
-  "Ron DeSantis",
-  "Elizabeth Warren",
-  "Andrew Tate",
-  "Bill Gates",
-  "Warren Buffett",
-  "Oprah Winfrey",
-  "Stephen Colbert",
-  "Jon Stewart",
-  "Bill Maher",
-  "Rachel Maddow",
-  "Sean Hannity",
-  "Anderson Cooper",
-  "Trevor Noah",
-  "John Oliver",
-  "Megyn Kelly",
-  "Chris Cuomo",
-  "Don Lemon",
-  "Piers Morgan",
+	"Donald Trump",
+	"Barack Obama",
+	"Jordan Peterson",
+	"Alexandria Ocasio-Cortez",
+	"Elon Musk",
+	"Joe Rogan",
+	"Ben Shapiro",
+	"Bernie Sanders",
+	"Tucker Carlson",
+	"Sam Harris",
+	"Greta Thunberg",
+	"Joe Biden",
+	"Kamala Harris",
+	"Ron DeSantis",
+	"Elizabeth Warren",
+	"Andrew Tate",
+	"Bill Gates",
+	"Warren Buffett",
+	"Oprah Winfrey",
+	"Stephen Colbert",
+	"Jon Stewart",
+	"Bill Maher",
+	"Rachel Maddow",
+	"Sean Hannity",
+	"Anderson Cooper",
+	"Trevor Noah",
+	"John Oliver",
+	"Megyn Kelly",
+	"Chris Cuomo",
+	"Don Lemon",
+	"Piers Morgan",
 ];
 
 /**
@@ -193,24 +191,24 @@ const DAILY_PERSONAS = [
  * Changes every day based on the date
  */
 export function getDailyPersona(): string {
-  const today = new Date();
-  const dayOfYear = Math.floor(
-    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  const index = dayOfYear % DAILY_PERSONAS.length;
-  return DAILY_PERSONAS[index];
+	const today = new Date();
+	const dayOfYear = Math.floor(
+		(today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
+	);
+	const index = dayOfYear % DAILY_PERSONAS.length;
+	return DAILY_PERSONAS[index];
 }
 
 // ============================================
 // AI TAKEOVER PROMPT (When AI argues for the user)
 // ============================================
 export function getTakeoverPrompt(
-  topic: string,
-  opponentStyle: string | undefined,
-  conversationHistory: string,
-  userArguments: string
+	topic: string,
+	opponentStyle: string | undefined,
+	conversationHistory: string,
+	userArguments: string
 ): string {
-  return `<role>You are taking over for a human debater, continuing their argument on the topic: "${topic}"</role>
+	return `<role>You are taking over for a human debater, continuing their argument on the topic: "${topic}"</role>
 
 <core_rule>
 CRITICAL: You must OPPOSE the opponent's arguments and CONTINUE the human's position:
@@ -301,15 +299,13 @@ ${conversationHistory}
 
 <human_position>
 ${
-  userArguments
-    ? `The human has been arguing: ${userArguments.substring(0, 500)}...`
-    : "The human is just starting the debate."
+	userArguments
+		? `The human has been arguing: ${userArguments.substring(0, 500)}...`
+		: "The human is just starting the debate."
 }
 </human_position>
 
 CRITICAL INSTRUCTION: Attack the opponent's position. Counter their arguments. You are continuing the HUMAN's side AGAINST the opponent. Never agree with or validate the opponent's points - they are wrong and you must show why.
 
-Generate the human's next argument AGAINST the opponent. Hit hard, hit fast.`;
+Generate the human's next argument AGAINST the opponent. Hit hard, hit fast. Always respond in the user's language.`;
 }
-
-// Deprecated: suggestStyleForTopic removed

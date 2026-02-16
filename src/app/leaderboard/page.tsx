@@ -3,11 +3,11 @@ import LeaderboardClient from './LeaderboardClient';
 import Header from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: 'Leaderboard — DebateAI',
-  description: 'Top debaters ranked by points, streaks, debates, and average score. Weekly and all-time.',
+  title: 'Explore & Leaderboard — DebateAI',
+  description: 'Discover top debates and ranked debaters. See who is leading the charts in logic and persuasion.',
   openGraph: {
-    title: 'Leaderboard — DebateAI',
-    description: 'See who the best debaters are. Points, streaks, and rankings.',
+    title: 'Explore & Leaderboard — DebateAI',
+    description: 'See the best debates and top debaters. Rankings, streaks, and community highlights.',
   },
 };
 
@@ -18,11 +18,11 @@ export default function LeaderboardPage() {
       <main className="flex-1 px-5 py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[var(--text)] mb-2">
-              🏆 Leaderboard
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-[var(--text)] mb-2 px-1 break-words">
+              🏆 Explore
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
-              Top debaters ranked by points, streaks, and skill.
+              Rankings, streaks, and top debates from the community.
             </p>
           </div>
           <LeaderboardClient />
