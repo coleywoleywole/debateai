@@ -223,9 +223,9 @@ test.describe('Journey: Share a Debate', () => {
     await page.goto('/debate/share-test-123');
 
     // Look for share button or share icon
-    const shareButton = page.locator(
-      'button[aria-label*="share" i], button:has-text("Share"), [data-testid="share"]'
-    );
+    // const shareButton = page.locator(
+    //   'button[aria-label*="share" i], button:has-text("Share"), [data-testid="share"]'
+    // );
 
     // Share functionality should be present (might be in a menu)
     // Even if hidden, the page should load without errors

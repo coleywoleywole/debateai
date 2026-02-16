@@ -21,7 +21,7 @@ const ROOT = process.cwd(); // Should be root of project when running tests from
 function readSrc(relPath: string) {
   try {
     return readFileSync(join(ROOT, relPath), 'utf-8');
-  } catch (e) {
+  } catch {
     // Fallback if running from within debateai/
     return readFileSync(join(ROOT, 'debateai', relPath), 'utf-8');
   }
@@ -205,7 +205,7 @@ describe('rate limiting on API routes', () => {
     { route: 'src/app/api/trending/route.ts', expectedIpLimit: 10, expectedUserLimit: null },
   ];
 
-  for (const { route, expectedIpLimit, expectedUserLimit } of rateLimitedRoutes) {
+  for (const { route, expectedIpLimit } of rateLimitedRoutes) {
     it(`${route}: imports rate-limit utilities`, () => {
       const src = readSrc(route);
       expect(src).toContain('createRateLimiter');

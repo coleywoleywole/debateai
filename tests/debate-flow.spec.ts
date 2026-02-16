@@ -76,35 +76,8 @@ async function mockDebateCreateAPI(page: Page, success = true) {
   });
 }
 
-// Helper to mock auth (simulate logged-in user)
-async function mockAuth(page: Page) {
-  // Mock Clerk's auth check to return a test user
-  await page.route('**/v1/client**', async (route: Route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        response: {
-          client: {
-            sessions: [
-              {
-                id: 'sess_test',
-                user: {
-                  id: 'user_test123',
-                  first_name: 'Test',
-                  last_name: 'User',
-                  email_addresses: [{ email_address: 'test@example.com' }],
-                },
-              },
-            ],
-            sign_in: null,
-            sign_up: null,
-          },
-        },
-      }),
-    });
-  });
-}
+// Helper to mock auth (unused)
+// async function mockAuth(page: Page) { ... }
 
 test.describe('Debate Creation Flow', () => {
   test('should display debate setup form on homepage', async ({ page }) => {

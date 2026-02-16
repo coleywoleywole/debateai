@@ -46,7 +46,8 @@ export async function GET(
 
       // Strip sensitive fields from public response
        
-      const { user_id, ...safeDebate } = result.debate as Record<
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { user_id: _, ...safeDebate } = result.debate as Record<
         string,
         unknown
       >;

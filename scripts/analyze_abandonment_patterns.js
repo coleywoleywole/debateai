@@ -57,7 +57,7 @@ async function analyzeAbandonment() {
         let msgs = [];
         try {
           msgs = typeof row.messages === 'string' ? JSON.parse(row.messages) : row.messages;
-        } catch (e) {
+        } catch {
           continue;
         }
 
