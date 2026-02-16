@@ -112,6 +112,11 @@ export interface AnalyticsEvents {
     experiment_variant?: 'aggressive' | 'default';
   };
 
+  debate_round_advanced: {
+    round: number;
+    nextRound: number;
+  };
+
   // Sharing
   debate_shared: {
     debateId: string;
