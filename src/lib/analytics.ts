@@ -44,11 +44,13 @@ export interface AnalyticsEvents {
     messageIndex: number;
     turnCount?: number;
     aiAssisted: boolean;
+    experiment_variant?: 'aggressive' | 'default';
   };
   debate_ai_message_sent: {
     debateId: string;
     messageIndex: number;
     turnCount: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
   debate_completed: {
     debateId: string;
@@ -58,6 +60,7 @@ export interface AnalyticsEvents {
     aiScore: number;
     roastLevel: string;
     messageCount: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   debate_ended: {
@@ -65,12 +68,14 @@ export interface AnalyticsEvents {
     reason: 'completed' | 'abandoned' | 'error';
     turnCount?: number;
     message?: string;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   user_feedback_submitted: {
     debateId: string;
     rating?: number;
     feedback?: string;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   debate_scored: {
@@ -78,12 +83,14 @@ export interface AnalyticsEvents {
     winner: 'user' | 'ai' | 'draw';
     userScore: number;
     aiScore: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   debate_finished: {
     debateId: string;
     winner: 'user' | 'ai' | 'draw';
     turnCount: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
   debate_ended_manual: {
     debateId: string;
@@ -93,6 +100,7 @@ export interface AnalyticsEvents {
   debate_ai_takeover: {
     debateId: string;
     messageIndex: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   debate_rematch: {
@@ -101,6 +109,7 @@ export interface AnalyticsEvents {
     topic: string;
     opponent: string;
     source: 'rematch' | string; // rematch = same topic, topic-* = suggested topic
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   // Sharing
@@ -108,6 +117,7 @@ export interface AnalyticsEvents {
     debateId: string;
     method: 'copy_link' | 'twitter' | 'facebook' | 'linkedin' | 'reddit' | 'native_share';
     source?: 'button' | 'modal' | 'post_debate';
+    experiment_variant?: 'aggressive' | 'default';
   };
   share_button_clicked: {
     debateId: string;
@@ -115,16 +125,20 @@ export interface AnalyticsEvents {
   };
   share_image_generated: {
     debateId: string;
+    experiment_variant?: 'aggressive' | 'default';
   };
   share_image_downloaded: {
     debateId: string;
+    experiment_variant?: 'aggressive' | 'default';
   };
   share_image_shared: {
     debateId: string;
     method: 'twitter' | 'download' | 'copy_link';
+    experiment_variant?: 'aggressive' | 'default';
   };
   share_image_copied: {
     debateId: string;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   // Diagnostics
@@ -132,11 +146,13 @@ export interface AnalyticsEvents {
     debateId: string;
     messageIndex: number;
     latencyMs: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
   debate_ai_ttft: {
     debateId: string;
     messageIndex: number;
     latencyMs: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
   debate_viewed: {
     debateId: string;
@@ -156,14 +172,17 @@ export interface AnalyticsEvents {
     source: string;
     message: string;
     code?: string;
+    experiment_variant?: 'aggressive' | 'default';
   };
   debate_judge_requested: {
     debateId: string;
     messageCount: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
   debate_friction_event: {
     debateId: string;
     type: 'retry_clicked' | 'upgrade_clicked_limit' | 'send_while_loading' | 'invalid_input';
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   // Guest mode conversion
@@ -202,6 +221,7 @@ export interface AnalyticsEvents {
     winner: 'user' | 'opponent';
     userSide?: string;
     opponentSide?: string;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   // Navigation & Attribution
@@ -224,11 +244,13 @@ export interface AnalyticsEvents {
   onboarding_started: {
     topic: string;
     source: 'onboarding';
+    experiment_variant?: 'aggressive' | 'default';
   };
   onboarding_completed: {
     winner: 'user' | 'ai' | 'draw';
     userScore: number;
     aiScore: number;
+    experiment_variant?: 'aggressive' | 'default';
   };
 
   // Explore

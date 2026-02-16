@@ -9,21 +9,14 @@ import { errors, validateBody } from "@/lib/api-errors";
 import { sendMessageSchema, SendMessageInput } from "@/lib/api-schemas";
 import { logger } from "@/lib/logger";
 import { captureError } from "@/lib/sentry";
-import Anthropic from "@anthropic-ai/sdk";
+import { getGeminiModel } from "@/lib/vertex";
+import { Content } from "@google-cloud/vertexai";
 
 const log = logger.scope('debate');
 
-const anthropic = new Anthropic({
-  baseURL: "https://anthropic.helicone.ai",
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  defaultHeaders: {
-    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-  },
-});
-
-// 20 messages per minute per user (calls Claude API — expensive)
+// 20 messages per minute per user
 const userLimiter = createRateLimiter({ maxRequests: 20, windowMs: 60_000 });
-// 10 per minute per IP as a broader safety net (matched to security test)
+// 10 per minute per IP as a broader safety net
 const ipLimiter = createRateLimiter({ maxRequests: 10, windowMs: 60_000 });
 
 export async function POST(request: Request) {
@@ -42,7 +35,7 @@ export async function POST(request: Request) {
       return errors.unauthorized();
     }
 
-    // Per-user rate limit (protects Claude API costs)
+    // Per-user rate limit
     const userRl = userLimiter.check(`user:${userId}`);
     if (!userRl.allowed) return rateLimitResponse(userRl);
 
@@ -88,14 +81,13 @@ export async function POST(request: Request) {
       character,
       messageIndex: previousMessages.length,
       isAIAssisted,
-      promptVariant: assignedVariant, // Log the assigned variant
+      promptVariant: assignedVariant,
     });
     
-    // Deduplicate debate creation: if no debateId and same user+topic within 30s, reuse existing
+    // Deduplicate debate creation
     if (!debateId) {
       const dup = await d1.findRecentDuplicate(userId, topic, 30);
       if (dup.found && dup.debateId) {
-        // Return the existing debate ID so the client uses it instead of creating a duplicate
         return NextResponse.json({
           deduplicated: true,
           debateId: dup.debateId,
@@ -103,7 +95,6 @@ export async function POST(request: Request) {
         });
       }
     }
-
 
     // Check message limit
     const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === "true";
@@ -131,79 +122,55 @@ export async function POST(request: Request) {
       systemPrompt = getDebatePrompt(persona, topic, isFirstResponse);
     }
 
-    // Build conversation history for Anthropic SDK format
-    const messages: Anthropic.MessageParam[] = [];
+    // Gemini history format
+    const history: Content[] = [];
 
-    // Add previous messages if they exist
     if (previousMessages && previousMessages.length > 0) {
       for (const msg of previousMessages) {
-        // Skip empty messages - Anthropic API requires non-empty content
         if (!msg.content || msg.content.trim() === "") continue;
 
         if (msg.role === "user") {
-          messages.push({ role: "user", content: msg.content });
+          history.push({ role: "user", parts: [{ text: msg.content }] });
         } else if (msg.role === "ai") {
-          messages.push({ role: "assistant", content: msg.content });
+          history.push({ role: "model", parts: [{ text: msg.content }] });
         }
       }
     }
 
-    // Add the current user argument
-    messages.push({ role: "user", content: userArgument });
+    // Initialize Gemini Model (Migrated back from Anthropic for credits + stability)
+    // Using gemini-2.0-flash-exp (Gemini 2.0 Flash) for speed and intelligence
+    const model = getGeminiModel("gemini-2.0-flash-exp", { systemInstruction: systemPrompt });
 
-    // Inject reminder about citations and brevity to prime the model
-    messages.push({
-      role: "assistant",
-      content:
-        "I'll respond with a short, punchy counter (under 120 words). If I search the web, I'll include [1], [2] markers for any facts I cite.",
-    });
-    messages.push({
-      role: "user",
-      content: "Go ahead. Keep it short.",
-    });
+    // Inject reminder about citations
+    const userMessage = `${userArgument}\n\n(Remember: Keep it short, under 120 words. If you state facts, verify them with Google Search.)`;
 
-    // Always use streaming response
     const encoder = new TextEncoder();
-    let controllerClosed = false; // Track if controller is closed
+    let controllerClosed = false;
 
     const streamResponse = new ReadableStream({
       async start(controller) {
+        const streamStartTime = Date.now();
         try {
-          // Send initial message
+          log.info('stream.start', { debateId, userId });
+
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ type: "start" })}\n\n`)
           );
 
-          // Use Anthropic directly with web search tool
-          const stream = anthropic.messages.stream({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 500,
-            system: systemPrompt,
-            messages: messages,
-            tools: [
-              {
-                type: "web_search_20250305",
-                name: "web_search",
-                max_uses: 2, // Allow 2 searches for better citations
-              },
-            ],
-          }, {
-            headers: {
-              "Helicone-User-Id": userId,
-              "Helicone-RateLimit-Policy": "100;w=86400;s=user", // 100 requests/day per user
-            },
+          const result = await model.generateContentStream({
+            contents: [...history, { role: "user", parts: [{ text: userMessage }] }],
+            tools: [{ googleSearchRetrieval: {} }], // Use Google Search Grounding
           });
 
           let accumulatedContent = "";
           let buffer = "";
           let lastFlushTime = Date.now();
-          const BUFFER_TIME = 20; // Reduced to 20ms for faster streaming
-          const BUFFER_SIZE = 8; // Send 8 characters at a time for better speed
+          const BUFFER_TIME = 20;
+          const BUFFER_SIZE = 8;
           const citations: any[] = [];
+          const seenUrls = new Set<string>();
           let citationCounter = 1;
-          let searchIndicatorSent = false;
 
-          // Simple flush function for character streaming
           const flushBuffer = () => {
             if (buffer && !controllerClosed) {
               controller.enqueue(
@@ -219,127 +186,44 @@ export async function POST(request: Request) {
             }
           };
 
-          // Handle Anthropic streaming events
-          stream.on("text", (text) => {
+          for await (const chunk of result.stream) {
+            const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            
+            // Handle citations/grounding
+            const groundingMetadata = chunk.candidates?.[0]?.groundingMetadata;
+            if (groundingMetadata?.groundingChunks) {
+              for (const groundChunk of groundingMetadata.groundingChunks) {
+                if (groundChunk.web && groundChunk.web.uri) {
+                   const url = groundChunk.web.uri;
+                   const title = groundChunk.web.title || new URL(url).hostname;
+                   
+                   if (!seenUrls.has(url)) {
+                     seenUrls.add(url);
+                     const citationData = {
+                       id: citationCounter++,
+                       url: url,
+                       title: title,
+                     };
+                     citations.push(citationData);
+                   }
+                }
+              }
+            }
+
             accumulatedContent += text;
 
-            // Add characters to buffer one by one
             for (const char of text) {
               buffer += char;
-
-              // Flush small chunks frequently
               const now = Date.now();
-              if (
-                buffer.length >= BUFFER_SIZE ||
-                (now - lastFlushTime >= BUFFER_TIME && buffer.length > 0)
-              ) {
+              if (buffer.length >= BUFFER_SIZE || (now - lastFlushTime >= BUFFER_TIME && buffer.length > 0)) {
                 flushBuffer();
               }
             }
-          });
-
-          // Handle content block events for web search
-          (stream as any).on("contentBlockStart", (event: any) => {
-            console.log("📚 [ANTHROPIC] Content block start:", JSON.stringify(event, null, 2));
-            if (event.content_block?.type === "server_tool_use" && event.content_block?.name === "web_search") {
-              if (!searchIndicatorSent) {
-                searchIndicatorSent = true;
-                controller.enqueue(
-                  encoder.encode(
-                    `data: ${JSON.stringify({
-                      type: "search_start",
-                    })}\n\n`
-                  )
-                );
-              }
-            }
-          });
-
-          // Handle the full message to extract citations
-          const finalMessage = await stream.finalMessage();
-          console.log("📚 [ANTHROPIC] Final message content blocks:", finalMessage.content.length);
-
-          // Extract citations from the response
-          const MAX_CITATIONS = 5;
-          const seenUrls = new Set<string>();
-
-          // First pass: extract from text block citations (preferred - has proper mapping)
-          for (const block of finalMessage.content) {
-            if (block.type === "text") {
-              // Cast to access citations property (added by web search, not in base type)
-              const textBlock = block as typeof block & {
-                citations?: Array<{
-                  type: string;
-                  url: string;
-                  title?: string;
-                  cited_text?: string;
-                }>;
-              };
-
-              if (textBlock.citations && Array.isArray(textBlock.citations)) {
-                console.log("📚 [CITATIONS] Found text block with", textBlock.citations.length, "citations");
-                for (const citation of textBlock.citations) {
-                  if (citations.length >= MAX_CITATIONS) break;
-                  if (citation.type === "web_search_result_location" && citation.url) {
-                    // Deduplicate by URL
-                    if (!seenUrls.has(citation.url)) {
-                      seenUrls.add(citation.url);
-                      const citationData = {
-                        id: citationCounter++,
-                        url: citation.url,
-                        title: citation.title || new URL(citation.url).hostname,
-                      };
-                      citations.push(citationData);
-                      console.log("📚 [CITATIONS] Added citation:", citationData);
-                    }
-                  }
-                }
-              }
-            }
-            if (citations.length >= MAX_CITATIONS) break;
           }
-
-          // Fallback: if no citations found in text blocks, extract from web_search_tool_result
-          if (citations.length === 0) {
-            console.log("📚 [CITATIONS] No citations in text blocks, checking web_search_tool_result");
-            for (const block of finalMessage.content) {
-              if (block.type === "web_search_tool_result") {
-                const resultBlock = block as typeof block & {
-                  content?: Array<{
-                    type: string;
-                    url?: string;
-                    title?: string;
-                  }>;
-                };
-                if (resultBlock.content && Array.isArray(resultBlock.content)) {
-                  console.log("📚 [CITATIONS] Found web_search_tool_result with", resultBlock.content.length, "results");
-                  for (const result of resultBlock.content) {
-                    if (citations.length >= MAX_CITATIONS) break;
-                    if (result.type === "web_search_result" && result.url) {
-                      if (!seenUrls.has(result.url)) {
-                        seenUrls.add(result.url);
-                        const citationData = {
-                          id: citationCounter++,
-                          url: result.url,
-                          title: result.title || new URL(result.url).hostname,
-                        };
-                        citations.push(citationData);
-                        console.log("📚 [CITATIONS] Added fallback citation:", citationData);
-                      }
-                    }
-                  }
-                }
-              }
-              if (citations.length >= MAX_CITATIONS) break;
-            }
-          }
-
-          console.log("📚 [CITATIONS] Total extracted:", citations.length);
 
           // Send citations if any
           if (citations.length > 0 && !controllerClosed) {
-            console.log("📚 [CITATIONS] Sending to frontend. Total citations:", citations.length);
-            flushBuffer(); // Flush any pending content first
+            flushBuffer();
             controller.enqueue(
               encoder.encode(
                 `data: ${JSON.stringify({
@@ -350,7 +234,6 @@ export async function POST(request: Request) {
             );
           }
 
-          // Flush any remaining buffer
           if (buffer && !controllerClosed) {
             controller.enqueue(
               encoder.encode(
@@ -360,18 +243,16 @@ export async function POST(request: Request) {
                 })}\n\n`
               )
             );
-            buffer = "";
           }
 
-          // Save the complete debate turn - fetch existing debate, add messages, and save
+          // Save the complete debate turn
           if (debateId && accumulatedContent) {
             const existingDebate = await d1.getDebate(debateId);
             if (existingDebate.success && existingDebate.debate) {
-              const existingMessages = Array.isArray(
-                existingDebate.debate.messages
-              )
-                ? existingDebate.debate.messages
+              const existingMessages = Array.isArray(existingDebate.debate.messages) 
+                ? existingDebate.debate.messages 
                 : [];
+              
               existingMessages.push({
                 role: "user",
                 content: userArgument,
@@ -386,7 +267,7 @@ export async function POST(request: Request) {
               await d1.saveDebate({
                 userId,
                 opponent: character,
-                topic: (existingDebate.debate.topic as string) || topic, // Preserve original topic
+                topic: (existingDebate.debate.topic as string) || topic,
                 messages: existingMessages,
                 debateId,
                 opponentStyle,
@@ -395,9 +276,7 @@ export async function POST(request: Request) {
             }
           }
 
-          // Send completion message
           if (!controllerClosed) {
-            console.log('📚 [CITATIONS] Stream complete. Final citations count:', citations.length);
             controller.enqueue(
               encoder.encode(
                 `data: ${JSON.stringify({
@@ -408,8 +287,14 @@ export async function POST(request: Request) {
                 })}\n\n`
               )
             );
-            // Send [DONE] signal to ensure frontend knows streaming is complete
             controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+            
+            log.info('stream.complete', { 
+              debateId, 
+              durationMs: Date.now() - streamStartTime,
+              contentLength: accumulatedContent.length,
+              citationCount: citations.length
+            });
           }
         } catch (error) {
           log.error('stream.failed', {
