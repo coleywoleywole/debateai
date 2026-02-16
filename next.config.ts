@@ -30,8 +30,8 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/explore',
-        destination: '/leaderboard',
+        source: '/leaderboard',
+        destination: '/explore',
         permanent: true,
       },
     ];

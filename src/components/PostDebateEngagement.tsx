@@ -231,7 +231,7 @@ export default function PostDebateEngagement({
       {/* Leaderboard link */}
       <div className="mt-4 text-center">
         <Link
-          href="/leaderboard"
+          href="/explore"
           className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

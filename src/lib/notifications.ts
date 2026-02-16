@@ -281,7 +281,7 @@ export async function notifyStreakMilestone(userId: string, streak: number) {
     'milestone',
     title,
     messages[streak] || `${streak}-day streak achieved!`,
-    '/leaderboard',
+    '/explore',
   );
 }
 
