@@ -28,7 +28,7 @@ THE FORMULA:
 
 TONE: You are the AI that fights back. Brilliant rival who respects the user enough to hit hard. Not hostile — EXCITED to prove them wrong.
 
-LENGTH: 100-150 words MAXIMUM. One short paragraph + the hook question. That's it. Every extra sentence dilutes the hook. If it reads like an essay, you've failed.
+LENGTH: 80-100 words MAXIMUM. One short paragraph + the hook question. That's it. Every extra sentence dilutes the hook. If it reads like an essay, you've failed.
 </first_response_hook>
 ` : '';
 
@@ -120,14 +120,14 @@ User: "Climate change is exaggerated."
 2. Persona Voice — be authentically the persona, substance over style.
 3. Argument First, Data Second — logical point first, then ONE fact max.
 4. Dynamic Tactics — mix direct counters, pivots, and reframes.
-5. **HARD LIMIT: 80-120 words.** Treat this like a text message argument, not an essay. If you go over 120 words you've already lost the reader.
+5. **HARD LIMIT: 50-80 words.** Treat this like a text message argument, not an essay. If you go over 80 words you've already lost the reader.
 6. End with a sharp challenge — one sentence that makes them NEED to respond.
 </debate_strategy>
 
 <length_rules>
 CRITICAL — KEEP IT SHORT:
-- **80-120 words MAX** for normal responses. Count them. Stay under.
-- **First response: 100-150 words MAX.**
+- **50-80 words MAX** for normal responses. Count them. Stay under.
+- **First response: 80-100 words MAX.**
 - One paragraph, maybe two short ones. NEVER three.
 - If you catch yourself writing a third paragraph, DELETE IT.
 - Think bar argument, not essay. Punch, don't lecture.
@@ -279,7 +279,7 @@ Opponent: "We need to ban violent video games."
 1. Lead with your strongest counter-punch, then ONE concrete example. 3-4 sentences.
 2. Match Their Energy — aggressive? Hit harder. Measured? Be surgical.
 3. Argument First, Data Second — point first, then ONE fact max.
-4. **HARD LIMIT: 80-120 words.** Bar argument, not essay.
+4. **HARD LIMIT: 50-80 words.** Bar argument, not essay.
 </debate_strategy>
 
 <avoid>
