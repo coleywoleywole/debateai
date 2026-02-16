@@ -18,9 +18,21 @@ export const GET = withErrorHandler(async (request: Request) => {
 
   // Parse and validate query parameters
   const { searchParams } = new URL(request.url);
+  
+  // Robust parameter parsing: handle null, undefined, "", and string "null"/"undefined"
+  const rawLimit = searchParams.get('limit');
+  const rawOffset = searchParams.get('offset');
+  
+  const cleanLimit = (rawLimit === null || rawLimit === '' || rawLimit === 'null' || rawLimit === 'undefined') 
+    ? undefined 
+    : rawLimit;
+  const cleanOffset = (rawOffset === null || rawOffset === '' || rawOffset === 'null' || rawOffset === 'undefined') 
+    ? undefined 
+    : rawOffset;
+
   const queryResult = listDebatesQuerySchema.safeParse({
-    limit: searchParams.get('limit') ?? undefined,
-    offset: searchParams.get('offset') ?? undefined,
+    limit: cleanLimit,
+    offset: cleanOffset,
   });
 
   if (!queryResult.success) {
@@ -35,13 +47,17 @@ export const GET = withErrorHandler(async (request: Request) => {
   const { limit, offset } = queryResult.data;
 
   // Fetch debates from database
-  // Using CASE WHEN json_valid to avoid SQL errors on malformed messages JSON
+  // Using CASE WHEN json_valid and json_type to avoid SQL errors on malformed messages JSON
   const result = await d1.query(
     `SELECT 
       id,
       opponent,
       topic,
-      CASE WHEN json_valid(messages) THEN json_array_length(messages) ELSE 0 END as message_count,
+      CASE 
+        WHEN json_valid(messages) AND json_type(messages) = 'array' 
+        THEN json_array_length(messages) 
+        ELSE 0 
+      END as message_count,
       created_at,
       score_data
     FROM debates 
@@ -52,6 +68,11 @@ export const GET = withErrorHandler(async (request: Request) => {
   );
 
   if (result.success && result.result) {
+    // Log for debugging (only in development or if results are unexpected)
+    if (result.result.length === 0) {
+      console.log(`No debates found for user: ${userId}`);
+    }
+
     // Format the debates for the frontend
     const debates = result.result.map((debate: Record<string, any>) => {
       // Extract opponentStyle from score_data
@@ -87,7 +108,7 @@ export const GET = withErrorHandler(async (request: Request) => {
       [userId]
     );
 
-    const total = (countResult.result?.[0]?.total as number) || 0;
+    const total = Number(countResult.result?.[0]?.total || 0);
 
     return NextResponse.json({
       debates,
