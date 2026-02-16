@@ -24,6 +24,7 @@ interface DailyDebateData {
   persona: string;
   personaId?: string | null;
   category?: string;
+  description?: string;
 }
 
 export default function HomeClient({
@@ -99,11 +100,13 @@ export default function HomeClient({
     }
   }, [isSignedIn, dailyDebate, router]);
 
-  const startDebate = async (e?: React.FormEvent) => {
+  const startDebate = async (e?: React.FormEvent, textOverride?: string) => {
     if (e) e.preventDefault();
     if (!dailyDebate) return;
 
-    if (!userInput.trim()) {
+    const textToSubmit = textOverride || userInput.trim();
+
+    if (!textToSubmit) {
       setShakeInput(true);
       inputRef.current?.focus();
       setTimeout(() => setShakeInput(false), 500);
@@ -146,7 +149,7 @@ export default function HomeClient({
           sessionStorage.setItem('guest_debate_id', debateId);
         }
         // Backend tracks debate_created with experiment_variant - avoid duplicate tracking
-        sessionStorage.setItem('firstArgument', userInput.trim());
+        sessionStorage.setItem('firstArgument', textToSubmit);
         sessionStorage.setItem('isInstantDebate', 'true');
         router.push(`/debate/${debateId}`);
       } else {
@@ -204,15 +207,22 @@ export default function HomeClient({
               </h2>
 
               {/* Opponent */}
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
-                  <svg className="w-3.5 h-3.5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
+                    <svg className="w-3.5 h-3.5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm text-[var(--text)]">
+                    You&apos;re debating <strong className="font-semibold text-[var(--accent)]">{dailyDebate.persona}</strong>
+                  </span>
                 </div>
-                <span className="text-sm text-[var(--text)]">
-                  You&apos;re debating <strong className="font-semibold text-[var(--accent)]">{dailyDebate.persona}</strong>
-                </span>
+                {dailyDebate.description && (
+                  <p className="text-xs text-[var(--text-secondary)] ml-8 italic">
+                    {dailyDebate.description}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -281,34 +291,50 @@ export default function HomeClient({
               </div>
             </div>
 
-            {/* CTA */}
-            <button
-              type="submit"
-              disabled={isStarting}
-              data-onboarding="cta"
-              className={`
-                w-full mt-3 h-12 px-6 rounded-xl font-medium text-base transition-all duration-200
-                flex items-center justify-center gap-2
-                ${!isStarting
-                  ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/35 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer'
-                  : 'bg-[var(--bg-sunken)] text-[var(--text-secondary)] cursor-not-allowed'
-                }
-              `}
-            >
-              {isStarting ? (
-                <>
-                  <Spinner className="h-4 w-4" />
-                  <span>Starting debate…</span>
-                </>
-              ) : (
-                <>
-                  <span className="whitespace-nowrap">Start Debate</span>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
-              )}
-            </button>
+            {/* CTA Row */}
+            <div className="flex flex-col sm:flex-row gap-3 mt-3">
+              <button
+                type="submit"
+                disabled={isStarting}
+                data-onboarding="cta"
+                className={`
+                  flex-1 h-12 px-6 rounded-xl font-medium text-base transition-all duration-200
+                  flex items-center justify-center gap-2
+                  ${!isStarting
+                    ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/35 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer'
+                    : 'bg-[var(--bg-sunken)] text-[var(--text-secondary)] cursor-not-allowed'
+                  }
+                `}
+              >
+                {isStarting ? (
+                  <>
+                    <Spinner className="h-4 w-4" />
+                    <span>Starting…</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="whitespace-nowrap">Start Debate</span>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                disabled={isStarting}
+                onClick={() => startDebate(undefined, "AI, you start the debate. Make your opening argument.")}
+                className={`
+                  sm:w-auto h-12 px-6 rounded-xl font-medium text-[15px] border border-[var(--border)]
+                  flex items-center justify-center gap-2 bg-[var(--bg-elevated)] text-[var(--text)]
+                  hover:bg-[var(--bg-sunken)] transition-all active:scale-95 disabled:opacity-50
+                  cursor-pointer
+                `}
+              >
+                <span>AI, you start →</span>
+              </button>
+            </div>
 
             {/* Sign-in hint */}
             {!isSignedIn && (
