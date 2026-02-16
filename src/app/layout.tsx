@@ -64,7 +64,7 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://debateai.org';
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.debateai.org';
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
