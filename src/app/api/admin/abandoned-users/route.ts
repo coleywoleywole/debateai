@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     // user + ai = 2 messages. user + ai + user + ai = 4 messages.
     // "< 3 messages" usually means 1 user message (2 total) or just 1 user message (if AI didn't reply).
     
-    const result = await d1.query(\`
+    const result = await d1.query(`
       SELECT 
         u.display_name as name,
         u.email,
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         AND json_array_length(d.messages) < 3
       ORDER BY d.created_at DESC
       LIMIT 100
-    \`);
+    `);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 });
@@ -51,9 +51,9 @@ export async function GET(request: Request) {
     
     users.forEach((u: any) => {
       const row = [
-        \`"\${(u.name || 'Unknown').replace(/"/g, '""')}"\`,
-        \`"\${(u.email || '').replace(/"/g, '""')}"\`,
-        \`"\${(u.topic || '').replace(/"/g, '""')}"\`,
+        `"${(u.name || 'Unknown').replace(/"/g, '""')}"`,
+        `"${(u.email || '').replace(/"/g, '""')}"`,
+        `"${(u.topic || '').replace(/"/g, '""')}"`,
         u.created_at,
         u.total_msg_count
       ].join(',');
