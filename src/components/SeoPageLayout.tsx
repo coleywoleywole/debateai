@@ -104,8 +104,8 @@ export default function SeoPageLayout({ page, backLink }: SeoPageLayoutProps) {
             className="blog-content prose dark:prose-invert max-w-none
               prose-headings:font-serif prose-headings:text-[var(--text)] prose-headings:font-semibold
               prose-h1:text-3xl prose-h1:sm:text-4xl prose-h1:leading-tight prose-h1:mb-6
-              prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-2xl prose-h2:sm:text-3xl prose-h2:leading-tight
-              prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-xl prose-h3:sm:text-2xl
+              prose-h2:mt-12 prose-h2:mb-6 prose-h2:text-2xl prose-h2:sm:text-3xl prose-h2:leading-tight
+              prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-xl prose-h3:sm:text-2xl
               prose-p:text-[var(--text-secondary)] prose-p:leading-7 prose-p:my-6
               prose-a:text-[var(--accent)] prose-a:no-underline prose-a:font-medium hover:prose-a:underline
               prose-strong:text-[var(--text)] prose-strong:font-semibold

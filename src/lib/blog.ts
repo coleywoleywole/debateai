@@ -80,7 +80,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const { data, content } = matter(fileContent);
 
-  if (data.published === false) {
+  if (data.published === false || data.status === 'draft') {
     return null;
   }
 
