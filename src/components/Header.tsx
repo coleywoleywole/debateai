@@ -65,13 +65,14 @@ export default function Header() {
               
               <nav className="hidden sm:flex items-center gap-1">
                 <Link
-                  href="/leaderboard"
+                  href="/explore"
                   className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text)] rounded-lg hover:bg-[var(--bg-sunken)] transition-all cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 11l2 2-2 2-2-2 2-2z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.5 9.5L12 12l-2.5 2.5"/>
                   </svg>
-                  Leaderboard
+                  Explore
                 </Link>
 
                 <Link

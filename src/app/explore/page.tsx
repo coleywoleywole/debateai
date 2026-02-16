@@ -1,17 +1,17 @@
 import { Metadata } from 'next';
-import LeaderboardClient from './LeaderboardClient';
+import ExploreClient from './ExploreClient';
 import Header from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: 'Leaderboard — DebateAI',
-  description: 'Top debaters ranked by points, streaks, debates, and average score. Weekly and all-time.',
+  title: 'Explore — DebateAI',
+  description: 'Explore top debates and debaters ranked by points, streaks, and skill.',
   openGraph: {
-    title: 'Leaderboard — DebateAI',
-    description: 'See who the best debaters are. Points, streaks, and rankings.',
+    title: 'Explore — DebateAI',
+    description: 'See the best debaters and most engaging debates.',
   },
 };
 
-export default function LeaderboardPage() {
+export default function ExplorePage() {
   return (
     <div className="min-h-dvh flex flex-col">
       <Header />
@@ -19,13 +19,13 @@ export default function LeaderboardPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[var(--text)] mb-2">
-              🏆 Leaderboard
+              🧭 Explore
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
               Top debaters ranked by points, streaks, and skill.
             </p>
           </div>
-          <LeaderboardClient />
+          <ExploreClient />
         </div>
       </main>
     </div>

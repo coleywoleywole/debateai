@@ -27,8 +27,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/explore',
-        destination: '/leaderboard',
+        source: '/leaderboard',
+        destination: '/explore',
+        permanent: true,
+      },
+      {
+        source: '/api/leaderboard',
+        destination: '/api/explore',
         permanent: true,
       },
       {
