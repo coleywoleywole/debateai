@@ -42,10 +42,8 @@ export default clerkMiddleware(async (auth, req) => {
   // Domain Redirect: debateai.org -> www.debateai.org (Skip /api)
   const host = req.headers.get('host')
   if (host === 'debateai.org' && !req.nextUrl.pathname.startsWith('/api')) {
-    const url = new URL(req.url)
-    url.protocol = 'https'
-    url.hostname = 'www.debateai.org'
-    url.port = ''
+    // Construct absolute URL to strip internal port (regression fix)
+    const url = new URL(req.nextUrl.pathname + req.nextUrl.search, 'https://www.debateai.org')
     return NextResponse.redirect(url, 308)
   }
 
