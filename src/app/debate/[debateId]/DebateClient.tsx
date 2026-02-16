@@ -17,6 +17,7 @@ import QuickReplies from "@/components/QuickReplies";
 import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
 import DebateProgress, { getRound } from "@/components/DebateProgress";
+import RoundSummary from "@/components/RoundSummary";
 import type { DebateScore } from "@/lib/scoring";
 
 // Lazy load modals - they're only shown on user interaction
@@ -402,6 +403,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
   const [isGuestOwner, setIsGuestOwner] = useState(false);
+  const [isWaitingForAdvance, setIsWaitingForAdvance] = useState(false);
   const isDevMode = searchParams.get('dev') === 'true';
 
   // Set guest owner if this is a new debate and user is not signed in
@@ -964,6 +966,17 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   }, [messages.length, debateScore, isAILoading, isUserLoading, requestJudgment]);
 
+  // Handle round transitions
+  useEffect(() => {
+    if (!isAILoading && !isUserLoading && !debateScore) {
+      if (messages.length === 2 || messages.length === 4) {
+        setIsWaitingForAdvance(true);
+      } else {
+        setIsWaitingForAdvance(false);
+      }
+    }
+  }, [messages.length, isAILoading, isUserLoading, debateScore]);
+
   // AI Takeover - generates an AI argument for the user
   const handleAITakeover = async () => {
     if (isAITakeoverLoading || isAILoading) {
@@ -1251,7 +1264,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   }
 
   const effectiveIsOwner = isOwner || isGuestOwner;
-  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner;
+  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner && !isWaitingForAdvance;
 
   // Determine placeholder based on round
   const currentRound = getRound(messages.length);
@@ -1355,6 +1368,15 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               userSideName="You"
               opponentSideName={opponent?.name || debate?.opponentStyle || "AI"}
               variant={variant}
+            />
+          )}
+
+          {/* Round Summary - shown between rounds */}
+          {isWaitingForAdvance && !debateScore && (
+            <RoundSummary
+              round={messages.length / 2}
+              nextRoundTitle={messages.length === 2 ? "Rebuttals" : "Closing Arguments"}
+              onAdvance={() => setIsWaitingForAdvance(false)}
             />
           )}
 
@@ -1468,14 +1490,14 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                placeholder={effectiveIsOwner ? placeholderText : "Sign in to contribute..."}
+                placeholder={effectiveIsOwner ? (isWaitingForAdvance ? "Advance to next round..." : placeholderText) : "Sign in to contribute..."}
                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl
                   px-3 sm:px-4 py-2.5 sm:py-3 resize-none text-[var(--text)] placeholder-[var(--text-secondary)]/70
                   outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20
                   transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] text-[15px] leading-relaxed overflow-hidden
                   touch-manipulation disabled:opacity-50"
                 rows={1}
-                disabled={isUserLoading || isAILoading || !effectiveIsOwner}
+                disabled={isUserLoading || isAILoading || !effectiveIsOwner || isWaitingForAdvance}
               />
             </div>
 
@@ -1485,7 +1507,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               <button
                 type="button"
                 onClick={handleAITakeover}
-                disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner}
+                disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner || isWaitingForAdvance}
                 className={`
                   w-10 h-10 rounded-lg border flex items-center justify-center
                   transition-all duration-200 flex-shrink-0

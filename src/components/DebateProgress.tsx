@@ -21,6 +21,10 @@ export default function DebateProgress({ messageCount }: { messageCount: number 
   return (
     <div className="sticky top-14 z-40 w-full bg-[var(--bg)]/95 backdrop-blur-md border-b border-[var(--border)] transition-all duration-300">
       <div className="max-w-xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
+          <span>Round {currentRound === 'complete' ? '3' : currentRound === 'closing' ? '3' : currentRound === 'rebuttal' ? '2' : '1'} of 3</span>
+          <span className="text-[var(--accent)]">{currentRound === 'complete' ? 'Finished' : 'In Progress'}</span>
+        </div>
         <div className="flex items-center justify-between py-3 relative">
           {/* Progress Line Background */}
           <div className="absolute top-[18px] left-0 w-full h-[2px] bg-[var(--bg-sunken)] -z-10" />
