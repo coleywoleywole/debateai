@@ -44,9 +44,10 @@ export default clerkMiddleware(async (auth, req) => {
   const hostname = host?.split(':')[0]
   if (hostname === 'debateai.org' && !req.nextUrl.pathname.startsWith('/api')) {
     // Construct absolute URL to strip internal port (regression fix)
-    // Using string template to ensure port 3000 doesn't leak from internal proxy
-    const url = `https://www.debateai.org${req.nextUrl.pathname}${req.nextUrl.search}`
-    return NextResponse.redirect(url, 308)
+    // Using URL object to ensure port 3000 doesn't leak from internal proxy
+    const url = new URL(req.nextUrl.pathname + req.nextUrl.search, 'https://www.debateai.org')
+    url.port = '' // Explicitly strip port
+    return NextResponse.redirect(url.toString(), 308)
   }
 
   // Skip auth in development mode when TEST_MODE is enabled

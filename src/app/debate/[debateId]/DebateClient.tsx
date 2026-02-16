@@ -401,7 +401,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [rateLimitData, setRateLimitData] = useState<{ current: number; limit: number } | undefined>();
   const [debateScore, setDebateScore] = useState<DebateScore | null>(null);
   const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
-  const [guestTurnCount, setGuestTurnCount] = useState(0);
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
   const [isGuestOwner, setIsGuestOwner] = useState(false);
   const isDevMode = searchParams.get('dev') === 'true';

@@ -118,7 +118,7 @@ const stream = await model.generateContentStream({ contents: [...] });
 // Enable Google Search grounding
 const model = vertex.getGenerativeModel({
   model: 'gemini-2.5-flash',
-  tools: [{ googleSearchRetrieval: { dynamicRetrievalConfig: { mode: 'MODE_DYNAMIC' } } }],
+  tools: [{ googleSearch: { dynamicRetrievalConfig: { mode: 'MODE_DYNAMIC' } } }],
 });
 ```
 
