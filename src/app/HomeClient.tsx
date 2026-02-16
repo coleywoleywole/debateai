@@ -177,7 +177,7 @@ export default function HomeClient({
           {/* Hero — minimal */}
           <div className="text-center mb-10">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-3">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[var(--text)] leading-tight px-1 break-words">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[var(--text)] leading-tight px-1 break-words whitespace-normal w-full">
                 The AI that fights back.
               </h1>
               <StreakIndicator />
