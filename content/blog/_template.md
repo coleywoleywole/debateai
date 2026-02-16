@@ -8,7 +8,6 @@ image: ""
 published: false
 ---
 
-# Your Post Title Here
 
 Your introduction paragraph goes here. Hook the reader.
 

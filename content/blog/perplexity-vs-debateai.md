@@ -8,7 +8,6 @@ image: ""
 published: true
 ---
 
-# DebateAI vs. Perplexity: The Difference Between Answers and Arguments
 
 Perplexity has replaced Google for many of us. It’s incredible at synthesis: you ask a question, it reads ten articles, and it gives you a summarized answer with citations.
 

@@ -16,7 +16,6 @@ published: true
 image: /blog/what-1000-debates-reveal.png
 ---
 
-# What 1,000 Debates Against AI Revealed About How Humans Argue
 
 We launched [DebateAI](https://debateai.org) expecting to learn about AI argumentation. What we learned about was human argumentation — specifically, the patterns people fall into when they're intellectually cornered and nobody's watching.
 

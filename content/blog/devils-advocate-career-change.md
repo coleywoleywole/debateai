@@ -18,7 +18,6 @@ published: true
 image: /blog/devils-advocate-career-change.png
 ---
 
-# I Asked AI to Argue Against My Career Change. It Found the Thing I Was Hiding From Myself.
 
 The Catholic Church invented a job called the Devil's Advocate. Their task: when someone was being considered for sainthood, argue against them. Find the flaws. Surface the doubts. Make the case that this person shouldn't be canonized.
 

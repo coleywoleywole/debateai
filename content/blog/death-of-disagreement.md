@@ -15,7 +15,6 @@ published: true
 image: /blog/death-of-disagreement.png
 ---
 
-# The Death of Disagreement: Why Nobody Argues in Good Faith Anymore
 
 There's a moment in every online argument where it stops being about the topic and starts being about winning. You can feel it happen. Someone misrepresents your position. You correct them. They double down. You realize you're not having a conversation anymore — you're in a performance.
 

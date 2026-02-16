@@ -16,7 +16,6 @@ published: true
 image: /blog/ai-makes-arguments-it-doesnt-understand.png
 ---
 
-# AI Makes the Best Arguments It Doesn't Understand
 
 Last month I spent an afternoon arguing with an AI about whether consciousness is an illusion. The AI made a case so thorough — drawing on Daniel Dennett, the binding problem, integrated information theory, and a handful of neuroscience papers I hadn't read — that I sat back from my screen and felt something shift in my thinking.
 
