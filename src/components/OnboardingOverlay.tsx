@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { isNewUser, markOnboarded } from '@/lib/onboarding';
 import { track } from '@/lib/analytics';
 
@@ -41,7 +41,6 @@ export default function OnboardingOverlay() {
   const [show, setShow] = useState(false);
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Only show for new users, after a short delay so the page renders
   useEffect(() => {
@@ -108,25 +107,23 @@ export default function OnboardingOverlay() {
 
   return (
     <>
-      {/* Backdrop — click to dismiss */}
-      <div
-        ref={overlayRef}
-        onClick={dismiss}
-        className="fixed inset-0 z-[10000] transition-opacity duration-300"
-        style={{
-          background: 'rgba(0,0,0,0.55)',
-          // CSS clip-path to cut out the spotlight hole
-          clipPath: `polygon(
-            0% 0%, 100% 0%, 100% 100%, 0% 100%,
-            0% ${rect.top - padding}px,
-            ${rect.left - padding}px ${rect.top - padding}px,
-            ${rect.left - padding}px ${rect.bottom + padding}px,
-            ${rect.right + padding}px ${rect.bottom + padding}px,
-            ${rect.right + padding}px ${rect.top - padding}px,
-            0% ${rect.top - padding}px
-          )`,
-        }}
-      />
+      {/* Backdrop — click to dismiss, allows click-through on spotlight */}
+      <svg 
+        className="fixed inset-0 z-[10000] w-full h-full pointer-events-none"
+        aria-hidden="true"
+      >
+        <path
+          d={`M0,0 H${window.innerWidth} V${window.innerHeight} H0 Z 
+              M${rect.left - padding},${rect.top - padding} 
+              h${rect.width + padding * 2} 
+              v${rect.height + padding * 2} 
+              h-${rect.width + padding * 2} Z`}
+          fill="rgba(0,0,0,0.55)"
+          fillRule="evenodd"
+          className="pointer-events-auto cursor-default"
+          onClick={dismiss}
+        />
+      </svg>
 
       {/* Spotlight ring */}
       <div

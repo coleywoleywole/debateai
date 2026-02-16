@@ -251,7 +251,7 @@ export default function HomeClient({
                       startDebate();
                     }
                   }}
-                  placeholder="Type your argument here..."
+                  placeholder="Type your opening argument here to begin..."
                   className="w-full bg-transparent resize-none outline-none text-[var(--text)] placeholder-[var(--text-secondary)]/50 min-h-[100px] text-base sm:text-[15px] leading-relaxed"
                   disabled={isStarting}
                   autoFocus

@@ -753,6 +753,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   // Only scroll after the user starts interacting (sending messages).
   useEffect(() => {
     if (!hasUserInteracted.current) return;
+    
+    // Don't auto-scroll if we only have the initial exchange (system + user + AI response starting)
+    // this ensures the user sees the start of the debate on load.
+    if (messages.length <= 2 && instantDebateActiveRef.current) return;
+
     if (isAutoScrollEnabled && messagesEndRef.current) {
       // Use 'instant' scroll during AI streaming to prevent layout bouncing
       const behavior = isAILoading ? 'instant' : 'smooth';
