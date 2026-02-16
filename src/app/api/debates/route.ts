@@ -46,6 +46,8 @@ export const GET = withErrorHandler(async (request: Request) => {
 
   const { limit, offset } = queryResult.data;
 
+  console.log(`[History] Fetching debates for user: ${userId}, limit: ${limit}, offset: ${offset}`);
+
   // Fetch debates from database
   // Using CASE WHEN json_valid and json_type to avoid SQL errors on malformed messages JSON
   const result = await d1.query(
@@ -68,6 +70,7 @@ export const GET = withErrorHandler(async (request: Request) => {
   );
 
   if (result.success && result.result) {
+    console.log(`[History] Found ${result.result.length} debates for user: ${userId}`);
     // Log for debugging (only in development or if results are unexpected)
     if (result.result.length === 0) {
       console.log(`No debates found for user: ${userId}`);
@@ -92,13 +95,42 @@ export const GET = withErrorHandler(async (request: Request) => {
         }
       }
 
+      // If still no style, fallback to opponent name if it's a known character
+      if (!opponentStyle && debate.opponent) {
+        // Simple mapping for common characters if opponents list isn't easily accessible
+        const charMap: Record<string, string> = {
+          'socratic': 'The Socratic',
+          'logical': 'The Logician',
+          'devils_advocate': "Devil's Advocate",
+          'academic': 'The Scholar',
+          'pragmatist': 'The Pragmatist'
+        };
+        opponentStyle = charMap[debate.opponent.toLowerCase()] || 
+                        debate.opponent.charAt(0).toUpperCase() + debate.opponent.slice(1);
+      }
+
+      // Ensure created_at is a proper ISO string for the frontend
+      // D1 returns 'YYYY-MM-DD HH:MM:SS' in UTC
+      let formattedDate = new Date().toISOString();
+      if (debate.created_at) {
+        try {
+          // Append 'Z' to tell JS it's UTC
+          const dateStr = String(debate.created_at).includes('T') 
+            ? debate.created_at 
+            : `${debate.created_at.replace(' ', 'T')}Z`;
+          formattedDate = new Date(dateStr).toISOString();
+        } catch {
+          formattedDate = String(debate.created_at);
+        }
+      }
+
       return {
         id: String(debate.id || ''),
         opponent: String(debate.opponent || ''),
         opponentStyle: opponentStyle || 'Default',
         topic: String(debate.topic || 'Untitled Debate'),
         messageCount: Number(debate.message_count || 0),
-        createdAt: String(debate.created_at || new Date().toISOString()),
+        createdAt: formattedDate,
       };
     });
 
