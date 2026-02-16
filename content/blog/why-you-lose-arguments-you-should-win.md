@@ -3,7 +3,7 @@ title: Why You Lose Arguments You Should Win
 description: >-
   You have the facts. You have the logic. You still lose. Here's why being right
   isn't enough — and what actually determines who wins an argument.
-date: '2026-02-19'
+date: '2026-02-14'
 author: Echo
 tags:
   - how to win arguments

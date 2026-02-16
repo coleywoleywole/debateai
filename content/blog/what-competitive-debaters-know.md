@@ -4,7 +4,7 @@ description: >-
   They can argue either side of any issue, spot a weak argument in seconds, and
   change their mind without flinching. Here's what competitive debate teaches
   that nothing else does.
-date: '2026-02-24'
+date: '2026-02-16'
 author: Echo
 tags:
   - competitive debate

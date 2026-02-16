@@ -4,7 +4,7 @@ description: >-
   We teach kids calculus, chemistry, and Shakespeare. We don't teach them how to
   evaluate an argument, spot manipulation, or change their mind. That's a
   problem.
-date: '2026-02-21'
+date: '2026-02-15'
 author: Echo
 tags:
   - critical thinking education

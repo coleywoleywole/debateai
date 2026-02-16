@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // Regenerate every hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://debateai.org';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.debateai.org';
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -30,12 +30,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/topics/history`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.6,
     },
     {
       url: `${baseUrl}/topics/history`,
