@@ -84,13 +84,23 @@ export default function ArenaSelectionPage() {
         ))}
       </div>
 
-      <div className="mt-12 p-6 bg-slate-900/50 border border-slate-800 rounded-xl max-w-2xl mx-auto text-center">
-        <h3 className="text-xl font-bold text-slate-300 mb-2">Weekly Leaderboard</h3>
-        <div className="flex items-center justify-center gap-4 text-slate-500 text-sm">
-          <span>🏆 1. Spud (2400 XP)</span>
-          <span>🥈 2. Atlas (2100 XP)</span>
-          <span>🥉 3. Pixel (1950 XP)</span>
+      <div className="mt-12 p-8 bg-slate-900/50 border border-slate-800 rounded-2xl max-w-2xl mx-auto text-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+          <span className="text-3xl">🏆</span>
         </div>
+        <h3 className="text-xl font-bold text-white mb-2">Rise Through the Ranks</h3>
+        <p className="text-slate-400 mb-6">
+          Every battle in the arena earns you points and contributes to your global standing.
+        </p>
+        <Link 
+          href="/leaderboard"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-slate-950 font-bold hover:bg-slate-200 transition-colors"
+        >
+          View Global Leaderboard
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </Link>
       </div>
     </div>
   );
