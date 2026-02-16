@@ -86,7 +86,9 @@ export function getPostBySlug(slug: string): BlogPost | null {
     breaks: true,
   });
 
-  const html = marked.parse(content) as string;
+  // Strip the first H1 if it exists (the page provides its own H1)
+  const contentWithoutH1 = content.replace(/^#\s+.+\n?/, "");
+  const html = marked.parse(contentWithoutH1) as string;
   const readingTime = Math.max(1, Math.ceil(content.split(/\s+/).length / 200));
 
   return {
