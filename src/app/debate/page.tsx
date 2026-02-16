@@ -95,10 +95,10 @@ export default function DebatePage() {
               <span className="h-px w-6 bg-gradient-to-l from-transparent to-[var(--accent)] opacity-50" />
             </div>
             
-            <h1 className="text-3xl font-serif font-semibold text-[var(--text)] mb-2">
+            <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[var(--text)] mb-2 px-1 break-words">
               Custom Debate
             </h1>
-            <p className="text-sm text-[var(--text-secondary)]">Choose your opponent and topic</p>
+            <p className="text-sm text-[var(--text-secondary)] break-words px-1">Choose your opponent and topic</p>
             
             {!isPremium && debatesUsed !== undefined && debatesLimit !== undefined && (
               <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs bg-[var(--accent)]/5 border border-[var(--accent)]/20">
@@ -182,7 +182,7 @@ export default function DebatePage() {
                     </>
                   ) : (
                     <>
-                      Start Debate
+                      <span className="whitespace-nowrap">Start Debate</span>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                       </svg>
