@@ -5,6 +5,7 @@ import { getUserId } from '@/lib/auth-helper';
 import { errors, validateBody } from '@/lib/api-errors';
 import { trackEvent } from '@/lib/posthog-server';
 import { GUEST_MESSAGE_LIMIT } from '@/lib/limits';
+import { calculateRound, isDebateCompleted } from '@/lib/debate-state';
 
 // Schema for POST body
 const addMessageSchema = z.object({
@@ -107,9 +108,21 @@ export async function POST(
           topic: 'Debate',
           messages: [],
           created_at: new Date().toISOString(),
+          current_round: 1,
+          total_rounds: 3,
+          status: 'active',
         };
       }
       memoryDebates.set(debateId, debate);
+    }
+
+    // Check if debate is completed
+    if (debate.status === 'completed') {
+      return NextResponse.json({
+        success: false,
+        error: 'debate_completed',
+        message: 'This debate has already finished.',
+      });
     }
 
     // Check for guest message limit
@@ -130,6 +143,16 @@ export async function POST(
       }
     }
 
+    // Determine current round
+    const existingMessages = Array.isArray(debate.messages) ? debate.messages as any[] : [];
+    // System (0) + User(1) + AI(2) ...
+    // Round 1: User msg at index 1 (count 1->2)
+    // Round 2: User msg at index 3 (count 3->4)
+    // Round 3: User msg at index 5 (count 5->6)
+    
+    const msgCount = existingMessages.length;
+    const currentRound = calculateRound(msgCount);
+
     // Add user message
     const userMessage = {
       role: 'user',
@@ -140,6 +163,7 @@ export async function POST(
 
     const messages = Array.isArray(debate.messages) ? debate.messages : [];
     debate.messages = [...messages, userMessage];
+    debate.current_round = currentRound;
 
     // Track user message (Fire and forget, but await to ensure execution in serverless)
     await trackEvent(userId, 'debate_message_sent', {
@@ -147,12 +171,13 @@ export async function POST(
       messageCount: (debate.messages as any[]).length,
       role: 'user',
       topic: debate.topic,
-      isAiAssisted: aiTakeover
+      isAiAssisted: aiTakeover,
+      round: currentRound
     });
 
-    // Try to save to D1 (don't fail if it doesn't work)
+    // Try to save to D1 (update round info)
     try {
-      await d1.addMessage(debateId, userMessage);
+      await d1.addMessage(debateId, userMessage, { currentRound });
     } catch {
       console.log('D1 save failed, using memory only');
     }
@@ -177,19 +202,31 @@ export async function POST(
 
     (debate.messages as Array<unknown>).push(aiMessage);
 
+    // Update status if round 3 is done (Sys + 3 User + 3 AI = 7 messages)
+    // After pushing AI message, length is msgCount + 2
+    const finalMsgCount = (debate.messages as Array<unknown>).length;
+    let newStatus = debate.status as string;
+    
+    if (isDebateCompleted(finalMsgCount)) {
+      newStatus = 'completed';
+      debate.status = 'completed';
+    }
+
     // Track AI response
     await trackEvent(userId, 'debate_ai_response_generated', {
       debateId,
-      messageCount: (debate.messages as any[]).length,
+      messageCount: finalMsgCount,
       role: 'ai',
       duration_ms: duration,
       topic: debate.topic,
-      opponent: debate.opponentStyle || debate.opponent || 'default'
+      opponent: debate.opponentStyle || debate.opponent || 'default',
+      round: currentRound,
+      status: newStatus
     });
 
-    // Try to save AI message to D1
+    // Try to save AI message to D1 with status update
     try {
-      await d1.addMessage(debateId, aiMessage);
+      await d1.addMessage(debateId, aiMessage, { status: newStatus });
     } catch {
       console.log('D1 save failed for AI message, using memory only');
     }
@@ -198,6 +235,9 @@ export async function POST(
       success: true,
       userMessage,
       aiMessage,
+      currentRound,
+      status: newStatus,
+      totalRounds: 3
     });
   } catch (error) {
     // If it's already a NextResponse (from our error helpers), return it

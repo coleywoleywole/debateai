@@ -5,6 +5,7 @@ import { MIGRATION_005_SQL } from './migrations/005-missing-users-cols';
 import { MIGRATION_006_SQL } from './migrations/006-content-review';
 import { MIGRATION_007_SQL } from './migrations/007-analytics';
 import { MIGRATION_008_SQL } from './migrations/008-welcome-email';
+import { MIGRATION_009_SQL } from './migrations/009-rounds';
 import { ArenaState } from './arena-schema';
 
 interface D1Response {
@@ -218,7 +219,7 @@ class D1Client {
     `;
 
     // Combine base schema with migrations
-    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL + '\n' + MIGRATION_008_SQL;
+    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL + '\n' + MIGRATION_008_SQL + '\n' + MIGRATION_009_SQL;
 
     const queries = fullSchema.split(';').filter(q => q.trim());
     const results = [];
@@ -588,7 +589,7 @@ class D1Client {
     return { success: false, count: 0, limit: 2, allowed: true, remaining: 2, isPremium: false };
   }
 
-  async addMessage(debateId: string, message: { role: string; content: string; aiAssisted?: boolean; citations?: unknown[] }) {
+  async addMessage(debateId: string, message: { role: string; content: string; aiAssisted?: boolean; citations?: unknown[] }, newState?: { currentRound?: number; status?: string; winner?: string }) {
     // First get the existing debate
     const debateResult = await this.getDebate(debateId);
     
@@ -604,11 +605,29 @@ class D1Client {
     // Add new message
     const updatedMessages = [...existingMessages, message];
     
-    // Update the debate with new messages
-    const result = await this.query(
-      `UPDATE debates SET messages = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [JSON.stringify(updatedMessages), debateId]
-    );
+    // Update the debate with new messages and optional state
+    let sql = `UPDATE debates SET messages = ?, updated_at = CURRENT_TIMESTAMP`;
+    const params: any[] = [JSON.stringify(updatedMessages)];
+
+    if (newState) {
+      if (newState.currentRound !== undefined) {
+        sql += `, current_round = ?`;
+        params.push(newState.currentRound);
+      }
+      if (newState.status !== undefined) {
+        sql += `, status = ?`;
+        params.push(newState.status);
+      }
+      if (newState.winner !== undefined) {
+        sql += `, winner = ?`;
+        params.push(newState.winner);
+      }
+    }
+
+    sql += ` WHERE id = ?`;
+    params.push(debateId);
+
+    const result = await this.query(sql, params);
     
     return result;
   }
