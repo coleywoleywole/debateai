@@ -30,11 +30,11 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       appearance={{
         elements: {
           modalBackdrop: "flex items-center justify-center bg-black/60 backdrop-blur-sm p-4",
-          modalContent: "w-full max-w-[calc(100vw-2rem)] sm:max-w-[400px] mx-auto my-auto overflow-hidden",
-          card: "w-full shadow-xl rounded-xl overflow-hidden box-border bg-background max-w-full",
+          modalContent: "w-full !max-w-[calc(100vw-2rem)] sm:!max-w-[400px] mx-auto my-auto overflow-hidden",
+          card: "w-full !max-w-[100%] shadow-xl rounded-xl overflow-hidden box-border bg-background",
           headerTitle: "text-lg sm:text-xl font-bold text-center break-words px-4 whitespace-normal",
           headerSubtitle: "text-center break-words text-muted-foreground px-4 text-sm whitespace-normal",
-          socialButtonsBlockButton: "w-full h-auto py-3 whitespace-normal break-words text-sm flex items-center justify-center gap-2 max-w-full",
+          socialButtonsBlockButton: "w-full !max-w-full h-auto py-3 !whitespace-normal !break-words text-sm flex items-center justify-center gap-2",
           footerActionLink: "text-primary hover:text-primary-600",
           formButtonPrimary: "bg-primary-600 hover:bg-primary-700 text-white w-full",
           rootBox: "w-full flex justify-center",

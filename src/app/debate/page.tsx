@@ -95,7 +95,7 @@ export default function DebatePage() {
               <span className="h-px w-6 bg-gradient-to-l from-transparent to-[var(--accent)] opacity-50" />
             </div>
             
-            <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[var(--text)] mb-2 px-1 break-words">
+            <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-[var(--text)] mb-2 px-1 break-words whitespace-normal w-full">
               Custom Debate
             </h1>
             <p className="text-sm text-[var(--text-secondary)] break-words px-1">Choose your opponent and topic</p>
