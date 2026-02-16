@@ -19,8 +19,8 @@ export const GET = withErrorHandler(async (request: Request) => {
   // Parse and validate query parameters
   const { searchParams } = new URL(request.url);
   const queryResult = listDebatesQuerySchema.safeParse({
-    limit: searchParams.get('limit'),
-    offset: searchParams.get('offset'),
+    limit: searchParams.get('limit') ?? undefined,
+    offset: searchParams.get('offset') ?? undefined,
   });
 
   if (!queryResult.success) {
@@ -35,12 +35,13 @@ export const GET = withErrorHandler(async (request: Request) => {
   const { limit, offset } = queryResult.data;
 
   // Fetch debates from database
+  // Using CASE WHEN json_valid(messages) to avoid errors if messages is not a valid JSON array
   const result = await d1.query(
     `SELECT 
       id,
       opponent,
       topic,
-      json_array_length(messages) as message_count,
+      CASE WHEN json_valid(messages) THEN json_array_length(messages) ELSE 0 END as message_count,
       created_at,
       score_data
     FROM debates 
@@ -52,16 +53,21 @@ export const GET = withErrorHandler(async (request: Request) => {
 
   if (result.success && result.result) {
     // Format the debates for the frontend
-    const debates = result.result.map((debate: Record<string, unknown>) => {
-      // Try to get opponentStyle from score_data since it's not in the debates table
-      let opponentStyle = debate.opponent_style as string | undefined;
+    const debates = result.result.map((debate: Record<string, any>) => {
+      // Extract opponentStyle from score_data
+      let opponentStyle: string | undefined;
       
-      if (!opponentStyle && debate.score_data && typeof debate.score_data === 'string') {
+      if (debate.score_data) {
         try {
-          const scoreData = JSON.parse(debate.score_data);
-          opponentStyle = scoreData.opponentStyle;
+          const scoreData = typeof debate.score_data === 'string' 
+            ? JSON.parse(debate.score_data) 
+            : debate.score_data;
+          
+          if (scoreData && typeof scoreData === 'object') {
+            opponentStyle = scoreData.opponentStyle || scoreData.opponent_style;
+          }
         } catch {
-          // Ignore parse errors
+          // Ignore parse errors, fallback to default
         }
       }
 

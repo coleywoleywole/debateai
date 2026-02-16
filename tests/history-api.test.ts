@@ -91,4 +91,21 @@ describe('GET /api/debates', () => {
     expect(data.debates).toHaveLength(1);
     expect(data.debates[0].opponentStyle).toBe('Default');
   });
+
+  it('should handle missing query parameters by using defaults', async () => {
+    // Mock request without any query params
+    const request = new Request('http://localhost:3000/api/debates');
+
+    // Mock D1 responses
+    (d1.query as any)
+      .mockResolvedValueOnce({ success: true, result: [] })
+      .mockResolvedValueOnce({ success: true, result: [{ total: 0 }] });
+
+    const response = await GET(request);
+    
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.pagination.limit).toBe(20);
+    expect(data.pagination.offset).toBe(0);
+  });
 });
