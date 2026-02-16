@@ -51,7 +51,7 @@ body {
 
   --text: var(--gray-900);
   --text-secondary: var(--gray-500);
-  --text-tertiary: var(--gray-400);
+  --text-tertiary: var(--gray-500);
 
   --accent: var(--primary-600);
   --accent-hover: var(--primary-700);
@@ -90,7 +90,7 @@ body {
 
   --text: var(--gray-100);
   --text-secondary: var(--gray-400);
-  --text-tertiary: var(--gray-500);
+  --text-tertiary: var(--gray-400);
 
   --accent: var(--primary-400);
   --accent-hover: var(--primary-300);

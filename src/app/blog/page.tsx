@@ -123,7 +123,7 @@ export default function BlogIndex() {
                             </div>
                           )}
 
-                          <h2 className="text-2xl sm:text-3xl font-serif font-semibold text-[var(--text)] mb-3 group-hover:text-[var(--accent)] transition-colors leading-tight">
+                          <h2 className="text-3xl sm:text-4xl font-serif font-semibold text-[var(--text)] mb-3 group-hover:text-[var(--accent)] transition-colors leading-tight">
                             {posts[0].title}
                           </h2>
                           <p className="text-[var(--text-secondary)] leading-relaxed mb-4 line-clamp-3">
@@ -197,7 +197,7 @@ export default function BlogIndex() {
                               </div>
                             )}
 
-                            <h2 className="text-xl font-semibold text-[var(--text)] mb-2 group-hover:text-[var(--accent)] transition-colors leading-snug">
+                            <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text)] mb-2 group-hover:text-[var(--accent)] transition-colors leading-snug">
                               {post.title}
                             </h2>
                             <p className="text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 flex-1">
