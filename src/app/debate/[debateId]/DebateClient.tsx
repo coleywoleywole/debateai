@@ -262,7 +262,6 @@ const Message = memo(
                   )
                 ) : (
                   <div className="whitespace-pre-wrap">
-                    {/* eslint-disable-next-line react-hooks/refs */}
                     {renderContentWithCitations(msg.content, msg.citations, handleCitationClick)}
                     {isStreaming && (
                       <span className="inline-block w-2 h-4 ml-0.5 bg-[var(--accent)] animate-pulse rounded-sm" />
