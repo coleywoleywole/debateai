@@ -16,7 +16,6 @@ published: true
 image: /blog/the-skill-schools-dont-teach.png
 ---
 
-# The Skill Schools Don't Teach (But Should)
 
 Quick: what's the quadratic formula?
 

@@ -18,7 +18,6 @@ published: true
 image: /blog/state-debate-finals-ai-prep.png
 ---
 
-# I Prepped for State Debate Finals Using AI. My Coach Wasn't Happy About What I Learned.
 
 Three weeks before state finals, my coach said something that stuck with me: "You're good at the arguments you've practiced. But you haven't faced an opponent who's read everything."
 

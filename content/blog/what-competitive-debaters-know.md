@@ -16,8 +16,6 @@ published: true
 image: /blog/what-competitive-debaters-know.png
 ---
 
-# What Competitive Debaters Know That You Don't
-
 There's a specific look people get when they argue with a competitive debater for the first time. It's confusion mixed with frustration. The debater isn't doing anything flashy. They're just... structured. They know where the argument actually lives, and they go straight there while the other person is still circling the perimeter.
 
 Competitive debaters — the ones who spent their weekends in high school and college tournaments — develop a set of cognitive skills that most people never acquire. Not because the skills are secret or difficult. Because most people never practice them systematically.

@@ -16,7 +16,6 @@ published: true
 image: /blog/best-argument-against-your-beliefs.png
 ---
 
-# You've Never Heard the Best Argument Against Your Beliefs
 
 There's a test in political philosophy called the Ideological Turing Test. The concept is simple: can you explain the opposing side's position so well that someone on that side can't tell you're faking it?
 

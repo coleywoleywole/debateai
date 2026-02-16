@@ -15,7 +15,6 @@ published: true
 image: /blog/why-you-lose-arguments-you-should-win.png
 ---
 
-# Why You Lose Arguments You Should Win
 
 You've been there. You have the data. Your logic is airtight. Your position is clearly, demonstrably correct. And somehow you lose the argument anyway.
 

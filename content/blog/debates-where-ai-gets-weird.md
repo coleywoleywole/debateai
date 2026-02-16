@@ -16,7 +16,6 @@ published: true
 image: /blog/debates-where-ai-gets-weird.png
 ---
 
-# The Debates Where AI Gets Weird
 
 Something strange happens when you ask an AI to argue about consciousness, free will, or whether AI should have rights. The arguments get sharper than they should be. Or weirder. Or both.
 

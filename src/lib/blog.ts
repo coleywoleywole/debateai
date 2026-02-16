@@ -47,10 +47,10 @@ export function getAllPosts(): BlogPostMeta[] {
         author: (data.author as string) || 'DebateAI Team',
         tags: Array.isArray(data.tags) ? data.tags : [],
         image: data.image as string | undefined,
-        published: data.published !== false, // Default to published
+        published: data.published !== false && data.status !== 'draft', // Respect status: draft
       } satisfies BlogPostMeta;
     })
-    .filter((post) => post.published)
+    .filter((post) => post.published && !post.slug.startsWith('_'))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return posts;

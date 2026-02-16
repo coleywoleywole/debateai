@@ -16,7 +16,6 @@ published: true
 image: /blog/i-debated-chatgpt-for-an-hour.png
 ---
 
-# I Debated AI for an Hour Straight. Here's What It Broke.
 
 *I went in thinking I'd easily win. I was wrong — but not in the way you'd expect.*
 

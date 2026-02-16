@@ -131,18 +131,18 @@ export default async function BlogPostPage({
             <div
               className="blog-content prose dark:prose-invert max-w-none
                 prose-headings:font-serif prose-headings:text-[var(--text)] prose-headings:font-semibold
-                prose-h2:mt-10 prose-h2:mb-4 prose-h2:text-2xl prose-h2:sm:text-3xl prose-h2:leading-tight
-                prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-xl prose-h3:sm:text-2xl
-                prose-p:text-[var(--text-secondary)] prose-p:leading-7 prose-p:my-6
+                prose-h2:mt-12 prose-h2:mb-6 prose-h2:pb-2 prose-h2:border-b prose-h2:border-[var(--border)]/50 prose-h2:text-2xl prose-h2:sm:text-3xl prose-h2:leading-tight
+                prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-xl prose-h3:sm:text-2xl
+                prose-p:text-[var(--text)] prose-p:opacity-90 prose-p:leading-8 prose-p:my-6
                 prose-a:text-[var(--accent)] prose-a:no-underline prose-a:font-medium hover:prose-a:underline
-                prose-strong:text-[var(--text)] prose-strong:font-semibold
+                prose-strong:text-[var(--text)] prose-strong:font-bold
                 prose-code:text-[var(--accent)] prose-code:bg-[var(--bg-sunken)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                prose-blockquote:border-l-2 prose-blockquote:border-[var(--accent)] prose-blockquote:pl-5 prose-blockquote:py-1 prose-blockquote:my-8 prose-blockquote:bg-[var(--bg-elevated)]/30 prose-blockquote:rounded-r-lg
+                prose-blockquote:border-l-4 prose-blockquote:border-[var(--accent)] prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:my-10 prose-blockquote:bg-[var(--bg-elevated)] prose-blockquote:shadow-sm prose-blockquote:rounded-r-xl
                 prose-blockquote:text-[var(--text)] prose-blockquote:not-italic prose-blockquote:text-lg prose-blockquote:font-medium
-                prose-ul:my-6 prose-ol:my-6
-                prose-li:text-[var(--text-secondary)] prose-li:my-2 prose-li:leading-relaxed
-                prose-img:rounded-xl prose-img:my-8
-                prose-hr:my-10 prose-hr:border-[var(--border)]/50 prose-hr:border-t"
+                prose-ul:my-8 prose-ol:my-8 prose-li:my-3
+                prose-li:text-[var(--text)] prose-li:opacity-90 prose-li:leading-relaxed
+                prose-img:rounded-2xl prose-img:my-10 prose-img:shadow-lg
+                prose-hr:my-12 prose-hr:border-[var(--border)]/50 prose-hr:border-t"
               dangerouslySetInnerHTML={{ __html: post.html }}
             />
 

@@ -17,7 +17,6 @@ image: /blog/how-we-built-realtime-ai-debates.png
 published: true
 ---
 
-# How We Built Real-Time AI Debates with Claude
 
 When we set out to build DebateAI, we had a deceptively simple idea: let people argue with AI opponents in real time. Pick a topic, choose a persona (Socrates, George Carlin, a Devil's Advocate), and go back and forth until someone concedes — or runs out of arguments.
 

@@ -12,10 +12,9 @@ tags:
   - AI debate
   - product
 published: true
-image: /blog/why-we-built-debateai.png
+image: ""
 ---
 
-# Why We Built an AI That Argues Back
 
 *Most AI assistants are trained to agree with you. We built one that doesn't.*
 
