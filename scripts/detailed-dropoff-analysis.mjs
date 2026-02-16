@@ -61,7 +61,6 @@ async function detailedAnalysis() {
     console.log(`📊 Retrieved ${rows.length} incomplete debates.`);
 
     let errorCount = 0;
-    let timeoutCount = 0; // Inferred by short message count + time?
     let stalledCount = 0; // User sent last message, no AI reply?
     let userAbandonedCount = 0; // AI sent last message, user left?
 
@@ -73,7 +72,7 @@ async function detailedAnalysis() {
       let msgs = [];
       try {
         msgs = JSON.parse(r.messages || '[]');
-      } catch (e) {
+      } catch {
         console.warn(`Failed to parse messages for ${r.id}`);
       }
 

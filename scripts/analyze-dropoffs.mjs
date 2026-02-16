@@ -77,7 +77,7 @@ async function analyzeDropoffs() {
           try {
             const sd = JSON.parse(r.score_data);
             if (sd.debateScore) isCompleted = true;
-          } catch (e) {}
+          } catch {}
         }
         
         if (isCompleted) completed++;

@@ -15,7 +15,7 @@ async function apiRequest(path: string, options: RequestInit = {}) {
       ...options,
     });
     return response;
-  } catch (error) {
+  } catch {
     return {
       ok: false,
       status: 0,
@@ -63,10 +63,7 @@ describe('Debate API Integration Tests', () => {
     }
   });
 
-  // Helper to skip if server down
-  const itIfServer = (name: string, fn: any) => {
-    return it.skipIf(!serverAvailable)(name, fn);
-  };
+  // itIfServer removed
 
   // Or better, just return early in tests if not available, but skipIf is cleaner.
   // However, skipIf is evaluated at definition time? No, it takes a boolean.

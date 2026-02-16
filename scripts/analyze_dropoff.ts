@@ -28,7 +28,7 @@ async function main() {
               const [key, val] = line.split('=');
               if (key && val) process.env[key.trim()] = val.trim();
           }
-      } catch (e) {
+      } catch {
           console.error("Could not read .env.local");
       }
   }
@@ -56,7 +56,7 @@ async function main() {
       } else {
         messages = debate.messages as any[];
       }
-    } catch (e) {
+    } catch {
       continue;
     }
 
