@@ -13,11 +13,8 @@ import StickyShareButton from "@/components/StickyShareButton";
 import JudgeMessage from "@/components/JudgeMessage";
 import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
-import QuickReplies from "@/components/QuickReplies";
 import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
-import DebateProgress, { getRound } from "@/components/DebateProgress";
-import RoundSummary from "@/components/RoundSummary";
 import ShareCard from "@/components/ShareCard";
 import type { DebateScore } from "@/lib/scoring";
 
@@ -189,7 +186,7 @@ const Message = memo(
       <div 
         ref={messageRef}
         id={`message-${messageIndex}`}
-        className={`py-5 relative group ${isUser ? '' : (variant === 'aggressive' ? 'bg-red-900/5 border-y border-red-500/10' : 'bg-[var(--bg-elevated)]/60 border-y border-[var(--border)]/30')} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
+        className={`py-5 relative group ${isUser ? '' : 'bg-[var(--bg-elevated)]/60 border-y border-[var(--border)]/30'} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
       >
         {/* Highlight overlay */}
         {isHighlighted && (
@@ -211,9 +208,7 @@ const Message = memo(
                 ? 'bg-[var(--error)]/10 text-[var(--error)] border border-[var(--error)]/30'
                 : isUser
                   ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : variant === 'aggressive'
-                    ? 'bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.2)]'
-                    : 'bg-[var(--bg-sunken)] border border-[var(--border)]/50'
+                  : 'bg-[var(--bg-sunken)] border border-[var(--border)]/50'
               }`}
             >
               {isUser ? (
@@ -405,7 +400,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
   const [isGuestOwner, setIsGuestOwner] = useState(false);
-  const [isWaitingForAdvance, setIsWaitingForAdvance] = useState(false);
   const isDevMode = searchParams.get('dev') === 'true';
 
   // Set guest owner if this is a new debate and user is not signed in
@@ -962,24 +956,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   };
 
-  // Auto-trigger judgment after 3 rounds (6 messages)
-  useEffect(() => {
-    if (!debateScore && messages.length >= 6 && !isAILoading && !isUserLoading) {
-      requestJudgment();
-    }
-  }, [messages.length, debateScore, isAILoading, isUserLoading, requestJudgment]);
-
-  // Handle round transitions
-  useEffect(() => {
-    if (!isAILoading && !isUserLoading && !debateScore) {
-      if (messages.length === 2 || messages.length === 4) {
-        setIsWaitingForAdvance(true);
-      } else {
-        setIsWaitingForAdvance(false);
-      }
-    }
-  }, [messages.length, isAILoading, isUserLoading, debateScore]);
-
   // AI Takeover - generates an AI argument for the user
   const handleAITakeover = async () => {
     if (isAITakeoverLoading || isAILoading) {
@@ -1267,22 +1243,12 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   }
 
   const effectiveIsOwner = isOwner || isGuestOwner;
-  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner && !isWaitingForAdvance;
-
-  // Determine placeholder based on round
-  const currentRound = getRound(messages.length);
-  let placeholderText = "Make your argument...";
-  if (currentRound === 'opening') placeholderText = "Make your opening statement...";
-  else if (currentRound === 'rebuttal') placeholderText = "Make your rebuttal...";
-  else if (currentRound === 'closing') placeholderText = "Make your closing argument...";
-  else if (currentRound === 'complete') placeholderText = "Debate complete.";
+  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner;
+  const placeholderText = "Make your argument...";
 
   return (
-    <div className={`h-dvh flex flex-col overflow-hidden transition-colors duration-500 ${variant === 'aggressive' ? 'bg-red-950/5' : 'bg-[var(--bg)]'}`}>
+    <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg)]">
       <Header />
-
-      {/* Progress Bar - Sticky */}
-      <DebateProgress messageCount={messages.length} />
 
       {/* Topic Header - Fixed */}
       {debate && (
@@ -1291,17 +1257,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-sm flex-1 min-w-0">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)] flex-shrink-0">Topic</span>
-                {variant === 'aggressive' && (
-                   <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 text-[10px] font-bold border border-red-500/20 uppercase tracking-wider">
-                     Hard Mode
-                   </span>
-                )}
                 <h1 className="font-medium text-[var(--text)] truncate hidden sm:block">{debate.topic}</h1>
-                {!debateScore && (
-                  <div className="hidden sm:block ml-2">
-                    {/* TurnCounter removed */}
-                  </div>
-                )}
               </div>
               <h1 className="font-medium text-[var(--text)] truncate sm:hidden">{debate.topic}</h1>
 
@@ -1374,15 +1330,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             />
           )}
 
-          {/* Round Summary - shown between rounds */}
-          {isWaitingForAdvance && !debateScore && (
-            <RoundSummary
-              round={messages.length / 2}
-              nextRoundTitle={messages.length === 2 ? "Rebuttals" : "Closing Arguments"}
-              onAdvance={() => setIsWaitingForAdvance(false)}
-            />
-          )}
-
           {/* Post-debate engagement — shown after scoring */}
           {debateScore && (
             <PostDebateEngagement
@@ -1410,53 +1357,24 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             />
           )}
           
-          {/* Request Judgment Button - shown when enough messages but no score */}
-          {!debateScore && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 2 && (
-            <div className="max-w-xl mx-auto px-4 py-8">
-              <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl p-6 text-center shadow-sm relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/5 to-transparent opacity-50" />
-                
-                <div className="relative z-10 flex flex-col items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mb-1 text-2xl">
-                    ⚖️
-                  </div>
-                  
-                  <h3 className="text-lg font-semibold text-[var(--text)]">
-                    Ready for the verdict?
-                  </h3>
-                  
-                  <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto mb-2">
-                    The debate has reached a good length. Ask the AI judge to analyze the arguments and declare a winner.
-                  </p>
-                  
-                  <button
-                    onClick={requestJudgment}
-                    disabled={isAILoading || isUserLoading}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all transform active:scale-95 font-medium shadow-md shadow-[var(--accent)]/20"
-                  >
-                    <span>Request Verdict</span>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
+      {/* Floating verdict button - shown when enough messages but no score */}
+      {!debateScore && effectiveIsOwner && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 2 && !isAILoading && !isUserLoading && (
+        <button
+          onClick={requestJudgment}
+          className="fixed right-4 bottom-24 sm:right-6 sm:bottom-28 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all transform active:scale-95 font-medium shadow-lg shadow-[var(--accent)]/30 text-sm"
+        >
+          <span>Request Verdict</span>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      )}
+
       {/* Input Area - Fixed at bottom with mobile keyboard handling */}
       <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)] z-50 relative">
-        {!debateScore && messages.length > 0 && messages[messages.length - 1].role === 'ai' && !isAILoading && (
-          <div className="pt-3 animate-fade-in">
-            <QuickReplies
-              onReply={(text) => handleSend(text)}
-              onJudge={messages.length >= 2 ? requestJudgment : undefined}
-              disabled={isUserLoading || isAILoading || !effectiveIsOwner}
-            />
-          </div>
-        )}
         <div className="max-w-3xl mx-auto px-3 sm:px-6 py-2 sm:py-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {/* Input Row */}
           <div className="flex gap-2">
@@ -1493,14 +1411,14 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   }, 100);
                 }}
-                placeholder={effectiveIsOwner ? (isWaitingForAdvance ? "Advance to next round..." : placeholderText) : "Sign in to contribute..."}
+                placeholder={effectiveIsOwner ? placeholderText : "Sign in to contribute..."}
                 className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl
                   px-3 sm:px-4 py-2.5 sm:py-3 resize-none text-[var(--text)] placeholder-[var(--text-secondary)]/70
                   outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20
                   transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] text-[15px] leading-relaxed overflow-hidden
                   touch-manipulation disabled:opacity-50"
                 rows={1}
-                disabled={isUserLoading || isAILoading || !effectiveIsOwner || isWaitingForAdvance}
+                disabled={isUserLoading || isAILoading || !effectiveIsOwner}
               />
             </div>
 
@@ -1510,7 +1428,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               <button
                 type="button"
                 onClick={handleAITakeover}
-                disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner || isWaitingForAdvance}
+                disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner}
                 className={`
                   w-10 h-10 rounded-lg border flex items-center justify-center
                   transition-all duration-200 flex-shrink-0
