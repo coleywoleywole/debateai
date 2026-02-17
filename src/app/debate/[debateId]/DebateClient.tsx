@@ -1374,7 +1374,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           {/* Round Summary - shown between rounds */}
           {isWaitingForAdvance && !debateScore && (
             <RoundSummary
-              round={messages.length / 2}
+              round={Math.floor(messages.length / 2)}
               nextRoundTitle={messages.length === 2 ? "Rebuttals" : "Closing Arguments"}
               onAdvance={() => setIsWaitingForAdvance(false)}
             />
@@ -1408,7 +1408,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           )}
           
           {/* Request Judgment Button - shown when enough messages but no score */}
-          {!debateScore && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 2 && (
+          {!debateScore && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 6 && (
             <div className="max-w-xl mx-auto px-4 py-8">
               <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl p-6 text-center shadow-sm relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/5 to-transparent opacity-50" />
