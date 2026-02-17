@@ -39,9 +39,13 @@ export const POST = withErrorHandler(async (request: Request) => {
     throw errors.unauthorized();
   }
 
-  const userRl = userLimiter.check(`user:${userId}`);
-  if (!userRl.allowed) {
-    return rateLimitResponse(userRl) as unknown as NextResponse;
+  // Skip user rate limit for guests (IP limit still applies)
+  let userRl;
+  if (!userId.startsWith('guest_')) {
+    userRl = userLimiter.check(`user:${userId}`);
+    if (!userRl.allowed) {
+      return rateLimitResponse(userRl) as unknown as NextResponse;
+    }
   }
 
   const { debateId } = await validateBody(request, scoreRequestSchema);
@@ -136,18 +140,20 @@ export const POST = withErrorHandler(async (request: Request) => {
 
   // ── Update streak + points + leaderboard ────────────────
   try {
-    const user = await currentUser();
-    const displayName = user?.firstName
-      ? `${user.firstName}${user.lastName ? ` ${user.lastName.charAt(0)}.` : ''}`
-      : user?.username || undefined;
+    if (!userId.startsWith('guest_')) {
+      const user = await currentUser();
+      const displayName = user?.firstName
+        ? `${user.firstName}${user.lastName ? ` ${user.lastName.charAt(0)}.` : ''}`
+        : user?.username || undefined;
 
-    const debateResult2 = score.winner === 'user' ? 'win' : score.winner === 'ai' ? 'loss' : 'draw';
-    const streakResult = await recordDebateCompletion(userId, debateResult2, score.userScore, displayName);
+      const debateResult2 = score.winner === 'user' ? 'win' : score.winner === 'ai' ? 'loss' : 'draw';
+      const streakResult = await recordDebateCompletion(userId, debateResult2, score.userScore, displayName);
 
-    // Fire notifications (non-blocking)
-    await notifyScoreResult(userId, topic, debateResult2, score.userScore, debateId);
-    if (streakResult) {
-      await notifyStreakMilestone(userId, streakResult.currentStreak);
+      // Fire notifications (non-blocking)
+      await notifyScoreResult(userId, topic, debateResult2, score.userScore, debateId);
+      if (streakResult) {
+        await notifyStreakMilestone(userId, streakResult.currentStreak);
+      }
     }
   } catch (err) {
     // Non-blocking — scoring still succeeds even if streak/notification update fails
