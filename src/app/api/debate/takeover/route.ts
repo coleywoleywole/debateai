@@ -99,7 +99,7 @@ export async function POST(request: Request) {
 
         try {
           const { stream: resultStream } = await generateContentStreamWithFallback(
-            "gemini-2.0-flash-exp",
+            "gemini-2.5-flash",
             modelOptions,
             {
               contents: [{ role: "user", parts: [{ text: userPrompt }] }],

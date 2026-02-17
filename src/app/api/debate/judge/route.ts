@@ -10,7 +10,7 @@ import { getGeminiModel } from '@/lib/vertex';
 const log = logger.scope('debate.judge');
 
 // Use Gemini Flash as requested (optimized for speed/cost)
-const model = getGeminiModel('gemini-2.0-flash-exp', {
+const model = getGeminiModel('gemini-2.5-flash', {
   generationConfig: {
     responseMimeType: 'application/json'
   }
