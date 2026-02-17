@@ -4,21 +4,30 @@ import { VertexAI, GenerativeModel, HarmCategory, HarmBlockThreshold } from '@go
 // Note: GOOGLE_APPLICATION_CREDENTIALS should be set in environment for local dev
 // or strictly rely on Vercel's attached integration if available.
 // Support GOOGLE_CREDENTIALS_JSON for Coolify/Container environments
-let googleAuthOptions;
-if (process.env.GOOGLE_CREDENTIALS_JSON) {
-  try {
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-    googleAuthOptions = { credentials };
-  } catch (e) {
-    console.error('Failed to parse GOOGLE_CREDENTIALS_JSON', e);
-  }
-}
 
-const vertex_ai = new VertexAI({
-  project: process.env.GOOGLE_CLOUD_PROJECT || 'debateai-prod', 
-  location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
-  googleAuthOptions,
-});
+let vertexAiInstance: VertexAI | null = null;
+
+function getVertexAI(): VertexAI {
+  if (vertexAiInstance) return vertexAiInstance;
+
+  let googleAuthOptions;
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    try {
+      const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+      googleAuthOptions = { credentials };
+    } catch (e) {
+      console.error('Failed to parse GOOGLE_CREDENTIALS_JSON', e);
+    }
+  }
+
+  vertexAiInstance = new VertexAI({
+    project: process.env.GOOGLE_CLOUD_PROJECT || 'debateai-prod', 
+    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
+    googleAuthOptions,
+  });
+
+  return vertexAiInstance;
+}
 
 export const getGeminiModel = (
   modelName: string = 'gemini-1.5-flash',
@@ -30,7 +39,9 @@ export const getGeminiModel = (
   // Allow override from env for testing different models
   const model = process.env.GEMINI_MODEL || modelName;
   
-  return vertex_ai.getGenerativeModel({
+  const vertexAi = getVertexAI();
+
+  return vertexAi.getGenerativeModel({
     model: model,
     systemInstruction: options.systemInstruction,
     generationConfig: options.generationConfig,
