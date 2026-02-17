@@ -3,7 +3,6 @@ import { POST } from '@/app/api/debate/[debateId]/route';
 import { NextRequest } from 'next/server';
 import { d1 } from '@/lib/d1';
 import * as authHelperModule from '@/lib/auth-helper';
-import * as posthogModule from '@/lib/posthog-server';
 
 // Mock dependencies
 vi.mock('@/lib/d1', () => ({
@@ -41,7 +40,6 @@ function createRequest(debateId: string, body: any) {
 }
 
 describe('Debate Rounds API', () => {
-  const debateId = 'test-debate';
   const userId = 'user-123';
 
   beforeEach(() => {

@@ -30,7 +30,7 @@ vi.mock('@/lib/rate-limit', () => ({
     check: vi.fn(() => ({ allowed: true, remaining: 10, resetAt: Date.now() + 1000 })),
   })),
   getClientIp: vi.fn(() => '127.0.0.1'),
-  rateLimitResponse: vi.fn((rl) => NextResponse.json({ error: 'Rate limited' }, { status: 429 })),
+  rateLimitResponse: vi.fn(() => NextResponse.json({ error: 'Rate limited' }, { status: 429 })),
 }));
 
 vi.mock('@/lib/analytics', () => ({
