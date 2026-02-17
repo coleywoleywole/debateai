@@ -29,14 +29,10 @@ export async function generateStaticParams() {
 // Generate dynamic metadata for SEO
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<{ debateId: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }): Promise<Metadata> {
   const { debateId } = await params;
-  const resolvedSearchParams = await searchParams;
-  const msgIndex = resolvedSearchParams?.msg ? parseInt(resolvedSearchParams.msg as string, 10) : -1;
 
   try {
     const result = await d1.getDebate(debateId);
@@ -45,45 +41,7 @@ export async function generateMetadata({
       const topic = (debate.topic as string) || 'AI Debate';
       const opponent = getOpponentById((debate.opponent || debate.character) as any);
       const opponentName = (debate.opponentStyle as string) || opponent?.name || 'AI';
-      
-      const messages = Array.isArray(debate.messages)
-        ? (debate.messages as Array<{ role: string; content: string }>)
-        : [];
 
-      // If a specific message is requested and valid, generate specific metadata
-      if (msgIndex >= 0 && msgIndex < messages.length) {
-        const message = messages[msgIndex];
-        const isUser = message.role === 'user';
-        const speaker = isUser ? 'User' : opponentName;
-        
-        // Truncate content for description (max ~160 chars is standard for SEO)
-        const contentPreview = message.content.length > 150 
-          ? message.content.substring(0, 150) + '...'
-          : message.content;
-
-        return {
-          title: `${speaker}'s Argument on "${topic}"`,
-          description: `"${contentPreview}" — Read the full debate on DebateAI.`,
-          openGraph: {
-            title: `${speaker}'s Argument on "${topic}"`,
-            description: contentPreview,
-            url: `${BASE_URL}/debate/${debateId}?msg=${msgIndex}`,
-            type: 'article',
-            images: [{
-              url: `${BASE_URL}/api/og?topic=${encodeURIComponent(topic)}&opponent=${encodeURIComponent(opponentName)}&msgIdx=${msgIndex}`,
-              width: 1200,
-              height: 630,
-            }],
-          },
-          twitter: {
-            card: 'summary_large_image',
-            title: `${speaker}'s Argument on "${topic}"`,
-            description: contentPreview,
-          },
-        };
-      }
-
-      // Default Debate Metadata
       return {
         title: `${topic} — Debate vs ${opponentName}`,
         description: `Watch an AI debate about "${topic}". ${opponentName} argues the opposing position on DebateAI.`,
