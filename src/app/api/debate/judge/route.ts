@@ -32,9 +32,13 @@ export async function POST(request: Request) {
       return errors.unauthorized();
     }
 
-    const userRl = userLimiter.check(`user:${userId}`);
-    if (!userRl.allowed) {
-      return rateLimitResponse(userRl);
+    // Skip user rate limit for guests (IP limit still applies)
+    let userRl;
+    if (!userId.startsWith('guest_')) {
+      userRl = userLimiter.check(`user:${userId}`);
+      if (!userRl.allowed) {
+        return rateLimitResponse(userRl);
+      }
     }
 
     const { debateId, topic, messages } = await validateBody(request, judgeDebateSchema);
