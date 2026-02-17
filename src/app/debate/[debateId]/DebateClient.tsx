@@ -18,6 +18,7 @@ import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
 import DebateProgress, { getRound } from "@/components/DebateProgress";
 import RoundSummary from "@/components/RoundSummary";
+import ShareCard from "@/components/ShareCard";
 import type { DebateScore } from "@/lib/scoring";
 
 // Lazy load modals - they're only shown on user interaction
@@ -398,6 +399,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
   const [rateLimitData, setRateLimitData] = useState<{ current: number; limit: number } | undefined>();
   const [debateScore, setDebateScore] = useState<DebateScore | null>(null);
   const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
@@ -451,6 +453,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
       
       const data = await response.json();
       setDebateScore(data);
+      setShowShareCard(true);
 
       // Track successful scoring (completion)
       track('debate_scored', {
@@ -1601,6 +1604,17 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             setShowShareModal(true);
           }} />
         </div>
+      )}
+
+      {showShareCard && debateScore && (
+        <ShareCard
+          topic={debate?.topic || ""}
+          userArgument={messages.findLast(m => m.role === 'user')?.content || ""}
+          aiArgument={messages.findLast(m => m.role === 'ai')?.content || ""}
+          rounds={Math.ceil(messages.filter(m => m.role !== 'system').length / 2)}
+          winner={debateScore.winner}
+          onClose={() => setShowShareCard(false)}
+        />
       )}
 
       {showGuestLimitModal && (
