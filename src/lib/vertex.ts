@@ -1,15 +1,12 @@
-import { VertexAI, GenerativeModel, HarmCategory, HarmBlockThreshold, Content, GenerateContentRequest } from '@google-cloud/vertexai';
+import { VertexAI, GenerativeModel, HarmCategory, HarmBlockThreshold, Content, GenerateContentRequest, RequestOptions } from '@google-cloud/vertexai';
 
 // Primary model + fallbacks in priority order
 const MODEL_CHAIN = [
-  'gemini-2.0-flash-exp',
+  'gemini-2.5-flash',
   'gemini-2.0-flash',
-  'gemini-1.5-flash',
 ];
 
-// Initialize Vertex with your Cloud project and location
-// Note: GOOGLE_APPLICATION_CREDENTIALS should be set in environment for local dev
-// Support GOOGLE_CREDENTIALS_JSON for Coolify/Container environments
+const LOCATION = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
 
 let vertexAiInstance: VertexAI | null = null;
 
@@ -26,13 +23,29 @@ function getVertexAI(): VertexAI {
     }
   }
 
+  // Route through Helicone AI Gateway when configured (bypasses IP restrictions)
+  const useHelicone = !!process.env.HELICONE_API_KEY;
+
   vertexAiInstance = new VertexAI({
     project: process.env.GOOGLE_CLOUD_PROJECT || 'debateai-prod',
-    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1',
+    location: LOCATION,
     googleAuthOptions,
+    ...(useHelicone && { apiEndpoint: 'gateway.helicone.ai' }),
   });
 
   return vertexAiInstance;
+}
+
+function getRequestOptions(): RequestOptions | undefined {
+  const heliconeKey = process.env.HELICONE_API_KEY;
+  if (!heliconeKey) return undefined;
+
+  return {
+    customHeaders: new Headers({
+      'Helicone-Auth': `Bearer ${heliconeKey}`,
+      'Helicone-Target-URL': `https://${LOCATION}-aiplatform.googleapis.com`,
+    }),
+  };
 }
 
 const SAFETY_SETTINGS = [
@@ -57,7 +70,7 @@ export const getGeminiModel = (
     systemInstruction: options.systemInstruction,
     generationConfig: options.generationConfig,
     safetySettings: SAFETY_SETTINGS,
-  });
+  }, getRequestOptions());
 };
 
 function isRateLimitError(error: unknown): boolean {
@@ -90,7 +103,7 @@ export async function generateContentStreamWithFallback(
         systemInstruction: options.systemInstruction,
         generationConfig: options.generationConfig,
         safetySettings: SAFETY_SETTINGS,
-      });
+      }, getRequestOptions());
       const result = await model.generateContentStream(request);
       return { stream: result.stream, model: modelName };
     } catch (error) {

@@ -89,7 +89,7 @@ export const POST = withErrorHandler(async (request: Request) => {
   const scoringPrompt = getScoringPrompt(topic, messages);
 
   // Use Gemini Flash (3 or 2.0 Exp)
-  const model = getGeminiModel('gemini-2.0-flash-exp', {
+  const model = getGeminiModel('gemini-2.5-flash', {
     generationConfig: {
       responseMimeType: 'application/json'
     }
