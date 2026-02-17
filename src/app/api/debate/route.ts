@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-helper";
 import { d1 } from "@/lib/d1";
-import { getDebatePrompt, getDailyPersona } from "@/lib/prompts";
 import { getAggressiveDebatePrompt } from "@/lib/prompts.aggressive";
+import { getRoundPrompt } from "@/lib/prompts.round";
+import { calculateRound, isDebateCompleted } from "@/lib/debate-state";
 import { checkAppDisabled } from "@/lib/app-disabled";
 import { createRateLimiter, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { errors, validateBody } from "@/lib/api-errors";
@@ -113,13 +114,16 @@ export async function POST(request: Request) {
     let systemPrompt: string;
     const isFirstResponse = !previousMessages || previousMessages.length === 0;
 
+    // ROUND-BASED LOGIC
+    const currentRound = calculateRound(previousMessages.length);
+    const persona = opponentStyle || getDailyPersona();
+
     if (assignedVariant === 'aggressive') {
-      log.info('prompt.variant.used', { variant: 'aggressive', debateId: debateId || 'new' });
+      log.info('prompt.variant.used', { variant: 'aggressive', debateId: debateId || 'new', round: currentRound });
       systemPrompt = getAggressiveDebatePrompt(topic, isFirstResponse);
     } else {
-      // Default behavior
-      const persona = opponentStyle || getDailyPersona();
-      systemPrompt = getDebatePrompt(persona, topic, isFirstResponse);
+      // Round-based prompting
+      systemPrompt = getRoundPrompt(currentRound, topic, persona);
     }
 
     // Gemini history format
@@ -155,6 +159,13 @@ export async function POST(request: Request) {
 
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ type: "start" })}\n\n`)
+          );
+
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ 
+              type: "state", 
+              data: { round: currentRound, status: isDebateCompleted(previousMessages.length + 2) ? 'completed' : 'active' } 
+            })}\n\n`)
           );
 
           const result = await model.generateContentStream({
@@ -253,12 +264,13 @@ export async function POST(request: Request) {
                 ? existingDebate.debate.messages 
                 : [];
               
-              existingMessages.push({
+              const updatedMessages = [...existingMessages];
+              updatedMessages.push({
                 role: "user",
                 content: userArgument,
                 ...(isAIAssisted && { aiAssisted: true }),
               });
-              existingMessages.push({
+              updatedMessages.push({
                 role: "ai",
                 content: accumulatedContent,
                 ...(citations.length > 0 && { citations }),
@@ -268,10 +280,12 @@ export async function POST(request: Request) {
                 userId,
                 opponent: character,
                 topic: (existingDebate.debate.topic as string) || topic,
-                messages: existingMessages,
+                messages: updatedMessages,
                 debateId,
                 opponentStyle,
                 promptVariant: assignedVariant,
+                currentRound,
+                status: isDebateCompleted(updatedMessages.length) ? 'completed' : 'active'
               });
             }
           }

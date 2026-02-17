@@ -45,6 +45,7 @@ export const sendMessageSchema = z.object({
   previousMessages: z.array(messageSchema).optional().default([]),
   isAIAssisted: z.boolean().optional().default(false),
   promptVariant: z.enum(['aggressive', 'default']).optional(),
+  currentRound: z.number().optional().default(1),
   // New Mechanics
   activePowerup: z.string().optional(),
   comboCount: z.number().optional().default(0),
