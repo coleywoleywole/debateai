@@ -37,6 +37,7 @@ export async function GET() {
     'CLOUDFLARE_D1_DATABASE_ID',
     'CLOUDFLARE_API_TOKEN',
     'CLERK_SECRET_KEY',
+    'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
   ];
 
   // These are important but not strictly critical for basic health

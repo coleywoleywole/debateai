@@ -6,6 +6,7 @@ import { MIGRATION_006_SQL } from './migrations/006-content-review';
 import { MIGRATION_007_SQL } from './migrations/007-analytics';
 import { MIGRATION_008_SQL } from './migrations/008-welcome-email';
 import { MIGRATION_009_SQL } from './migrations/009-rounds';
+import { MIGRATION_010_SQL } from './migrations/010-fix-history-schema';
 import { ArenaState } from './arena-schema';
 
 interface D1Response {
@@ -219,7 +220,7 @@ class D1Client {
     `;
 
     // Combine base schema with migrations
-    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL + '\n' + MIGRATION_008_SQL + '\n' + MIGRATION_009_SQL;
+    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL + '\n' + MIGRATION_008_SQL + '\n' + MIGRATION_009_SQL + '\n' + MIGRATION_010_SQL;
 
     const queries = fullSchema.split(';').filter(q => q.trim());
     const results = [];

@@ -89,7 +89,7 @@ describe('GET /api/debates', () => {
     const data = await response.json();
 
     expect(data.debates).toHaveLength(1);
-    expect(data.debates[0].opponentStyle).toBe('Default');
+    expect(data.debates[0].opponentStyle).toBe('Trump');
   });
 
   it('should handle missing query parameters by using defaults', async () => {
