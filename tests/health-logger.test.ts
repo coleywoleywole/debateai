@@ -19,6 +19,7 @@ describe('GET /api/health', () => {
       CLOUDFLARE_D1_DATABASE_ID: 'test-db-id',
       CLOUDFLARE_API_TOKEN: 'test-token',
       CLERK_SECRET_KEY: 'test-clerk-key',
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'test-clerk-pub-key',
       AGENTMAIL_API_KEY: 'test-agentmail-key',
       NEXT_PUBLIC_POSTHOG_KEY: 'test-posthog-key',
       NEXT_PUBLIC_POSTHOG_HOST: 'test-posthog-host',
