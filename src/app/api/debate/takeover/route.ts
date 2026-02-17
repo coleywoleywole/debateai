@@ -6,7 +6,7 @@ import { getTakeoverPrompt } from "@/lib/prompts";
 import { createRateLimiter, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { errors, validateBody } from "@/lib/api-errors";
 import { takeoverSchema } from "@/lib/api-schemas";
-import { getGeminiModel } from "@/lib/vertex";
+import { generateContentStreamWithFallback } from "@/lib/vertex";
 
 // 10 takeover requests per minute per user
 const userLimiter = createRateLimiter({ maxRequests: 10, windowMs: 60_000 });
@@ -89,8 +89,7 @@ export async function POST(request: Request) {
       ? `The opponent just said: "${lastOpponentMessage}"\n\nGenerate my response arguing for my position.`
       : `Generate my opening argument for this debate on "${topic}".`;
 
-    // Initialize Gemini Model (Gemini 3 Flash / Flash 2.0)
-    const model = getGeminiModel("gemini-2.0-flash-exp", { systemInstruction: systemPrompt });
+    const modelOptions = { systemInstruction: systemPrompt };
 
     let controllerClosed = false;
 
@@ -99,10 +98,14 @@ export async function POST(request: Request) {
         const encoder = new TextEncoder();
 
         try {
-          const result = await model.generateContentStream({
-            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-            tools: [{ googleSearch: {} } as any],
-          });
+          const { stream: resultStream } = await generateContentStreamWithFallback(
+            "gemini-2.0-flash-exp",
+            modelOptions,
+            {
+              contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+              tools: [{ googleSearch: {} } as any],
+            },
+          );
 
           let buffer = "";
           let lastFlushTime = Date.now();
@@ -127,7 +130,7 @@ export async function POST(request: Request) {
             }
           };
 
-          for await (const chunk of result.stream) {
+          for await (const chunk of resultStream) {
             const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text || "";
             
             // Handle citations

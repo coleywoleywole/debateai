@@ -9,7 +9,7 @@ import { errors, validateBody } from "@/lib/api-errors";
 import { sendMessageSchema, SendMessageInput } from "@/lib/api-schemas";
 import { logger } from "@/lib/logger";
 import { captureError } from "@/lib/sentry";
-import { getGeminiModel } from "@/lib/vertex";
+import { generateContentStreamWithFallback } from "@/lib/vertex";
 import { Content } from "@google-cloud/vertexai";
 
 const log = logger.scope('debate');
@@ -137,9 +137,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Initialize Gemini Model (Migrated back from Anthropic for credits + stability)
-    // Using gemini-2.0-flash-exp (Gemini 2.0 Flash) for speed and intelligence
-    const model = getGeminiModel("gemini-2.0-flash-exp", { systemInstruction: systemPrompt });
+    const modelOptions = { systemInstruction: systemPrompt };
 
     // Inject reminder about citations
     const userMessage = `${userArgument}\n\n(Remember: Keep it short, under 120 words. If you state facts, verify them with Google Search.)`;
@@ -157,10 +155,15 @@ export async function POST(request: Request) {
             encoder.encode(`data: ${JSON.stringify({ type: "start" })}\n\n`)
           );
 
-          const result = await model.generateContentStream({
-            contents: [...history, { role: "user", parts: [{ text: userMessage }] }],
-            tools: [{ googleSearch: {} } as any], // Use Google Search Grounding
-          });
+          const { stream: resultStream, model: usedModel } = await generateContentStreamWithFallback(
+            "gemini-2.0-flash-exp",
+            modelOptions,
+            {
+              contents: [...history, { role: "user", parts: [{ text: userMessage }] }],
+              tools: [{ googleSearch: {} } as any],
+            },
+          );
+          log.info('stream.model', { debateId, model: usedModel });
 
           let accumulatedContent = "";
           let buffer = "";
@@ -186,7 +189,7 @@ export async function POST(request: Request) {
             }
           };
 
-          for await (const chunk of result.stream) {
+          for await (const chunk of resultStream) {
             const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text || "";
             
             // Handle citations/grounding
