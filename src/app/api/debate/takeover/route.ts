@@ -89,7 +89,12 @@ export async function POST(request: Request) {
       ? `The opponent just said: "${lastOpponentMessage}"\n\nGenerate my response arguing for my position.`
       : `Generate my opening argument for this debate on "${topic}".`;
 
-    const modelOptions = { systemInstruction: systemPrompt };
+    const modelOptions = {
+      systemInstruction: systemPrompt,
+      generationConfig: {
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    };
 
     let controllerClosed = false;
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserId } from '@/lib/auth-helper';
-import { getJudgePrompt } from '@/lib/prompts.judge';
+import { getScoringPrompt } from '@/lib/scoring';
 import { createRateLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { errors, validateBody } from '@/lib/api-errors';
 import { judgeDebateSchema } from '@/lib/api-schemas';
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     log.info('judging.started', { debateId, topic: topic.slice(0, 100), messageCount: messages.length });
 
     // Generate the judging prompt
-    const judgePrompt = getJudgePrompt(topic, messages);
+    const judgePrompt = getScoringPrompt(topic, messages);
 
     // Call Gemini
     const result = await model.generateContent({

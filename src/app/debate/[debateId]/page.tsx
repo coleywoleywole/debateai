@@ -186,7 +186,7 @@ export default async function DebatePage({
             character: debate.character as string | undefined,
             opponentStyle: debate.opponentStyle as string | undefined,
             messages: messages as any,
-            score_data: debate.score_data as Record<string, unknown> | undefined,
+            score_data: debate.score_data as any,
           } : null}
           initialMessages={messages as any}
           initialIsOwner={isOwner}

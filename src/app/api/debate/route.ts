@@ -59,7 +59,12 @@ export async function POST(request: Request) {
     } = body;
 
     // Get existing debate state for A/B test variant
-    const existingDebate = debateId ? await d1.getDebate(debateId) : { success: false };
+    let existingDebate: { success: boolean; debate?: any } = { success: false };
+    try {
+      existingDebate = debateId ? await d1.getDebate(debateId) : { success: false };
+    } catch {
+      // D1 unavailable (e.g. local dev) — continue with defaults
+    }
     let assignedVariant = 'default';
 
     if (existingDebate.success && (existingDebate as any).debate?.promptVariant) {
@@ -86,13 +91,17 @@ export async function POST(request: Request) {
     
     // Deduplicate debate creation
     if (!debateId) {
-      const dup = await d1.findRecentDuplicate(userId, topic, 30);
-      if (dup.found && dup.debateId) {
-        return NextResponse.json({
-          deduplicated: true,
-          debateId: dup.debateId,
-          message: "A debate on this topic was just created. Resuming that debate.",
-        });
+      try {
+        const dup = await d1.findRecentDuplicate(userId, topic, 30);
+        if (dup.found && dup.debateId) {
+          return NextResponse.json({
+            deduplicated: true,
+            debateId: dup.debateId,
+            message: "A debate on this topic was just created. Resuming that debate.",
+          });
+        }
+      } catch {
+        // D1 unavailable — skip dedup check
       }
     }
 
@@ -137,7 +146,14 @@ export async function POST(request: Request) {
       }
     }
 
-    const modelOptions = { systemInstruction: systemPrompt };
+    const modelOptions = {
+      systemInstruction: systemPrompt,
+      generationConfig: {
+        // Limit thinking budget so tokens start streaming faster
+        // Without this, Gemini 2.5 Flash "thinks" for seconds before emitting any tokens
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    };
 
     // Inject reminder about citations
     const userMessage = `${userArgument}\n\n(Remember: Keep it short, under 120 words. If you state facts, verify them with Google Search.)`;
@@ -248,34 +264,38 @@ export async function POST(request: Request) {
             );
           }
 
-          // Save the complete debate turn
+          // Save the complete debate turn (non-blocking in dev if D1 unavailable)
           if (debateId && accumulatedContent) {
-            const existingDebate = await d1.getDebate(debateId);
-            if (existingDebate.success && existingDebate.debate) {
-              const existingMessages = Array.isArray(existingDebate.debate.messages) 
-                ? existingDebate.debate.messages 
-                : [];
-              
-              existingMessages.push({
-                role: "user",
-                content: userArgument,
-                ...(isAIAssisted && { aiAssisted: true }),
-              });
-              existingMessages.push({
-                role: "ai",
-                content: accumulatedContent,
-                ...(citations.length > 0 && { citations }),
-              });
+            try {
+              const existingDebate = await d1.getDebate(debateId);
+              if (existingDebate.success && existingDebate.debate) {
+                const existingMessages = Array.isArray(existingDebate.debate.messages)
+                  ? existingDebate.debate.messages
+                  : [];
 
-              await d1.saveDebate({
-                userId,
-                opponent: character,
-                topic: (existingDebate.debate.topic as string) || topic,
-                messages: existingMessages,
-                debateId,
-                opponentStyle,
-                promptVariant: assignedVariant,
-              });
+                existingMessages.push({
+                  role: "user",
+                  content: userArgument,
+                  ...(isAIAssisted && { aiAssisted: true }),
+                });
+                existingMessages.push({
+                  role: "ai",
+                  content: accumulatedContent,
+                  ...(citations.length > 0 && { citations }),
+                });
+
+                await d1.saveDebate({
+                  userId,
+                  opponent: character,
+                  topic: (existingDebate.debate.topic as string) || topic,
+                  messages: existingMessages,
+                  debateId,
+                  opponentStyle,
+                  promptVariant: assignedVariant,
+                });
+              }
+            } catch {
+              // D1 unavailable — debate still works, just not persisted
             }
           }
 

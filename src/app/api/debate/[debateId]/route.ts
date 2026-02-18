@@ -39,7 +39,19 @@ export async function GET(
     }
 
     // Try D1
-    const result = await d1.getDebate(debateId);
+    let result: { success: boolean; debate?: any } = { success: false };
+    try {
+      result = await d1.getDebate(debateId);
+    } catch {
+      // D1 unavailable (local dev) — return empty debate shell
+      if (process.env.NODE_ENV === 'development') {
+        return NextResponse.json({
+          debate: { id: debateId, topic: '', opponent: 'custom', messages: [], created_at: new Date().toISOString() },
+          isOwner: true,
+          isAuthenticated: false,
+        });
+      }
+    }
 
     if (result.success && result.debate) {
       const isOwner = userId ? result.debate.user_id === userId : false;

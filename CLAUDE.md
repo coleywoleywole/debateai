@@ -122,48 +122,35 @@ STRIPE_WEBHOOK_SECRET=
 
 5. **Debate Styles**: Each opponent type has specific argumentation patterns and approaches defined through system prompts, ensuring intellectually consistent debate experiences.
 
-## Discord Bot (Inter-Agent Communication)
+## Communicating with Sketch (UI/Design Agent)
 
-A Discord bot runs at `/Users/spud/discord-bot/` that lets Claude Code instances communicate with other agents (like Sketch) in the team Discord server.
+Sketch is a design-focused agent that handles UI/visual work. It operates in the `#sketch` Discord channel.
 
-### Starting the bot
+### How to talk to Sketch
+- **Require mention**: You MUST mention `<@1465238762807099440>` in your message or Sketch won't respond
+- **Channel**: `#sketch` (ID: `1468692375042785424`)
+- **Don't give design direction**: Tell Sketch WHAT needs fixing (the problem, broken behavior, which file/component), but do NOT tell it HOW to design or style it. Sketch has better design instincts — let it decide the visual approach.
+- **Tell it to run tests**: Remind Sketch to run `npx playwright test tests/e2e/critical-journeys.spec.ts --project=chromium` after changes
+- **CRITICAL — Tell Sketch NOT to change API calls or business logic**: Sketch is a design agent and must ONLY modify CSS, classes, HTML structure, and visual presentation. It must NOT change: API endpoint URLs (`fetch('/api/...')`), request/response handling, SSE/streaming logic, sessionStorage keys, state management logic, or any non-visual JavaScript. If Sketch needs backend changes, it should flag them for you to handle.
+
+### Example message to Sketch
+Write your message JSON to a file, then send:
+```bash
+echo '{"message": "<@1465238762807099440> The verdict button on the debate page is overlapping the input bar. File: src/app/debate/[debateId]/DebateClient.tsx — search for Request Verdict. Please run tests after."}' > /tmp/msg.json
+curl -s -X POST http://localhost:3456/send -H "Content-Type: application/json" -d @/tmp/msg.json
+```
+
+### Reading Sketch's replies
+```bash
+curl -s "http://localhost:3456/messages?limit=10"
+```
+
+### Bot setup
+The Discord bot at `/Users/spud/discord-bot/` must be running. Start it with:
 ```bash
 cd /Users/spud/discord-bot && node bot.js &
 ```
-
-### Sending a message to Discord
+Then set the channel:
 ```bash
-# Set the target channel first (only needed once per session)
-curl -s -X POST http://localhost:3456/channel \
-  -H "Content-Type: application/json" \
-  -d '{"channelId": "CHANNEL_ID"}'
-
-# Send a message
-curl -s -X POST http://localhost:3456/send \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Your message here"}'
+curl -s -X POST http://localhost:3456/channel -H "Content-Type: application/json" -d '{"channelId": "1468692375042785424"}'
 ```
-
-### Reading messages from Discord
-```bash
-curl -s http://localhost:3456/messages?limit=10
-```
-
-### Key channels
-| Channel | ID | Purpose |
-|---------|-----|---------|
-| #sketch | `1468692375042785424` | UI/design agent |
-| #general | `1465239718819139792` | General |
-| #forge-backend | `1469615895021093029` | Backend agent |
-| #pixel-frontend | `1469615896505880657` | Frontend agent |
-
-### Bot status
-```bash
-curl -s http://localhost:3456/status
-```
-
-### Notes
-- Bot posts as `ClaudeCode#4534`
-- Long messages (>1900 chars) are auto-split
-- For messages with special characters, write JSON to a file and use `curl -d @/tmp/msg.json`
-- Server: **Temp** (ID: `1465239717971759199`)

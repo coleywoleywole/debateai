@@ -7,6 +7,7 @@ import Link from 'next/link';
 import UpgradeModal from '@/components/UpgradeModal';
 import Header from '@/components/Header';
 import { useSubscription } from '@/lib/useSubscription';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function DebatePage() {
   const { isSignedIn } = useSafeUser();
@@ -32,7 +33,7 @@ export default function DebatePage() {
     }
     
     setIsStarting(true);
-    const debateId = crypto.randomUUID();
+    const debateId = uuidv4();
     
     try {
       const response = await fetch('/api/debate/create', {

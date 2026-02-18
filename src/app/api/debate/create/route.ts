@@ -75,18 +75,29 @@ export async function POST(request: Request) {
     const experimentVariant = lastChar.charCodeAt(0) % 2 === 0 ? 'aggressive' : 'default';
 
     // Save the debate to the database with custom opponent info
-    const saveResult = await d1.saveDebate({
-      userId,
-      opponent: effectiveOpponent as OpponentType,
-      topic,
-      messages: initialMessages,
-      debateId,
-      opponentStyle, // Save the custom style for later use
-      promptVariant: experimentVariant, // Save the experiment variant
-    } as any);
-    
-    if (!saveResult.success) {
-      throw new Error(saveResult.error || 'Failed to create debate');
+    let saveResult: { success: boolean; debateId?: string; error?: string };
+    try {
+      saveResult = await d1.saveDebate({
+        userId,
+        opponent: effectiveOpponent as OpponentType,
+        topic,
+        messages: initialMessages,
+        debateId,
+        opponentStyle, // Save the custom style for later use
+        promptVariant: experimentVariant, // Save the experiment variant
+      } as any);
+
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || 'Failed to create debate');
+      }
+    } catch (dbError) {
+      // In development, allow debates without D1 persistence
+      if (process.env.NODE_ENV === 'development') {
+        log.info('D1 unavailable in dev — proceeding without persistence', { debateId });
+        saveResult = { success: true, debateId };
+      } else {
+        throw dbError;
+      }
     }
     
     log.info('created', {
@@ -108,8 +119,8 @@ export async function POST(request: Request) {
       is_guest: isGuest
     });
 
-    // Log to internal analytics table
-    await d1.logAnalyticsEvent({
+    // Log to internal analytics table (non-blocking, don't fail on error)
+    d1.logAnalyticsEvent({
       eventType: 'debate_started',
       debateId: saveResult.debateId || debateId,
       userId,
@@ -118,7 +129,7 @@ export async function POST(request: Request) {
         opponent: effectiveOpponent,
         isGuest
       }
-    });
+    }).catch(() => {});
 
     // Return success with rate limit headers
     const response = NextResponse.json({ 

@@ -24,13 +24,20 @@ function checkClerkAvailability(): boolean {
   if (clerkAvailabilityCache !== null) {
     return clerkAvailabilityCache;
   }
-  
+
   // Check build-time env var first
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
     clerkAvailabilityCache = false;
     return false;
   }
-  
+
+  // In development, skip Clerk entirely — production keys don't work on
+  // non-debateai.org origins (localhost, Tailscale, etc.) and cause infinite loading.
+  if (process.env.NODE_ENV === 'development') {
+    clerkAvailabilityCache = false;
+    return false;
+  }
+
   // If env var exists, assume Clerk is available (runtime check happens in hooks)
   clerkAvailabilityCache = true;
   return true;

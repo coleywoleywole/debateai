@@ -12,6 +12,7 @@ import StreakUrgencyBanner from '@/components/StreakUrgencyBanner';
 import { useSubscription } from '@/lib/useSubscription';
 import { markOnboarded } from '@/lib/onboarding';
 import { track } from '@/lib/analytics';
+import { v4 as uuidv4 } from 'uuid';
 
 const QUICK_STARTS = [
   { topic: "Free will is an illusion", persona: "Sam Harris" },
@@ -39,7 +40,6 @@ export default function HomeClient({
   const [userInput, setUserInput] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const [shakeInput, setShakeInput] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -58,7 +58,7 @@ export default function HomeClient({
         setIsStarting(true);
 
         const createPendingDebate = async () => {
-          const debateId = crypto.randomUUID();
+          const debateId = uuidv4();
 
           try {
             const response = await fetch('/api/debate/create', {
@@ -121,7 +121,7 @@ export default function HomeClient({
     if (!isSignedIn) {
       let guestId = document.cookie.split('; ').find(row => row.startsWith('guest_id='))?.split('=')[1];
       if (!guestId) {
-        guestId = crypto.randomUUID();
+        guestId = uuidv4();
         // Set guest_id cookie for 1 year
         const expiry = new Date();
         expiry.setFullYear(expiry.getFullYear() + 1);
@@ -130,7 +130,7 @@ export default function HomeClient({
     }
 
     setIsStarting(true);
-    const debateId = crypto.randomUUID();
+    const debateId = uuidv4();
 
     try {
       const response = await fetch('/api/debate/create', {
@@ -258,9 +258,7 @@ export default function HomeClient({
                 rounded-2xl bg-[var(--bg-elevated)] transition-all duration-200 border
                 ${shakeInput
                   ? 'animate-shake border-[var(--error)] ring-2 ring-[var(--error)]/20'
-                  : isFocused
-                    ? 'border-[var(--accent)]/50 ring-1 ring-[var(--accent)]/20 shadow-md'
-                    : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+                  : 'border-[var(--border)] hover:border-[var(--border-strong)]'
                 }
               `}
             >
@@ -280,8 +278,6 @@ export default function HomeClient({
                       setUserInput(e.target.value);
                     }
                   }}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !isStarting) {
                       startDebate();

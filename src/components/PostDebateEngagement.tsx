@@ -7,6 +7,7 @@ import { useSafeUser, useSafeClerk } from '@/lib/useSafeClerk';
 import { getRelatedTopics } from '@/lib/topics';
 import { PERSONAS } from '@/lib/personas';
 import { track } from '@/lib/analytics';
+import { v4 as uuidv4 } from 'uuid';
 import { useToast } from './Toast';
 
 interface PostDebateEngagementProps {
@@ -37,11 +38,11 @@ export default function PostDebateEngagement({
   // Generate related topics once (stable across re-renders)
   const relatedTopics = useMemo(() => getRelatedTopics(topic, 3), [topic]);
 
-  // Pick a random opponent for suggested topics (different from current)
-  const getRandomOpponent = () => {
+  // Pick a stable random opponent per topic (doesn't change on re-render)
+  const topicOpponents = useMemo(() => {
     const others = PERSONAS.filter(p => p.id !== opponentId);
-    return others[Math.floor(Math.random() * others.length)];
-  };
+    return relatedTopics.map(() => others[Math.floor(Math.random() * others.length)]);
+  }, [relatedTopics, opponentId]);
 
   const startDebate = async (newTopic: string, persona: string, source: string) => {
     if (isStarting) return;
@@ -61,7 +62,7 @@ export default function PostDebateEngagement({
     }
 
     setIsStarting(source);
-    const newDebateId = crypto.randomUUID();
+    const newDebateId = uuidv4();
 
     try {
       const response = await fetch('/api/debate/create', {
@@ -185,8 +186,8 @@ export default function PostDebateEngagement({
           </div>
 
           <div className="space-y-2">
-            {relatedTopics.map((rt) => {
-              const randomOpp = getRandomOpponent();
+            {relatedTopics.map((rt, idx) => {
+              const randomOpp = topicOpponents[idx];
               const key = `topic-${rt.id}`;
 
               return (

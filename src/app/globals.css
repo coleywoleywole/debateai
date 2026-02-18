@@ -8,6 +8,20 @@ body {
   overflow-x: hidden;
 }
 
+/* All interactive elements get pointer cursor by default */
+button,
+[role="button"],
+a,
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 :root, .light {
   /* ============================================
      DESIGN SYSTEM - DebateAI
@@ -479,6 +493,20 @@ textarea:focus-visible,
 }
 .animate-shake {
   animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-message-in {
+  animation: message-in 0.25s ease-out both;
 }
 
 /* ============================================
