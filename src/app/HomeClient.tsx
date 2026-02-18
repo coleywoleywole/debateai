@@ -174,10 +174,10 @@ export default function HomeClient({
 
       <main className="flex-1 flex flex-col items-center justify-center px-5 py-8 relative z-10">
         <div className="w-full max-w-2xl">
-          {/* Hero — minimal */}
-          <div className="text-center mb-10">
+          {/* Hero — improved typography and spacing */}
+          <div className="text-center mb-8 sm:mb-10">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-3">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[var(--text)] leading-tight px-1 break-words whitespace-normal w-full">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[var(--text)] leading-tight px-1">
                 The AI that fights back.
               </h1>
               <StreakIndicator />
@@ -190,13 +190,16 @@ export default function HomeClient({
           {/* Streak urgency banner */}
           <StreakUrgencyBanner />
 
-          {/* Today's Debate Card */}
+          {/* Today's Debate Card — enhanced styling */}
           <div className="mb-6 animate-fade-up" style={{ animationDelay: '100ms' }} data-onboarding="topic">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 sm:p-6">
-              {/* Topic label */}
-              <div className="flex items-center justify-between mb-3">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 sm:p-6 shadow-sm">
+              {/* Topic label with shuffle button */}
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 flex-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                     Today&apos;s Debate
                   </span>
                   <span className="h-px flex-1 bg-[var(--border)]" />
@@ -212,57 +215,60 @@ export default function HomeClient({
                     });
                     track('topic_shuffled', { newTopic: random.topic });
                   }}
-                  className="ml-3 p-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/5 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-all group"
-                  title="Shuffle topic"
+                  className="ml-3 p-2 rounded-lg border border-[var(--border)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-all group"
+                  title="Shuffle to a different topic"
                 >
-                  <svg className="w-3.5 h-3.5 group-active:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 group-active:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
               </div>
 
-              {/* Topic */}
-              <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text)] mb-3 leading-snug break-words">
+              {/* Topic — improved typography */}
+              <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text)] mb-4 leading-snug">
                 {dailyDebate.topic}
               </h2>
 
-              {/* Opponent */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
-                    <svg className="w-3.5 h-3.5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm text-[var(--text)]">
-                    You&apos;re debating <strong className="font-semibold text-[var(--accent)]">{dailyDebate.persona}</strong>
-                  </span>
+              {/* Opponent — enhanced styling */}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-sunken)]/50 border border-[var(--border)]/50">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
-                {dailyDebate.description && (
-                  <p className="text-xs text-[var(--text-secondary)] ml-8 italic">
-                    {dailyDebate.description}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[var(--text)]">
+                    You&apos;re debating <strong className="font-semibold text-[var(--accent)]">{dailyDebate.persona}</strong>
                   </p>
-                )}
+                  {dailyDebate.description && (
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
+                      {dailyDebate.description}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Argument Input — always visible, ready to type */}
+          {/* Argument Input — enhanced styling */}
           <form onSubmit={startDebate} className="animate-fade-up" style={{ animationDelay: '200ms' }}>
             <div
               data-onboarding="input"
               className={`
-                rounded-2xl bg-[var(--bg-elevated)] transition-all duration-200
+                rounded-2xl bg-[var(--bg-elevated)] transition-all duration-200 border
                 ${shakeInput
-                  ? 'animate-shake ring-2 ring-[var(--error)]'
+                  ? 'animate-shake border-[var(--error)] ring-2 ring-[var(--error)]/20'
                   : isFocused
-                    ? 'ring-1 ring-[var(--accent)]/30'
-                    : 'ring-1 ring-[var(--border)]/30'
+                    ? 'border-[var(--accent)]/50 ring-1 ring-[var(--accent)]/20 shadow-md'
+                    : 'border-[var(--border)] hover:border-[var(--border-strong)]'
                 }
               `}
             >
               <div className="p-5">
-                <label htmlFor="argument-input" className="block text-xs font-medium text-[var(--text)] mb-2">
+                <label htmlFor="argument-input" className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] mb-3">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
                   What&apos;s your opening argument?
                 </label>
                 <textarea
@@ -282,23 +288,23 @@ export default function HomeClient({
                     }
                   }}
                   placeholder="Type your opening argument here to begin..."
-                  className="w-full bg-transparent resize-none outline-none text-[var(--text)] placeholder-[var(--text-secondary)]/70 min-h-[100px] text-base sm:text-[15px] leading-relaxed"
+                  className="w-full bg-transparent resize-none outline-none text-[var(--text)] placeholder-[var(--text-secondary)]/60 min-h-[100px] text-base sm:text-[15px] leading-relaxed"
                   disabled={isStarting}
                   autoFocus
                 />
 
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border)]/30">
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--border)]/50">
                   <span
                     className={`text-xs tabular-nums transition-colors ${
                       charCount > maxChars * 0.9
-                        ? 'text-[var(--error)]'
-                        : 'text-[var(--text-secondary)]'
+                        ? 'text-[var(--error)] font-medium'
+                        : 'text-[var(--text-tertiary)]'
                     }`}
                   >
                     {charCount > 0 ? `${charCount} / ${maxChars}` : '\u00A0'}
                   </span>
 
-                  <span className="hidden sm:flex items-center gap-1 text-xs text-[var(--text-secondary)] cursor-default select-none">
+                  <span className="hidden sm:flex items-center gap-1 text-xs text-[var(--text-tertiary)] cursor-default select-none">
                     <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border)] text-[10px] font-mono">
                       ⌘
                     </kbd>
@@ -306,13 +312,14 @@ export default function HomeClient({
                     <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border)] text-[10px] font-mono">
                       Enter
                     </kbd>
+                    <span className="ml-1">to start</span>
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* CTA Row */}
-            <div className="flex flex-col sm:flex-row gap-3 mt-3">
+            {/* CTA Row — improved button styling */}
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <button
                 type="submit"
                 disabled={isStarting}
@@ -321,7 +328,7 @@ export default function HomeClient({
                   flex-1 h-12 px-6 rounded-xl font-medium text-base transition-all duration-200
                   flex items-center justify-center gap-2
                   ${!isStarting
-                    ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/35 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer'
+                    ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md cursor-pointer'
                     : 'bg-[var(--bg-sunken)] text-[var(--text-secondary)] cursor-not-allowed'
                   }
                 `}
@@ -333,7 +340,7 @@ export default function HomeClient({
                   </>
                 ) : (
                   <>
-                    <span className="whitespace-nowrap">Start Debate</span>
+                    <span>Start Debate</span>
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -345,14 +352,12 @@ export default function HomeClient({
                 type="button"
                 disabled={isStarting}
                 onClick={() => startDebate(undefined, "AI, you start the debate. Make your opening argument.")}
-                className={`
-                  sm:w-auto h-12 px-6 rounded-xl font-medium text-[15px] border border-[var(--border)]
-                  flex items-center justify-center gap-2 bg-[var(--bg-elevated)] text-[var(--text)]
-                  hover:bg-[var(--bg-sunken)] transition-all active:scale-95 disabled:opacity-50
-                  cursor-pointer
-                `}
+                className="h-12 px-5 rounded-xl font-medium text-[15px] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-sunken)] hover:border-[var(--border-strong)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
               >
-                <span>AI, you start →</span>
+                <svg className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>AI goes first</span>
               </button>
             </div>
 
@@ -364,11 +369,15 @@ export default function HomeClient({
             )}
           </form>
 
-          {/* Quick Start Options */}
-          <div className="mt-8 animate-fade-in" style={{ animationDelay: '300ms' }}>
-            <p className="text-xs text-center text-[var(--text-secondary)] mb-3 uppercase tracking-wider font-semibold">
-              Or try a different topic
-            </p>
+          {/* Quick Start Options — improved card styling */}
+          <div className="mt-10 animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="h-px flex-1 bg-[var(--border)]" />
+              <p className="text-xs text-center text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
+                Or try a different topic
+              </p>
+              <div className="h-px flex-1 bg-[var(--border)]" />
+            </div>
             <div className="grid gap-3">
               {QUICK_STARTS.map((option, i) => (
                 <button
@@ -384,9 +393,9 @@ export default function HomeClient({
                       inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                   }}
-                  className="group flex items-center justify-between p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition-all text-left w-full cursor-pointer"
+                  className="group flex items-center justify-between p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 transition-all text-left w-full cursor-pointer shadow-sm hover:shadow-md"
                 >
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
                       {option.topic}
                     </span>
@@ -394,9 +403,11 @@ export default function HomeClient({
                       vs. {option.persona}
                     </span>
                   </div>
-                  <svg className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <div className="w-8 h-8 rounded-lg bg-[var(--bg-sunken)] group-hover:bg-[var(--accent)]/10 flex items-center justify-center transition-colors">
+                    <svg className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-all transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </button>
               ))}
             </div>
@@ -404,10 +415,10 @@ export default function HomeClient({
 
           {/* Upgrade Nudge */}
           {!isPremium && debatesUsed !== undefined && debatesUsed >= 2 && (
-            <div className="mt-8 text-center animate-fade-in">
+            <div className="mt-10 text-center animate-fade-in">
               <button
                 onClick={() => setShowUpgradeModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs text-[var(--accent)] bg-[var(--accent)]/5 border border-[var(--accent)]/20 hover:bg-[var(--accent)]/10 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium text-[var(--accent)] bg-[var(--accent)]/5 border border-[var(--accent)]/20 hover:bg-[var(--accent)]/10 hover:scale-105 transition-all cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

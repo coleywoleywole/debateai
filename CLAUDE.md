@@ -121,3 +121,49 @@ STRIPE_WEBHOOK_SECRET=
 4. **Error Handling**: All API routes include try-catch blocks with appropriate error responses. Database operations fail gracefully if D1 is not configured.
 
 5. **Debate Styles**: Each opponent type has specific argumentation patterns and approaches defined through system prompts, ensuring intellectually consistent debate experiences.
+
+## Discord Bot (Inter-Agent Communication)
+
+A Discord bot runs at `/Users/spud/discord-bot/` that lets Claude Code instances communicate with other agents (like Sketch) in the team Discord server.
+
+### Starting the bot
+```bash
+cd /Users/spud/discord-bot && node bot.js &
+```
+
+### Sending a message to Discord
+```bash
+# Set the target channel first (only needed once per session)
+curl -s -X POST http://localhost:3456/channel \
+  -H "Content-Type: application/json" \
+  -d '{"channelId": "CHANNEL_ID"}'
+
+# Send a message
+curl -s -X POST http://localhost:3456/send \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Your message here"}'
+```
+
+### Reading messages from Discord
+```bash
+curl -s http://localhost:3456/messages?limit=10
+```
+
+### Key channels
+| Channel | ID | Purpose |
+|---------|-----|---------|
+| #sketch | `1468692375042785424` | UI/design agent |
+| #general | `1465239718819139792` | General |
+| #forge-backend | `1469615895021093029` | Backend agent |
+| #pixel-frontend | `1469615896505880657` | Frontend agent |
+
+### Bot status
+```bash
+curl -s http://localhost:3456/status
+```
+
+### Notes
+- Bot posts as `ClaudeCode#4534`
+- Long messages (>1900 chars) are auto-split
+- For messages with special characters, write JSON to a file and use `curl -d @/tmp/msg.json`
+- Server: **Temp** (ID: `1465239717971759199`)

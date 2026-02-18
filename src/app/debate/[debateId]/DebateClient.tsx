@@ -186,7 +186,7 @@ const Message = memo(
       <div 
         ref={messageRef}
         id={`message-${messageIndex}`}
-        className={`py-5 relative group ${isUser ? '' : 'bg-[var(--bg-elevated)]/60 border-y border-[var(--border)]/30'} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
+        className={`py-5 sm:py-6 relative group ${isUser ? '' : 'bg-[var(--bg-elevated)]/50 border-y border-[var(--border)]/40'} ${isFailed ? 'opacity-80' : ''} ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
       >
         {/* Highlight overlay */}
         {isHighlighted && (
@@ -201,22 +201,22 @@ const Message = memo(
         )}
         
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex gap-3">
-            {/* Avatar */}
-            <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm
+          <div className="flex gap-3 sm:gap-4">
+            {/* Avatar - enhanced styling */}
+            <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-sm shadow-sm
               ${isFailed
                 ? 'bg-[var(--error)]/10 text-[var(--error)] border border-[var(--error)]/30'
                 : isUser
-                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'bg-[var(--bg-sunken)] border border-[var(--border)]/50'
+                  ? 'bg-gradient-to-br from-[var(--accent)]/20 to-[var(--accent)]/5 text-[var(--accent)] border border-[var(--accent)]/20'
+                  : 'bg-[var(--bg-sunken)] border border-[var(--border)]'
               }`}
             >
               {isUser ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
               ) : (
-                opponent?.avatar || "🤖"
+                <span className="text-lg">{opponent?.avatar || "🤖"}</span>
               )}
             </div>
 
@@ -375,7 +375,7 @@ Message.displayName = "Message";
 export default function DebateClient({ initialDebate = null, initialMessages = [], initialIsOwner = false }: DebateClientProps = {}) {
   const params = useParams();
   const searchParams = useSearchParams();
-  const { user, isSignedIn } = useSafeUser();
+  const { user, isSignedIn, isLoaded: isAuthLoaded } = useSafeUser();
   const { showToast } = useToast();
   const debateId = params.debateId as string;
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1233,7 +1233,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   }
 
   // Loading state - skeleton loader
-  if (!isDevMode && (isSignedIn === undefined || isLoadingDebate)) {
+  if (!isDevMode && (!isAuthLoaded || isLoadingDebate)) {
     return (
       <>
         <Header />
@@ -1360,17 +1360,31 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         </div>
       </div>
 
-      {/* Floating verdict button - shown when enough messages but no score */}
+      {/* Enhanced Floating Request Verdict button */}
       {!debateScore && effectiveIsOwner && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 2 && !isAILoading && !isUserLoading && (
-        <button
-          onClick={requestJudgment}
-          className="fixed right-4 bottom-24 sm:right-6 sm:bottom-28 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all transform active:scale-95 font-medium shadow-lg shadow-[var(--accent)]/30 text-sm"
-        >
-          <span>Request Verdict</span>
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
+        <div className="fixed right-4 bottom-24 sm:right-8 sm:bottom-28 z-40 flex flex-col items-end gap-2">
+          <button
+            onClick={requestJudgment}
+            className="group flex items-center gap-2.5 px-5 py-3 rounded-full 
+              bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] 
+              text-white font-semibold shadow-xl shadow-[var(--accent)]/40 
+              hover:shadow-2xl hover:shadow-[var(--accent)]/50 
+              hover:scale-105 active:scale-95 
+              transition-all duration-300 text-sm sm:text-base"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+            </svg>
+            <span>Request Verdict</span>
+            <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+          <span className="text-[10px] text-[var(--text-secondary)] bg-[var(--bg-elevated)]/80 px-2 py-1 rounded-full backdrop-blur-sm">
+            Judge will score your debate
+          </span>
+        </div>
       )}
 
       {/* Input Area - Fixed at bottom with mobile keyboard handling */}
@@ -1412,11 +1426,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   }, 100);
                 }}
                 placeholder={effectiveIsOwner ? placeholderText : "Sign in to contribute..."}
-                className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl
-                  px-3 sm:px-4 py-2.5 sm:py-3 resize-none text-[var(--text)] placeholder-[var(--text-secondary)]/70
-                  outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20
-                  transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] text-[15px] leading-relaxed overflow-hidden
-                  touch-manipulation disabled:opacity-50"
+                className="w-full bg-[var(--bg-elevated)] border-2 border-[var(--border)] rounded-2xl
+                  px-4 py-3 sm:py-3.5 resize-none text-[var(--text)] placeholder-[var(--text-secondary)]/60
+                  outline-none focus:border-[var(--accent)]/60 focus:ring-4 focus:ring-[var(--accent)]/10
+                  transition-all min-h-[52px] sm:min-h-[56px] max-h-[140px] text-[15px] leading-relaxed overflow-hidden
+                  touch-manipulation disabled:opacity-50 shadow-sm"
                 rows={1}
                 disabled={isUserLoading || isAILoading || !effectiveIsOwner}
               />
@@ -1430,13 +1444,13 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 onClick={handleAITakeover}
                 disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner}
                 className={`
-                  w-10 h-10 rounded-lg border flex items-center justify-center
-                  transition-all duration-200 flex-shrink-0
+                  w-11 h-11 rounded-xl border-2 flex items-center justify-center
+                  transition-all duration-200 flex-shrink-0 shadow-sm
                   ${isAITakeoverLoading
                     ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10'
-                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/30'
+                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5'
                   }
-                  disabled:opacity-40 disabled:cursor-not-allowed
+                  disabled:opacity-40 disabled:cursor-not-allowed active:scale-95
                 `}
                 title={effectiveIsOwner ? "Let AI argue for you" : "Sign in to contribute to this debate"}
               >
@@ -1459,11 +1473,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 onClick={() => handleSend()}
                 disabled={!canSend}
                 className={`
-                  w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-                  transition-all duration-200
+                  w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
+                  transition-all duration-200 shadow-sm
                   ${canSend
-                    ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] cursor-pointer'
-                    : 'bg-[var(--bg-sunken)] text-[var(--text-tertiary)] cursor-not-allowed'
+                    ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] cursor-pointer shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
+                    : 'bg-[var(--bg-sunken)] text-[var(--text-tertiary)] cursor-not-allowed border-2 border-[var(--border)]'
                   }
                 `}
                 title="Send message"

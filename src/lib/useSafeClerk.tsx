@@ -68,7 +68,7 @@ export function useSafeUser() {
     return useClerkUser();
   }
   
-  return { isSignedIn: undefined, isLoaded: true, user: undefined };
+  return { isSignedIn: false as const, isLoaded: true, user: undefined };
 }
 
 /**
