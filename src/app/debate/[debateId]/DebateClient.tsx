@@ -449,23 +449,31 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   }, [isLoadingDebate, isDevMode]);
 
-  // Load debate data if not provided
+  // Load debate data and check ownership
+  // Always fetch from API to get correct isOwner (SSR can't check auth cookies)
   useEffect(() => {
-    if (initialDebate || isDevMode) return;
+    if (isDevMode) return;
 
     async function loadDebate() {
       try {
         const res = await fetch(`/api/debate/${debateId}`);
         if (!res.ok) throw new Error('Failed to load debate');
         const data = await res.json();
-        setDebate(data.debate);
-        setMessages(data.debate.messages || []);
+        // Always update ownership from authenticated API call
         setIsOwner(data.isOwner);
-        if (data.debate.score_data) {
-          setDebateScore(data.debate.score_data);
+        // Only update debate data if SSR didn't provide it
+        if (!initialDebate) {
+          setDebate(data.debate);
+          setMessages(data.debate.messages || []);
+          if (data.debate.score_data) {
+            setDebateScore(data.debate.score_data);
+          }
         }
       } catch (e) {
-        setLoadError(e instanceof Error ? e.message : 'Unknown error');
+        // Only set error if we don't have SSR data to fall back on
+        if (!initialDebate) {
+          setLoadError(e instanceof Error ? e.message : 'Unknown error');
+        }
       } finally {
         setIsLoadingDebate(false);
       }
