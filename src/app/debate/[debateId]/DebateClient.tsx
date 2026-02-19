@@ -483,13 +483,12 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         const data = await res.json();
         // Always update ownership from authenticated API call
         setIsOwner(data.isOwner);
-        // Only update debate data if SSR didn't provide it
-        if (!initialDebate) {
-          setDebate(data.debate);
-          setMessages(data.debate.messages || []);
-          if (data.debate.score_data) {
-            setDebateScore(data.debate.score_data);
-          }
+        // Always update debate data from the API — SSR/ISR data may be stale
+        // (e.g., page was pre-rendered or ISR-cached before all messages were added)
+        setDebate(data.debate);
+        setMessages(data.debate.messages || []);
+        if (data.debate.score_data) {
+          setDebateScore(data.debate.score_data);
         }
       } catch (e) {
         // Only set error if we don't have SSR data to fall back on
@@ -502,7 +501,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
 
     loadDebate();
-  }, [debateId, initialDebate, isDevMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- initialDebate is from SSR and never changes; we intentionally always fetch fresh data
+  }, [debateId, isDevMode]);
 
   // Dev mode mock data
   useEffect(() => {
