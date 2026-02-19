@@ -16,7 +16,9 @@ import PostDebateEngagement from "@/components/PostDebateEngagement";
 import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
 import ShareCard from "@/components/ShareCard";
+import { LiveJudgePanel } from "@/components/LiveJudgePanel";
 import type { DebateScore } from "@/lib/scoring";
+import type { LiveJudgeFeedback, LiveJudgeHighlight } from "@/lib/live-judge";
 
 // Lazy load modals - they're only shown on user interaction
 const UpgradeModal = lazy(() => import("@/components/UpgradeModal"));
@@ -39,21 +41,22 @@ export interface DebateClientProps {
   initialIsOwner?: boolean;
 }
 
-// Message component with share per message
-const Message = memo(({ 
-  msg, 
-  opponent, 
-  debate, 
-  isAILoading, 
-  isUserLoading, 
-  onRetry, 
+// Message component with share per message and text highlighting
+const Message = memo(({
+  msg,
+  opponent,
+  debate,
+  isAILoading,
+  isUserLoading,
+  onRetry,
   messageIndex,
   isHighlighted,
   debateId,
-  variant
-}: { 
-  msg: { role: string; content: string; citations?: any[]; failed?: boolean }; 
-  opponent: any; 
+  variant,
+  highlights
+}: {
+  msg: { role: string; content: string; citations?: any[]; failed?: boolean };
+  opponent: any;
   debate: any;
   isAILoading?: boolean;
   isUserLoading?: boolean;
@@ -62,6 +65,7 @@ const Message = memo(({
   isHighlighted?: boolean;
   debateId: string;
   variant: 'default' | 'aggressive';
+  highlights?: LiveJudgeHighlight[];
 }) => {
   const isUser = msg.role === "user";
   const isFailed = msg.failed;
@@ -91,20 +95,78 @@ const Message = memo(({
     setTimeout(() => setHighlightedCitation(null), 2000);
   }, [showCitations]);
 
+  // Render message content with highlights
+  const renderContent = () => {
+    if (!highlights || highlights.length === 0 || !isUser) {
+      return <>{msg.content}</>;
+    }
+
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    const sortedHighlights = [...highlights].sort((a, b) => msg.content.indexOf(a.text) - msg.content.indexOf(b.text));
+
+    sortedHighlights.forEach((highlight, idx) => {
+      const startIndex = msg.content.indexOf(highlight.text, lastIndex);
+      if (startIndex === -1) return;
+
+      // Add text before highlight
+      if (startIndex > lastIndex) {
+        parts.push(<span key={`text-${idx}`}>{msg.content.slice(lastIndex, startIndex)}</span>);
+      }
+
+      // Add highlighted text with subtle underline + tooltip on hover
+      const isPositive = highlight.type === 'strong' || highlight.type === 'good-evidence';
+      const isFallacy = highlight.type === 'fallacy';
+      parts.push(
+        <span
+          key={`highlight-${idx}`}
+          className={`cursor-help relative group/highlight decoration-2 underline underline-offset-4 ${
+            isPositive
+              ? 'decoration-emerald-400/60'
+              : isFallacy
+              ? 'decoration-red-400/60'
+              : 'decoration-amber-400/60'
+          }`}
+        >
+          {highlight.text}
+          {/* Tooltip */}
+          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] shadow-xl text-xs opacity-0 invisible group-hover/highlight:opacity-100 group-hover/highlight:visible transition-all z-50 max-w-[220px] whitespace-normal text-left leading-relaxed">
+            <span className={`font-medium block mb-0.5 ${
+              isPositive ? 'text-emerald-500' : isFallacy ? 'text-red-500' : 'text-amber-500'
+            }`}>
+              {isPositive ? 'Strong point' : isFallacy ? 'Watch out' : 'Could improve'}
+            </span>
+            <span className="text-[var(--text-secondary)]">{highlight.comment}</span>
+            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[var(--bg-elevated)]" />
+          </span>
+        </span>
+      );
+
+      lastIndex = startIndex + highlight.text.length;
+    });
+
+    // Add remaining text
+    if (lastIndex < msg.content.length) {
+      parts.push(<span key="text-end">{msg.content.slice(lastIndex)}</span>);
+    }
+
+    return <>{parts}</>;
+  };
+
   return (
-    <div 
+    <div
       ref={messageRef}
       id={`message-${messageIndex}`}
       className={`py-6 relative group animate-message-in ${isHighlighted ? 'animate-highlight-pulse' : ''}`}
     >
       {isHighlighted && <div className="absolute inset-0 bg-[var(--accent)]/5 pointer-events-none" />}
-      
+
       {showShareToast && (
         <div className="absolute top-2 right-4 z-10 px-3 py-1.5 rounded-full bg-[var(--accent)] text-white text-xs font-medium shadow-lg animate-fade-in">
           Link copied!
         </div>
       )}
-      
+
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className={`flex gap-4 ${isUser ? 'flex-row' : 'flex-row'}`}>
           {/* Avatar */}
@@ -136,7 +198,7 @@ const Message = memo(({
                 {isUser ? "" : opponent?.title || ""}
               </span>
               {!isUser && (
-                <button 
+                <button
                   onClick={handleShare}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)]"
                   title="Share this message"
@@ -150,7 +212,7 @@ const Message = memo(({
 
             {/* Message Content */}
             <div className={`text-[var(--text)] leading-relaxed ${isFailed ? 'text-red-400' : ''}`}>
-              {msg.content}
+              {renderContent()}
               {isAILoading && (
                 <span className="inline-flex ml-1">
                   <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}/>
@@ -187,7 +249,7 @@ const Message = memo(({
               <div className="mt-3 p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Sources</span>
-                  <button 
+                  <button
                     onClick={() => setShowCitations(false)}
                     className="text-[var(--text-secondary)] hover:text-[var(--text)]"
                   >
@@ -263,9 +325,17 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [debateScore, setDebateScore] = useState<DebateScore | null>(null);
   const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
+  const [guestWallDismissed, setGuestWallDismissed] = useState(false);
   const [isGuestOwner, setIsGuestOwner] = useState(false);
   const [isJudging, setIsJudging] = useState(false);
   const isDevMode = searchParams.get('dev') === 'true';
+
+  // Live Judge state
+  const [liveFeedbackHistory, setLiveFeedbackHistory] = useState<LiveJudgeFeedback[]>([]);
+  const [runningSummary, setRunningSummary] = useState<string>('');
+  const [isLiveJudgeLoading, setIsLiveJudgeLoading] = useState(false);
+  const [showLiveJudgeDrawer, setShowLiveJudgeDrawer] = useState(false);
+  const liveJudgeAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!isSignedIn && (isDevMode || (debateId && sessionStorage.getItem('guest_debate_id') === debateId))) {
@@ -301,28 +371,64 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   }, [debate, messages, debateId, isJudging]);
 
-  // Auto-scroll effect
+  // Fetch live judge feedback
+  const fetchLiveJudgeFeedback = useCallback(async (userMsg: string, aiMsg: string) => {
+    if (liveJudgeAbortRef.current) liveJudgeAbortRef.current.abort();
+    const controller = new AbortController();
+    liveJudgeAbortRef.current = controller;
+    setIsLiveJudgeLoading(true);
+    try {
+      const res = await fetch('/api/debate/judge/live', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          debateId,
+          topic: debate?.topic,
+          latestExchange: { user: userMsg, ai: aiMsg },
+          runningSummary: runningSummary || undefined,
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setLiveFeedbackHistory(prev => [...prev, data.feedback]);
+      setRunningSummary(data.feedback.debateSummarySoFar || '');
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') console.error('Live judge error:', e);
+    } finally {
+      setIsLiveJudgeLoading(false);
+    }
+  }, [debateId, debate?.topic, runningSummary]);
+
+  // Auto-scroll effect — follows streaming content, uses smooth scroll for new messages
   useEffect(() => {
-    if (!scrollContainerRef.current || !isAutoScrollEnabled || hasUserInteracted.current) return;
-    
-    const scrollToBottom = () => {
-      if (messagesEndRef.current) {
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
-    };
-    
-    scrollToBottom();
+    const container = scrollContainerRef.current;
+    if (!container || !isAutoScrollEnabled) return;
+
+    // During active streaming, use instant scroll to keep up with chunks
+    // For new messages (not streaming), use smooth scroll
+    const isStreaming = isAILoading || isUserLoading;
+    if (isStreaming) {
+      container.scrollTop = container.scrollHeight;
+    } else if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isAILoading, isUserLoading, isAutoScrollEnabled]);
 
-  // Detect user scroll interaction
+  // Detect user scroll — unlock when scrolling up, re-lock when near bottom
   const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
     const { scrollTop, scrollHeight, clientHeight } = container;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    
-    if (!isNearBottom) {
+
+    if (isNearBottom) {
+      // User scrolled back to bottom — re-enable auto-scroll
+      hasUserInteracted.current = false;
+      setIsAutoScrollEnabled(true);
+    } else {
+      // User scrolled up — disable auto-scroll
       hasUserInteracted.current = true;
       setIsAutoScrollEnabled(false);
     }
@@ -507,6 +613,12 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         return newMessages;
       });
 
+      // Trigger live judge after exchange 2+
+      const newUserCount = messages.filter(m => m.role === 'user').length + 1;
+      if (newUserCount >= 2) {
+        fetchLiveJudgeFeedback(inputToSend, aiContent);
+      }
+
     } catch (error) {
       console.error("Failed to send message:", error);
       setMessages(prev => {
@@ -593,7 +705,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
     const isInstant = sessionStorage.getItem('isInstantDebate') === 'true';
     const firstArgument = sessionStorage.getItem('firstArgument');
-    
+
     if (isInstant && firstArgument && debate) {
       sessionStorage.removeItem('isInstantDebate');
       sessionStorage.removeItem('firstArgument');
@@ -603,7 +715,8 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   }, [isAuthLoaded, isLoadingDebate, debate]);
 
   const effectiveIsOwner = isOwner || isGuestOwner;
-  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && effectiveIsOwner;
+  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && !isJudging && effectiveIsOwner;
+  const canRequestVerdict = effectiveIsOwner && messages.filter(m => m.role === 'user').length >= 2 && messages.filter(m => m.role === 'ai').length >= 2 && !isAILoading && !isUserLoading;
 
   if (loadError) {
     return (
@@ -649,22 +762,57 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         </div>
       )}
 
-      {debateScore ? (
-        /* Split view: Chat + Verdict Panel */
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          {/* Left: Chat (read-only) */}
-          <div className="flex-1 lg:flex-[3] flex flex-col min-h-0 border-r border-[var(--border)]/50">
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
-              <div className="max-w-2xl mx-auto space-y-4">
-                {messages.filter(m => m?.role).map((msg, idx) => (
-                  <Message key={idx} msg={msg} opponent={opponent} debate={debate} isAILoading={false}
-                    isUserLoading={false} onRetry={undefined} messageIndex={idx} isHighlighted={highlightedMessageIndex === idx} debateId={debateId} variant={variant} />
-                ))}
-                
-                <div ref={messagesEndRef} />
-              </div>
+      {/* Main Content - Always split on desktop */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden justify-center">
+        {/* Left: Chat Area */}
+        <div className="flex-1 lg:flex-[7] lg:max-w-4xl flex flex-col min-h-0 border-l border-r border-[var(--border)]/50">
+          {/* Chat messages — always visible */}
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
+            <div className="pb-4">
+              {messages.filter(m => m?.role).map((msg, idx) => {
+                const isUserMsg = msg.role === 'user';
+                const latestFeedback = liveFeedbackHistory.length > 0 ? liveFeedbackHistory[liveFeedbackHistory.length - 1] : null;
+                const msgHighlights = isUserMsg && latestFeedback
+                  ? latestFeedback.highlights.filter(h => msg.content.includes(h.text))
+                  : undefined;
+                return (
+                  <Message key={idx} msg={msg} opponent={opponent} debate={debate}
+                    isAILoading={!debateScore && isAILoading && idx === messages.length - 1}
+                    isUserLoading={!debateScore && isUserLoading && idx === messages.length - 1}
+                    onRetry={!debateScore && msg.failed ? () => {
+                      setMessages(prev => prev.filter((_, i) => i !== idx));
+                      setUserInput(msg.content);
+                    } : undefined}
+                    messageIndex={idx} isHighlighted={highlightedMessageIndex === idx} debateId={debateId} variant={variant}
+                    highlights={msgHighlights} />
+                );
+              })}
+
+              {/* Final verdict inline in chat */}
+              {debateScore && (
+                <div className="py-6 animate-message-in">
+                  <div className="max-w-3xl mx-auto px-4 sm:px-6">
+                    <JudgeMessage score={debateScore} opponentName={opponent?.name || debate?.opponentStyle || "AI"} experiment_variant={variant} />
+                    <div className="mt-4">
+                      <DebateVoting debateId={debateId} userSideName="You" opponentSideName={opponent?.name || debate?.opponentStyle || "AI"} variant={variant} />
+                    </div>
+                    <div className="mt-4">
+                      <PostDebateEngagement debateId={debateId} topic={debate?.topic || ""} opponentName={opponent?.name || debate?.opponentStyle || "AI"} opponentId={opponent?.id} variant={variant} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+
+              {!isSignedIn && !guestWallDismissed && messages.filter(m => m.role === 'user').length >= 5 && (
+                <GuestModeWall isOpen={true} messageCount={messages.filter(m => m.role === 'user').length} onClose={() => setGuestWallDismissed(true)} />
+              )}
             </div>
-            {/* Chat footer */}
+          </div>
+
+          {/* Footer: input or debate complete */}
+          {debateScore ? (
             <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3">
               <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -686,130 +834,102 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 </a>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)]">
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1 relative">
+                    {!effectiveIsOwner && (
+                      <div className="absolute inset-0 bg-[var(--bg)]/80 backdrop-blur rounded-2xl flex items-center justify-center z-10">
+                        <span className="text-sm text-[var(--text-secondary)]">Sign in to contribute</span>
+                      </div>
+                    )}
+                    <textarea
+                      ref={textareaRef}
+                      value={userInput}
+                      onChange={(e) => { setUserInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 280) + "px"; }}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (canSend) handleSend(); } }}
+                      placeholder={isAITakeoverLoading ? "" : "Make your argument..."}
+                      className="w-full bg-[var(--bg-elevated)] border-2 border-[var(--border)] rounded-2xl px-5 py-4 resize-none text-[var(--text)] placeholder:text-[var(--text-secondary)]/50 outline-none focus:border-[var(--accent)]/50 focus:ring-4 focus:ring-[var(--accent)]/10 transition-all min-h-[100px] max-h-[280px] leading-relaxed text-base scrollbar-contained"
+                      disabled={isUserLoading || isAILoading || isAITakeoverLoading || isJudging || !effectiveIsOwner}
+                      rows={3}
+                    />
+                    {isAITakeoverLoading && !userInput && (
+                      <div className="absolute top-4 left-5 flex items-center gap-2 pointer-events-none">
+                        <span className="text-sm text-[var(--text-secondary)]/50">AI is writing</span>
+                        <span className="inline-flex gap-0.5">
+                          <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}/>
+                          <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}/>
+                          <span className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}/>
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-          {/* Right: Verdict Panel */}
-          <div className="flex-1 lg:flex-[2] flex flex-col min-h-0 bg-[var(--bg-elevated)]/30">
-            <div className="flex-shrink-0 border-b border-[var(--border)]/50 bg-[var(--bg)] px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="font-semibold text-[var(--text)] text-sm">Debate Results</h2>
-                  <p className="text-[10px] text-[var(--text-secondary)]">The verdict is in</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              <JudgeMessage score={debateScore} opponentName={opponent?.name || debate?.opponentStyle || "AI"} experiment_variant={variant} />
-              <DebateVoting debateId={debateId} userSideName="You" opponentSideName={opponent?.name || debate?.opponentStyle || "AI"} variant={variant} />
-              <PostDebateEngagement debateId={debateId} topic={debate?.topic || ""} opponentName={opponent?.name || debate?.opponentStyle || "AI"} opponentId={opponent?.id} variant={variant} />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Messages */}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
-            <div className="pb-4">
-              {messages.filter(m => m?.role).map((msg, idx) => (
-                <Message key={idx} msg={msg} opponent={opponent} debate={debate} isAILoading={isAILoading && idx === messages.length - 1}
-                  isUserLoading={isUserLoading && idx === messages.length - 1} onRetry={msg.failed ? () => {
-                    setMessages(prev => prev.filter((_, i) => i !== idx));
-                    setUserInput(msg.content);
-                  } : undefined} messageIndex={idx} isHighlighted={highlightedMessageIndex === idx} debateId={debateId} variant={variant} />
-              ))}
-
-              <div ref={messagesEndRef} />
-              
-              {!isSignedIn && messages.filter(m => m.role === 'user').length >= 5 && (
-                <GuestModeWall isOpen={true} messageCount={messages.filter(m => m.role === 'user').length} onClose={() => {}} />
-              )}
-            </div>
-          </div>
-
-          {/* Input Area */}
-          <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)]">
-            {/* Floating Verdict Bar - Centered on border line */}
-            {effectiveIsOwner && messages.filter(m => m.role === 'user' || m.role === 'ai').length >= 2 && !isAILoading && !isUserLoading && (
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-[19px] relative z-10">
-                <div className="flex items-center justify-center">
-                  <button
-                    onClick={requestJudgment}
-                    disabled={isJudging}
-                    className="flex items-center gap-2 px-5 py-2 rounded-full bg-[var(--bg)] border-2 border-[var(--border)] text-[var(--text)] text-sm font-medium shadow-xl hover:border-[var(--accent)]/50 hover:text-[var(--accent)] transition-all disabled:pointer-events-none"
-                  >
-                    {isJudging ? (
-                      <>
-                        <svg className="w-4 h-4 text-[var(--accent)] animate-spin" fill="none" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-2 pb-1">
+                    <button
+                      onClick={handleAITakeover}
+                      disabled={isAITakeoverLoading || isAILoading || isJudging || !effectiveIsOwner}
+                      title="Let AI argue for you"
+                      className="w-12 h-12 rounded-xl border-2 border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 transition-all disabled:opacity-40 disabled:hover:bg-transparent"
+                    >
+                      {isAITakeoverLoading ? (
+                        <svg className="w-5 h-5 animate-spin text-[var(--accent)]" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
-                        <span>Judging...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                         </svg>
-                        <span>Request Verdict</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Message Input */}
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
-              <div className="flex gap-3 items-end">
-                <div className="flex-1 relative">
-                  {!effectiveIsOwner && (
-                    <div className="absolute inset-0 bg-[var(--bg)]/80 backdrop-blur rounded-2xl flex items-center justify-center z-10">
-                      <span className="text-sm text-[var(--text-secondary)]">Sign in to contribute</span>
-                    </div>
-                  )}
-                  <textarea
-                    ref={textareaRef}
-                    value={userInput}
-                    onChange={(e) => { setUserInput(e.target.value); }}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (canSend) handleSend(); } }}
-                    placeholder="Make your argument..."
-                    className="w-full bg-[var(--bg-elevated)] border-2 border-[var(--border)] rounded-2xl px-4 py-3.5 resize-y text-[var(--text)] placeholder:text-[var(--text-secondary)]/50 outline-none focus:border-[var(--accent)]/50 focus:ring-4 focus:ring-[var(--accent)]/10 transition-all min-h-[56px] max-h-[200px] leading-relaxed"
-                    disabled={isUserLoading || isAILoading || isJudging || !effectiveIsOwner}
-                    rows={1}
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 pb-1">
-                  <button 
-                    onClick={handleAITakeover} 
-                    disabled={isAITakeoverLoading || isAILoading || !effectiveIsOwner} 
-                    title="Let AI argue for you" 
-                    className="w-12 h-12 rounded-xl border-2 border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 transition-all disabled:opacity-40 disabled:hover:bg-transparent"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                    </svg>
-                  </button>
-                  <button 
-                    onClick={() => handleSend()} 
-                    disabled={!canSend} 
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${canSend ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/30 hover:-translate-y-0.5 active:translate-y-0' : 'bg-[var(--bg-sunken)] text-[var(--text-tertiary)] border-2 border-[var(--border)]'}`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                    </svg>
-                  </button>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleSend()}
+                      disabled={!canSend}
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${canSend ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/30 hover:-translate-y-0.5 active:translate-y-0' : 'bg-[var(--bg-sunken)] text-[var(--text-tertiary)] border-2 border-[var(--border)]'}`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Right: Live Judge Panel — always coach, never verdict */}
+        <div className="hidden lg:flex lg:flex-[3] lg:max-w-md flex-col min-h-0 border-l border-r border-[var(--border)]/50">
+          <LiveJudgePanel
+              feedbackHistory={liveFeedbackHistory}
+              isLoading={isLiveJudgeLoading}
+              currentScore={liveFeedbackHistory.length > 0 ? liveFeedbackHistory[liveFeedbackHistory.length - 1].overallScore : null}
+              isMobileDrawerOpen={showLiveJudgeDrawer}
+              onMobileDrawerToggle={() => setShowLiveJudgeDrawer(!showLiveJudgeDrawer)}
+              canRequestVerdict={canRequestVerdict && !debateScore}
+              isJudging={isJudging}
+              onRequestVerdict={requestJudgment}
+            />
+        </div>
+
+        {/* Mobile Live Judge - only shown during active debate on small screens */}
+        {!debateScore && (
+          <div className="lg:hidden">
+            <LiveJudgePanel
+              feedbackHistory={liveFeedbackHistory}
+              isLoading={isLiveJudgeLoading}
+              currentScore={liveFeedbackHistory.length > 0 ? liveFeedbackHistory[liveFeedbackHistory.length - 1].overallScore : null}
+              isMobileDrawerOpen={showLiveJudgeDrawer}
+              onMobileDrawerToggle={() => setShowLiveJudgeDrawer(!showLiveJudgeDrawer)}
+              canRequestVerdict={canRequestVerdict}
+              isJudging={isJudging}
+              onRequestVerdict={requestJudgment}
+            />
           </div>
-        </>
-      )}
+        )}
+      </div>
 
       {showUpgradeModal && <Suspense fallback={null}><UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} /></Suspense>}
       {showShareModal && <Suspense fallback={null}><ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} debateId={debateId} topic={debate?.topic || ''} /></Suspense>}

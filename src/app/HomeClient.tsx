@@ -172,17 +172,17 @@ export default function HomeClient({
     <div className="min-h-dvh flex flex-col relative overflow-hidden">
       <Header />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-5 py-8 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center px-5 py-4 sm:py-6 relative z-10">
         <div className="w-full max-w-2xl">
-          {/* Hero — improved typography and spacing */}
-          <div className="text-center mb-8 sm:mb-10">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-3">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[var(--text)] leading-tight px-1">
+          {/* Hero — compact */}
+          <div className="text-center mb-4 sm:mb-5">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-[var(--text)] leading-tight px-1">
                 The AI that fights back.
               </h1>
               <StreakIndicator />
             </div>
-            <p className="text-base sm:text-lg text-[var(--text-secondary)] max-w-md mx-auto">
+            <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-md mx-auto">
               Defend your position. Get challenged. Think harder.
             </p>
           </div>
@@ -190,11 +190,11 @@ export default function HomeClient({
           {/* Streak urgency banner */}
           <StreakUrgencyBanner />
 
-          {/* Today's Debate Card — enhanced styling */}
-          <div className="mb-6 animate-fade-up" style={{ animationDelay: '100ms' }} data-onboarding="topic">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-5 sm:p-6 shadow-sm">
+          {/* Today's Debate Card — compact */}
+          <div className="mb-4 animate-fade-up" style={{ animationDelay: '100ms' }} data-onboarding="topic">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 sm:p-5 shadow-sm">
               {/* Topic label with shuffle button */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 flex-1">
                   <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,7 +215,7 @@ export default function HomeClient({
                     });
                     track('topic_shuffled', { newTopic: random.topic });
                   }}
-                  className="ml-3 p-2 rounded-lg border border-[var(--border)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-all group"
+                  className="ml-2 p-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-all group"
                   title="Shuffle to a different topic"
                 >
                   <svg className="w-4 h-4 group-active:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,15 +224,15 @@ export default function HomeClient({
                 </button>
               </div>
 
-              {/* Topic — improved typography */}
-              <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text)] mb-4 leading-snug">
+              {/* Topic — compact typography */}
+              <h2 className="text-lg sm:text-xl font-serif font-semibold text-[var(--text)] mb-3 leading-snug">
                 {dailyDebate.topic}
               </h2>
 
-              {/* Opponent — enhanced styling */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-sunken)]/50 border border-[var(--border)]/50">
-                <div className="w-10 h-10 rounded-full bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {/* Opponent — compact */}
+              <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-[var(--bg-sunken)]/50 border border-[var(--border)]/50">
+                <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
@@ -250,20 +250,20 @@ export default function HomeClient({
             </div>
           </div>
 
-          {/* Argument Input — enhanced styling */}
+          {/* Argument Input — compact */}
           <form onSubmit={startDebate} className="animate-fade-up" style={{ animationDelay: '200ms' }}>
             <div
               data-onboarding="input"
               className={`
-                rounded-2xl bg-[var(--bg-elevated)] transition-all duration-200 border
+                rounded-xl bg-[var(--bg-elevated)] transition-all duration-200 border
                 ${shakeInput
                   ? 'animate-shake border-[var(--error)] ring-2 ring-[var(--error)]/20'
                   : 'border-[var(--border)] hover:border-[var(--border-strong)]'
                 }
               `}
             >
-              <div className="p-5">
-                <label htmlFor="argument-input" className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] mb-3">
+              <div className="p-4">
+                <label htmlFor="argument-input" className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] mb-2">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
@@ -284,12 +284,12 @@ export default function HomeClient({
                     }
                   }}
                   placeholder="Type your opening argument here to begin..."
-                  className="w-full bg-transparent resize-none outline-none text-[var(--text)] placeholder-[var(--text-secondary)]/60 min-h-[100px] text-base sm:text-[15px] leading-relaxed"
+                  className="w-full bg-transparent resize-none outline-none text-[var(--text)] placeholder-[var(--text-secondary)]/60 min-h-[80px] sm:min-h-[60px] text-base leading-relaxed"
                   disabled={isStarting}
                   autoFocus
                 />
 
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--border)]/50">
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-[var(--border)]/50">
                   <span
                     className={`text-xs tabular-nums transition-colors ${
                       charCount > maxChars * 0.9
@@ -314,14 +314,14 @@ export default function HomeClient({
               </div>
             </div>
 
-            {/* CTA Row — improved button styling */}
-            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            {/* CTA Row — compact */}
+            <div className="flex flex-col sm:flex-row gap-2.5 mt-3">
               <button
                 type="submit"
                 disabled={isStarting}
                 data-onboarding="cta"
                 className={`
-                  flex-1 h-12 px-6 rounded-xl font-medium text-base transition-all duration-200
+                  flex-1 h-11 px-5 rounded-lg font-medium text-sm transition-all duration-200
                   flex items-center justify-center gap-2
                   ${!isStarting
                     ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md cursor-pointer'
@@ -337,7 +337,7 @@ export default function HomeClient({
                 ) : (
                   <>
                     <span>Start Debate</span>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </>
@@ -348,7 +348,7 @@ export default function HomeClient({
                 type="button"
                 disabled={isStarting}
                 onClick={() => startDebate(undefined, "AI, you start the debate. Make your opening argument.")}
-                className="h-12 px-5 rounded-xl font-medium text-[15px] border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-sunken)] hover:border-[var(--border-strong)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                className="h-11 px-4 rounded-lg font-medium text-sm border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text)] hover:bg-[var(--bg-sunken)] hover:border-[var(--border-strong)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
               >
                 <svg className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -359,22 +359,22 @@ export default function HomeClient({
 
             {/* Sign-in hint */}
             {!isSignedIn && (
-              <p className="text-center text-xs text-[var(--text-secondary)] mt-3">
+              <p className="text-center text-xs text-[var(--text-secondary)] mt-2">
                 Start immediately — no account needed
               </p>
             )}
           </form>
 
-          {/* Quick Start Options — improved card styling */}
-          <div className="mt-10 animate-fade-in" style={{ animationDelay: '300ms' }}>
-            <div className="flex items-center gap-4 mb-4">
+          {/* Quick Start Options — horizontal compact row */}
+          <div className="mt-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <div className="flex items-center gap-3 mb-3">
               <div className="h-px flex-1 bg-[var(--border)]" />
-              <p className="text-xs text-center text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
-                Or try a different topic
+              <p className="text-[10px] text-center text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
+                Or try
               </p>
               <div className="h-px flex-1 bg-[var(--border)]" />
             </div>
-            <div className="grid gap-3">
+            <div className="flex flex-wrap gap-2 justify-center">
               {QUICK_STARTS.map((option, i) => (
                 <button
                   key={i}
@@ -383,27 +383,13 @@ export default function HomeClient({
                       topic: option.topic,
                       persona: option.persona,
                     });
-                    // Focus input and bring it into view so user can start typing immediately
                     if (inputRef.current) {
                       inputRef.current.focus();
-                      inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                   }}
-                  className="group flex items-center justify-between p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 transition-all text-left w-full cursor-pointer shadow-sm hover:shadow-md"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-all"
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
-                      {option.topic}
-                    </span>
-                    <span className="text-xs text-[var(--text-secondary)]">
-                      vs. {option.persona}
-                    </span>
-                  </div>
-                  <div className="w-8 h-8 rounded-lg bg-[var(--bg-sunken)] group-hover:bg-[var(--accent)]/10 flex items-center justify-center transition-colors">
-                    <svg className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-all transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
+                  {option.topic}
                 </button>
               ))}
             </div>
@@ -411,10 +397,10 @@ export default function HomeClient({
 
           {/* Upgrade Nudge */}
           {!isPremium && debatesUsed !== undefined && debatesUsed >= 2 && (
-            <div className="mt-10 text-center animate-fade-in">
+            <div className="mt-6 text-center animate-fade-in">
               <button
                 onClick={() => setShowUpgradeModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium text-[var(--accent)] bg-[var(--accent)]/5 border border-[var(--accent)]/20 hover:bg-[var(--accent)]/10 hover:scale-105 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium text-[var(--accent)] bg-[var(--accent)]/5 border border-[var(--accent)]/20 hover:bg-[var(--accent)]/10 hover:scale-105 transition-all cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

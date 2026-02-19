@@ -10,12 +10,15 @@ const nextConfig: NextConfig = {
   // - instrumentation.ts for server/edge (auto-detected by Next.js)
   // - SentryProvider component for client
   // No withSentryConfig wrapper needed (causes issues with Next.js 15)
-  
+
+  // Disable dev indicator (the orange loading bar at top)
+  devIndicators: false,
+
   // Image optimization - serve modern formats
   images: {
     formats: ['image/avif', 'image/webp'],
   },
-  
+
   // Experimental optimizations
   experimental: {
     // Optimize package imports for smaller bundles
