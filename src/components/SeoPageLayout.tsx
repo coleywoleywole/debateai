@@ -156,7 +156,7 @@ export default function SeoPageLayout({ page, backLink }: SeoPageLayoutProps) {
               Watch AI models argue both sides of any topic — structured, adversarial, and free.
             </p>
             <Link
-              href="/debate"
+              href="/"
               className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/40 transition-all"
             >
               Start a Debate

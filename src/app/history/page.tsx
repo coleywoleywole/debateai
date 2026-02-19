@@ -109,7 +109,7 @@ export default function HistoryPage() {
               <p className="text-xs text-[var(--text-secondary)] mt-1">Continue where you left off</p>
             </div>
             <Link 
-              href="/debate" 
+              href="/" 
               className="h-9 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-medium flex items-center justify-center gap-2 self-center sm:self-start shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/40 transition-all"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

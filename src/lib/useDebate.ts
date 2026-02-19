@@ -115,13 +115,13 @@ export function useDebate(debateId: string): UseDebateReturn {
           return;
         }
       } else if (response.status === 404) {
-        router.push('/debate');
+        router.push('/');
       } else {
-        router.push('/debate');
+        router.push('/');
       }
     } catch (error) {
       console.error('Error loading debate:', error);
-      router.push('/debate');
+      router.push('/');
     } finally {
       setState(prev => ({ ...prev, isLoadingDebate: false }));
     }

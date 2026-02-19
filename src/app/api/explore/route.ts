@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withErrorHandler, errors } from '@/lib/api-errors';
-import { getLeaderboard, createStreakTables, type LeaderboardPeriod, type LeaderboardSort } from '@/lib/streaks';
+import { getLeaderboard, type LeaderboardPeriod, type LeaderboardSort } from '@/lib/streaks';
 
 const VALID_PERIODS: LeaderboardPeriod[] = ['weekly', 'alltime'];
 const VALID_SORTS: LeaderboardSort[] = ['points', 'streak', 'debates', 'avg_score'];
@@ -18,9 +18,6 @@ export const GET = withErrorHandler(async (request: Request) => {
   if (!VALID_SORTS.includes(sort)) {
     throw errors.badRequest(`Invalid sort. Must be one of: ${VALID_SORTS.join(', ')}`);
   }
-
-  // Ensure tables exist
-  await createStreakTables();
 
   const limit = Math.min(Math.max(1, limitParam), 100);
   const entries = await getLeaderboard(period, sort, limit);

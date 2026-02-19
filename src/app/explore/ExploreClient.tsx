@@ -203,7 +203,7 @@ export default function ExploreClient() {
                 : 'Complete a debate to appear on the rankings and earn points.'}
             </p>
             <Link
-              href="/debate"
+              href="/"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors"
             >
               <span>Start Debating</span>
@@ -225,7 +225,7 @@ export default function ExploreClient() {
               Be the first to share your convictions with the world.
             </p>
             <Link
-              href="/debate"
+              href="/"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors"
             >
               <span>Start Debating</span>
@@ -320,7 +320,7 @@ export default function ExploreClient() {
             {publicDebates.map((debate) => (
               <Link
                 key={debate.id}
-                href={`/debates/${debate.id}`}
+                href={`/debate/${debate.id}`}
                 className="group p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)]/50 hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/[0.02] transition-all"
               >
                 <div className="flex items-center gap-2 mb-2">
