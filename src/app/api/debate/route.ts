@@ -188,7 +188,9 @@ export async function POST(request: Request) {
           const BUFFER_SIZE = 8;
           const citations: any[] = [];
           const seenUrls = new Set<string>();
+          const urlToCitationId = new Map<string, number>();
           let citationCounter = 1;
+          let lastGroundingMetadata: any = null;
 
           const flushBuffer = () => {
             if (buffer && !controllerClosed) {
@@ -207,24 +209,28 @@ export async function POST(request: Request) {
 
           for await (const chunk of resultStream) {
             const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            
+
             // Handle citations/grounding
             const groundingMetadata = chunk.candidates?.[0]?.groundingMetadata;
-            if (groundingMetadata?.groundingChunks) {
-              for (const groundChunk of groundingMetadata.groundingChunks) {
-                if (groundChunk.web && groundChunk.web.uri) {
-                   const url = groundChunk.web.uri;
-                   const title = groundChunk.web.title || new URL(url).hostname;
-                   
-                   if (!seenUrls.has(url)) {
-                     seenUrls.add(url);
-                     const citationData = {
-                       id: citationCounter++,
-                       url: url,
-                       title: title,
-                     };
-                     citations.push(citationData);
-                   }
+            if (groundingMetadata) {
+              lastGroundingMetadata = groundingMetadata;
+              if (groundingMetadata.groundingChunks) {
+                for (const groundChunk of groundingMetadata.groundingChunks) {
+                  if (groundChunk.web && groundChunk.web.uri) {
+                     const url = groundChunk.web.uri;
+                     const title = groundChunk.web.title || new URL(url).hostname;
+
+                     if (!seenUrls.has(url)) {
+                       seenUrls.add(url);
+                       const citationData = {
+                         id: citationCounter++,
+                         url: url,
+                         title: title,
+                       };
+                       citations.push(citationData);
+                       urlToCitationId.set(url, citationData.id);
+                     }
+                  }
                 }
               }
             }
@@ -238,6 +244,47 @@ export async function POST(request: Request) {
                 flushBuffer();
               }
             }
+          }
+
+          // Insert inline citation markers using groundingSupports
+          if (lastGroundingMetadata?.groundingSupports && citations.length > 0) {
+            const chunks = lastGroundingMetadata.groundingChunks || [];
+            const supports = lastGroundingMetadata.groundingSupports;
+
+            // Map grounding chunk index → citation id
+            const chunkIndexToCitationId = new Map<number, number>();
+            for (let i = 0; i < chunks.length; i++) {
+              const url = chunks[i]?.web?.uri;
+              if (url && urlToCitationId.has(url)) {
+                chunkIndexToCitationId.set(i, urlToCitationId.get(url)!);
+              }
+            }
+
+            // Sort supports by endIndex descending so insertions don't shift earlier indices
+            const sortedSupports = [...supports]
+              .filter((s: any) => s.segment && typeof s.segment.endIndex === 'number')
+              .sort((a: any, b: any) => b.segment.endIndex - a.segment.endIndex);
+
+            let annotated = accumulatedContent;
+            const insertedPositions = new Set<number>();
+
+            for (const support of sortedSupports) {
+              const endIdx = support.segment.endIndex;
+              if (insertedPositions.has(endIdx)) continue;
+
+              const ids = (support.groundingChunkIndices || [])
+                .map((idx: number) => chunkIndexToCitationId.get(idx))
+                .filter((id: number | undefined): id is number => id !== undefined);
+
+              if (ids.length > 0 && endIdx <= annotated.length) {
+                const uniqueIds = [...new Set(ids)];
+                const marker = uniqueIds.map(id => `[${id}]`).join('');
+                annotated = annotated.slice(0, endIdx) + marker + annotated.slice(endIdx);
+                insertedPositions.add(endIdx);
+              }
+            }
+
+            accumulatedContent = annotated;
           }
 
           // Send citations if any

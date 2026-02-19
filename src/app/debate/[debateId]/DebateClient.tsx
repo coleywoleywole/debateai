@@ -95,10 +95,32 @@ const Message = memo(({
     setTimeout(() => setHighlightedCitation(null), 2000);
   }, [showCitations]);
 
+  // Render inline citation markers [N] as clickable superscripts
+  const renderWithCitations = (text: string) => {
+    if (!msg.citations || msg.citations.length === 0) return <>{text}</>;
+    const parts = text.split(/(\[\d+\])/g);
+    return <>{parts.map((part, i) => {
+      const match = part.match(/^\[(\d+)\]$/);
+      if (match) {
+        const id = parseInt(match[1], 10);
+        return (
+          <button
+            key={i}
+            onClick={() => handleCitationClick(id)}
+            className="inline-flex items-center justify-center text-[10px] font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] cursor-pointer align-super ml-0.5 -mr-0.5 min-w-0 p-0 bg-transparent border-none"
+          >
+            [{id}]
+          </button>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    })}</>;
+  };
+
   // Render message content with highlights
   const renderContent = () => {
     if (!highlights || highlights.length === 0 || !isUser) {
-      return <>{msg.content}</>;
+      return renderWithCitations(msg.content);
     }
 
     const parts: React.ReactNode[] = [];
@@ -604,6 +626,9 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 });
               } else if (data.type === 'citations' && data.citations) {
                 citations = data.citations;
+              } else if (data.type === 'complete' && data.content) {
+                // Use annotated content from server (includes [1], [2] markers)
+                aiContent = data.content;
               }
             } catch {}
           }
