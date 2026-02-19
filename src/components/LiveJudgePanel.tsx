@@ -17,8 +17,10 @@ interface LiveJudgePanelProps {
 
 // Simple inline icons
 const CoachAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
-    C
+  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-md">
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
   </div>
 );
 
@@ -97,30 +99,6 @@ function FeedbackBubble({ feedback, isLatest }: { feedback: LiveJudgeFeedback; i
             </div>
           )}
           
-          {/* Highlights - compact inline tags */}
-          {feedback.highlights.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-[var(--border)]/50">
-              {feedback.highlights.map((h, i) => (
-                <span
-                  key={i}
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium ${
-                    h.type === 'strong' || h.type === 'good-evidence'
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                      : h.type === 'fallacy'
-                      ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                  }`}
-                  title={h.comment}
-                >
-                  {h.type === 'strong' && '💪'}
-                  {h.type === 'good-evidence' && '📚'}
-                  {h.type === 'fallacy' && '⚠️'}
-                  {h.type === 'weak' && '💡'}
-                  {h.text.slice(0, 20)}{h.text.length > 20 && '...'}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>

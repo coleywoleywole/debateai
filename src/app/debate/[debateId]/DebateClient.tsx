@@ -152,7 +152,7 @@ const Message = memo(({
         >
           {highlight.text}
           {/* Tooltip */}
-          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] shadow-xl text-xs opacity-0 invisible group-hover/highlight:opacity-100 group-hover/highlight:visible transition-all z-50 max-w-[220px] whitespace-normal text-left leading-relaxed">
+          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] shadow-xl text-xs opacity-0 invisible group-hover/highlight:opacity-100 group-hover/highlight:visible transition-all z-50 min-w-[200px] max-w-[280px] whitespace-normal text-left leading-relaxed">
             <span className={`font-medium block mb-0.5 ${
               isPositive ? 'text-emerald-500' : isFallacy ? 'text-red-500' : 'text-amber-500'
             }`}>
