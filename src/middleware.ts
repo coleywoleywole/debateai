@@ -33,6 +33,10 @@ const isPublicRoute = createRouteMatcher([
   '/debate',  // Allow access to debate setup page (will handle auth client-side)
   '/debate/(.*)',  // Allow debate pages to load and handle auth client-side
   '/api/debate(.*)', // Allow debate creation and messaging for guest users
+  '/api/notifications(.*)', // Notifications — auth handled in route
+  '/api/user/(.*)',  // User data endpoints — auth handled in route
+  '/api/subscription', // Subscription check — auth handled in route
+  '/api/analytics',  // Analytics — auth handled in route
   '/history',  // Allow history page to load and handle auth client-side
   '/robots.txt',      // SEO — must be public
   '/sitemap.xml',     // SEO — must be public
