@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { d1 } from '@/lib/d1';
+import { createRateLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 export const runtime = 'edge';
 
+const ipLimiter = createRateLimiter({ maxRequests: 30, windowMs: 60_000 });
+
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rateCheck = ipLimiter.check(ip);
+  if (!rateCheck.allowed) {
+    return rateLimitResponse(rateCheck);
+  }
+
   try {
     const body = await req.json();
     const { event, properties } = body;

@@ -20,18 +20,8 @@ function escapeCsv(field: string | number | null): string {
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const key = searchParams.get('key');
-  
-  // Use env var for secret, fallback only in development
-  const validKey = process.env.ADMIN_EXPORT_SECRET || process.env.ADMIN_SECRET;
-
-  if (!validKey) {
-    console.error('ADMIN_EXPORT_SECRET or ADMIN_SECRET not configured');
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
-  }
-
-  if (key !== validKey) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

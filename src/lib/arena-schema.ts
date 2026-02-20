@@ -44,8 +44,8 @@ export type ArenaStateInput = z.infer<typeof arenaStateSchema>;
 
 // For API endpoints that update arena state
 export const updateArenaSchema = z.object({
-  debateId: z.string(),
+  debateId: z.string().max(100),
   action: z.enum(['attack', 'defend', 'heal', 'special']),
-  damage: z.number().optional(),
-  cost: z.number().optional(),
+  damage: z.number().min(0).max(50).optional(),
+  cost: z.number().max(50).optional(),
 });

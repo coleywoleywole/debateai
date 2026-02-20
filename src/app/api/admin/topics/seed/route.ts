@@ -12,7 +12,12 @@ import { CURATED_DAILY_DEBATES } from '@/lib/daily-debates';
 
 export const runtime = 'nodejs';
 
-export async function POST() {
+export async function POST(request: Request) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     // 1. Create tables
     await createTopicTables();

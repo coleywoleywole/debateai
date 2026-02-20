@@ -2,12 +2,8 @@ import { NextResponse } from 'next/server';
 import { d1 } from '@/lib/d1';
 
 export const GET = async (request: Request) => {
-  const { searchParams } = new URL(request.url);
-  const key = searchParams.get('key');
-  
-  const validKey = process.env.ADMIN_SECRET;
-
-  if (!validKey || key !== validKey) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

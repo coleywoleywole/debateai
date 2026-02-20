@@ -18,10 +18,10 @@ const requestSchema = z.object({
   debateId: z.string().min(1),
   topic: z.string().min(1),
   latestExchange: z.object({
-    user: z.string().min(1),
-    ai: z.string().min(1),
+    user: z.string().min(1).max(15000),
+    ai: z.string().min(1).max(15000),
   }),
-  runningSummary: z.string().optional(),
+  runningSummary: z.string().max(3000).optional(),
 });
 
 // 10 live-judge requests per minute per user

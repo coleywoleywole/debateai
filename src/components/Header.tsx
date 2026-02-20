@@ -7,6 +7,8 @@ import { SafeSignInButton, SafeUserButton, useSafeUser } from '@/lib/useSafeCler
 import ThemeToggle from './ThemeToggle';
 import UpgradeModal from './UpgradeModal';
 import MobileNav from './MobileNav';
+import NotificationBell from './NotificationBell';
+import StreakIndicator from './StreakIndicator';
 import { useSubscription } from '@/lib/useSubscription';
 
 // Skeleton placeholder for auth loading state
@@ -123,6 +125,8 @@ export default function Header() {
                   <AuthSkeleton />
                 ) : showSignedIn ? (
                   <div className="flex items-center gap-1">
+                    <StreakIndicator />
+                    <NotificationBell />
                     <div className="w-8 h-8">
                       <SafeUserButton 
                         appearance={{

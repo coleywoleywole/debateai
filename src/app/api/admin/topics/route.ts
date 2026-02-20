@@ -9,6 +9,11 @@ import { listTopics, addTopic, getTopicCount } from '@/lib/daily-topics-db';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = request.nextUrl;
   const category = searchParams.get('category') ?? undefined;
   const enabledOnly = searchParams.get('enabledOnly') === '1';
@@ -22,6 +27,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
 

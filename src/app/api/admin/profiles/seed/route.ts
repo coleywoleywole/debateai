@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withErrorHandler, errors } from '@/lib/api-errors';
-import { getUserId } from '@/lib/auth-helper';
 import { createProfileTables } from '@/lib/profiles';
 
 /**
@@ -8,9 +7,11 @@ import { createProfileTables } from '@/lib/profiles';
  *
  * Creates the user_profiles table + indexes.
  */
-export const POST = withErrorHandler(async () => {
-  const userId = await getUserId();
-  if (!userId) throw errors.unauthorized();
+export const POST = withErrorHandler(async (request: Request) => {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    throw errors.unauthorized();
+  }
 
   await createProfileTables();
 

@@ -105,7 +105,10 @@ export async function POST(
     const resolvedParams = await params;
     debateId = resolvedParams.debateId;
     const authUserId = await getUserId();
-    if (authUserId) userId = authUserId;
+    if (!authUserId) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+    userId = authUserId;
 
     const userRl = userLimiter.check(`user:${userId}`);
     if (!userRl.allowed) {

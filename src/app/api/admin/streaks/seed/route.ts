@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withErrorHandler, errors } from '@/lib/api-errors';
-import { getUserId } from '@/lib/auth-helper';
 import { createStreakTables } from '@/lib/streaks';
 
 /**
@@ -9,9 +8,11 @@ import { createStreakTables } from '@/lib/streaks';
  * Creates the user_streaks and user_stats tables + indexes.
  * Admin-only — requires authenticated user.
  */
-export const POST = withErrorHandler(async () => {
-  const userId = await getUserId();
-  if (!userId) throw errors.unauthorized();
+export const POST = withErrorHandler(async (request: Request) => {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    throw errors.unauthorized();
+  }
 
   await createStreakTables();
 

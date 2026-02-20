@@ -7,17 +7,8 @@ import { withErrorHandler } from '@/lib/api-errors';
 const REAL_DEBATES_BASE = "user_id != 'test-user-123'";
 
 export const GET = withErrorHandler(async (request: Request) => {
-  const { searchParams } = new URL(request.url);
-  const key = searchParams.get('key');
-  
-  const validKey = process.env.ADMIN_SECRET;
-
-  if (!validKey) {
-    console.error('ADMIN_SECRET not configured');
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
-  }
-
-  if (key !== validKey) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

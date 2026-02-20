@@ -102,25 +102,26 @@ export function createRateLimiter(config: RateLimitConfig) {
 
 /**
  * Extract client IP from request headers.
- * Works with Vercel (x-forwarded-for), Cloudflare (cf-connecting-ip),
+ * Works with Vercel (x-real-ip), Cloudflare (cf-connecting-ip),
  * and standard proxies.
  */
 export function getClientIp(request: Request): string {
   const headers = request.headers;
 
-  // Vercel / standard proxy
-  const forwarded = headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
+  // Vercel sets x-real-ip to the actual client IP (cannot be spoofed)
+  const realIp = headers.get('x-real-ip');
+  if (realIp) return realIp;
 
   // Cloudflare
   const cfIp = headers.get('cf-connecting-ip');
   if (cfIp) return cfIp;
 
-  // Vercel specific
-  const realIp = headers.get('x-real-ip');
-  if (realIp) return realIp;
+  // Fallback: last entry in x-forwarded-for (proxy-appended, harder to spoof)
+  const forwarded = headers.get('x-forwarded-for');
+  if (forwarded) {
+    const ips = forwarded.split(',').map(ip => ip.trim());
+    return ips[ips.length - 1];
+  }
 
   return 'unknown';
 }

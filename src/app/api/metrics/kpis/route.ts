@@ -8,7 +8,11 @@ import { withErrorHandler } from '@/lib/api-errors';
 const REAL_DEBATES = "user_id != 'test-user-123' AND json_array_length(messages) >= 2";
 const REAL_USERS = "user_id != 'test-user-123'";
 
-export const GET = withErrorHandler(async () => {
+export const GET = withErrorHandler(async (request: Request) => {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
     const [
       // Debates
       totalDebatesResult,

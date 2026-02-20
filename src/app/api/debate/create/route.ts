@@ -41,17 +41,14 @@ export async function POST(request: Request) {
       isGuest = true;
     }
 
-    // Per-user rate limit (skip for guests, use IP limit only)
-    let userRl;
-    if (!isGuest) {
-      userRl = userLimiter.check(`user:${userId}`);
-      if (!userRl.allowed) {
-        return errors.rateLimited({
-          limit: 10,
-          remaining: userRl.remaining,
-          reset: Math.ceil(userRl.resetAt / 1000),
-        });
-      }
+    // Per-user rate limit
+    const userRl = userLimiter.check(`user:${userId}`);
+    if (!userRl.allowed) {
+      return errors.rateLimited({
+        limit: 10,
+        remaining: userRl.remaining,
+        reset: Math.ceil(userRl.resetAt / 1000),
+      });
     }
 
     // Validate request body with Zod
@@ -139,15 +136,11 @@ export async function POST(request: Request) {
       guestId: isGuest ? userId : undefined
     });
 
-    if (userRl) {
-      return withRateLimitHeaders(response, {
-        limit: 10,
-        remaining: userRl.remaining,
-        reset: Math.ceil(userRl.resetAt / 1000),
-      });
-    }
-    
-    return response;
+    return withRateLimitHeaders(response, {
+      limit: 10,
+      remaining: userRl.remaining,
+      reset: Math.ceil(userRl.resetAt / 1000),
+    });
   } catch (error) {
     // If it's already a NextResponse (from validateBody), return it
     if (error instanceof NextResponse) {

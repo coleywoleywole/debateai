@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSafeUser } from '@/lib/useSafeClerk';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
+import StreakUrgencyBanner from '@/components/StreakUrgencyBanner';
 import Spinner from '@/components/Spinner';
 import UpgradeModal from '@/components/UpgradeModal';
 import OnboardingOverlay from '@/components/OnboardingOverlay';
@@ -174,6 +175,7 @@ export default function HomeClient({
 
       <main className="flex-1 flex flex-col items-center justify-center px-5 py-4 sm:py-6 relative z-10">
         <div className="w-full max-w-2xl">
+          <StreakUrgencyBanner />
           {/* Hero — compact */}
           <div className="text-center mb-4 sm:mb-5">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-2">

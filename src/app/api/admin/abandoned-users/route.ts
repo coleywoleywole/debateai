@@ -7,8 +7,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const key = searchParams.get('key');
 
-  // Emergency bypass for Echo's user research
-  if (key !== 'openclaw-urgent-bypass') {
+  if (!process.env.ADMIN_SECRET || key !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
