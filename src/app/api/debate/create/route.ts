@@ -8,6 +8,7 @@ import { errors, validateBody, withRateLimitHeaders } from '@/lib/api-errors';
 import { createDebateSchema } from '@/lib/api-schemas';
 import { logger } from '@/lib/logger';
 import { track } from '@/lib/analytics';
+import { signGuestId } from '@/lib/guest-token';
 
 const log = logger.scope('debate');
 
@@ -35,9 +36,11 @@ export async function POST(request: Request) {
     let userId = await getUserId();
     let isGuest = false;
     
+    let guestUuid = '';
     if (!userId) {
-      // Guest mode: generate a temporary ID
-      userId = `guest_${crypto.randomUUID()}`;
+      // Guest mode: generate a signed guest ID
+      guestUuid = crypto.randomUUID();
+      userId = `guest_${guestUuid}`;
       isGuest = true;
     }
 
@@ -129,12 +132,24 @@ export async function POST(request: Request) {
     }).catch(() => {});
 
     // Return success with rate limit headers
-    const response = NextResponse.json({ 
-      success: true, 
+    const signedToken = isGuest ? signGuestId(guestUuid) : undefined;
+    const response = NextResponse.json({
+      success: true,
       debateId: saveResult.debateId || debateId,
       isGuest,
       guestId: isGuest ? userId : undefined
     });
+
+    // Set signed guest cookie so subsequent requests are authenticated
+    if (isGuest && signedToken) {
+      response.cookies.set('guest_id', signedToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+      });
+    }
 
     return withRateLimitHeaders(response, {
       limit: 10,

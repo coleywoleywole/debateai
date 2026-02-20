@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { d1 } from '@/lib/d1';
 import { getUserId } from '@/lib/auth-helper';
+import { signGuestId } from '@/lib/guest-token';
 import { logger } from '@/lib/logger';
 
 const log = logger.scope('vote');
@@ -57,11 +58,12 @@ export async function POST(request: Request) {
     const response = NextResponse.json({ success: true, ...counts });
 
     if (setCookie) {
-      // Set cookie for 1 year
-      response.cookies.set('guest_id', guestUuid, { 
-        path: '/', 
+      response.cookies.set('guest_id', signGuestId(guestUuid), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
         maxAge: 31536000, // 1 year
-        sameSite: 'lax' 
+        sameSite: 'lax'
       });
     }
 
