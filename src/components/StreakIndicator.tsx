@@ -40,11 +40,11 @@ export default function StreakIndicator() {
 
   return (
     <div
-      className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gradient-to-br from-orange-500/15 to-amber-500/10 border border-orange-500/25 text-orange-600 shadow-sm"
       title={`${streak.currentStreak}-day debate streak! ${streak.totalPoints} total points`}
     >
       <span className="text-sm">🔥</span>
-      <span className="text-xs font-semibold tabular-nums">{streak.currentStreak}</span>
+      <span className="text-xs font-bold tabular-nums">{streak.currentStreak}</span>
     </div>
   );
 }

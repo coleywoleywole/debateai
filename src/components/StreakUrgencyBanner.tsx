@@ -46,22 +46,34 @@ export default function StreakUrgencyBanner() {
   if (!show) return null;
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-4 animate-fade-up">
-      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
-        <span className="text-lg">🔥</span>
-        <p className="text-sm text-orange-600 dark:text-orange-400 font-medium flex-1">
-          Your {streakCount}-day streak ends in {hoursLeft} {hoursLeft === 1 ? 'hour' : 'hours'}!
-        </p>
-        <button
-          onClick={() => {
-            // Scroll to input area
-            document.querySelector('[data-onboarding="input"]')?.scrollIntoView({ behavior: 'smooth' });
-            (document.querySelector('[data-onboarding="input"] textarea') as HTMLTextAreaElement)?.focus();
-          }}
-          className="text-xs font-semibold text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors whitespace-nowrap"
-        >
-          Debate now →
-        </button>
+    <div className="w-full max-w-2xl mx-auto mb-6 animate-fade-up">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-orange-500/25 shadow-sm">
+        {/* Decorative gradient line */}
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+        
+        <div className="flex items-center gap-3 px-5 py-4">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-lg shadow-sm">
+            🔥
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+              Your {streakCount}-day streak ends in {hoursLeft} {hoursLeft === 1 ? 'hour' : 'hours'}!
+            </p>
+            <p className="text-xs text-orange-600/80 dark:text-orange-400/80 mt-0.5">
+              Debate now to keep it alive
+            </p>
+          </div>          
+          <button
+            onClick={() => {
+              // Scroll to input area
+              document.querySelector('[data-onboarding="input"]')?.scrollIntoView({ behavior: 'smooth' });
+              (document.querySelector('[data-onboarding="input"] textarea') as HTMLTextAreaElement)?.focus();
+            }}
+            className="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 active:scale-95 transition-all shadow-sm shadow-orange-500/25"
+          >
+            Debate now
+          </button>
+        </div>
       </div>
     </div>
   );
