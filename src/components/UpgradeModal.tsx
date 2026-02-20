@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { SafeSignedOut, SafeSignInButton } from '@/lib/useSafeClerk';
 import { useUser } from '@/lib/useTestUser';
 import { track } from '@/lib/analytics';
+import { Zap, Search, History, X, Crown, Check } from 'lucide-react';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -38,9 +39,9 @@ export default function UpgradeModal({ isOpen, onClose, trigger = 'button', limi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ returnUrl: window.location.pathname + window.location.search }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.url) {
         window.location.href = data.url;
       } else if (data.hasSubscription) {
@@ -62,102 +63,120 @@ export default function UpgradeModal({ isOpen, onClose, trigger = 'button', limi
   const isDebateLimit = trigger === 'rate-limit-debate';
 
   const features = [
-    { icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', title: 'Unlimited debates', desc: 'Create as many as you want' },
-    { icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z', title: 'Unlimited messages', desc: 'No limits on length' },
-    { icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', title: 'Web search', desc: 'Real-time data & citations' },
-    { icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', title: 'Full history', desc: 'Access all past debates' },
+    { icon: Zap, title: 'Unlimited debates & messages' },
+    { icon: Search, title: 'Opponents research & cite real sources' },
+    { icon: History, title: 'Full debate history' },
   ];
 
   return (
     <div className="fixed inset-0 z-50 animate-fade-in">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}/>
-      
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose}/>
+
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div 
-          className="w-full max-w-md bg-[var(--bg-elevated)] rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden animate-fade-scale"
+        <div
+          className="w-full max-w-md bg-[var(--bg)] rounded-2xl shadow-2xl shadow-black/20 border border-[var(--border)] overflow-hidden animate-fade-scale"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="px-6 pt-6 pb-4 border-b border-[var(--border)]">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent)]/10 mb-3">
-                  <svg className="w-3 h-3 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                  </svg>
-                  <span className="text-xs font-medium text-[var(--accent)]">Premium</span>
-                </div>
-                
-                <h2 className="text-lg font-semibold text-[var(--text)]">
-                  {isMessageLimit ? 'Message limit reached' : isDebateLimit ? 'Debate limit reached' : 'Upgrade to Premium'}
-                </h2>
-                <p className="text-small text-[var(--text-secondary)] mt-1">
-                  {isMessageLimit 
-                    ? `You have used ${limitData?.current || 2} of ${limitData?.limit || 2} free messages`
-                    : isDebateLimit 
-                    ? `You have created ${limitData?.current || 3} of ${limitData?.limit || 3} free debates`
-                    : 'Unlock unlimited debates and messages'
-                  }
-                </p>
-              </div>
-              
-              <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text)] hover:bg-[var(--bg-sunken)] transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
+          {/* Hero Section with Gradient */}
+          <div className="relative px-8 pt-8 pb-5 text-center overflow-hidden">
+            {/* Gradient glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/15 via-transparent to-[var(--accent)]/5 pointer-events-none" />
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-[var(--accent)]/25 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text)] hover:bg-[var(--bg-sunken)] transition-all duration-200 z-10"
+            >
+              <X className="w-4 h-4" strokeWidth={2} />
+            </button>
+
+            {/* Premium Badge */}
+            <div className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/30 mb-4">
+              <Crown className="w-3 h-3 text-[var(--accent)]" strokeWidth={2} />
+              <span className="text-[11px] font-bold text-[var(--accent)] tracking-wider uppercase">Pro</span>
             </div>
+
+            <h2 className="relative text-[26px] font-serif font-semibold text-[var(--text)] mb-2 leading-tight">
+              {isMessageLimit ? "You're out of messages" : isDebateLimit ? "You've hit the free limit" : "Go Pro"}
+            </h2>
+            <p className="relative text-sm text-[var(--text-secondary)] max-w-[260px] mx-auto leading-relaxed">
+              {isMessageLimit
+                ? `Free accounts get ${limitData?.limit || 2} messages per debate.`
+                : isDebateLimit
+                ? `Free accounts get ${limitData?.limit || 3} debates.`
+                : "Unlimited debates, web-sourced opponents, full history."
+              }
+            </p>
           </div>
 
-          <div className="px-6 py-5 space-y-5">
-            <div className="grid grid-cols-2 gap-3">
-              {features.map((f, i) => (
-                <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-[var(--bg-sunken)] border border-[var(--border-light)]">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={f.icon}/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-[var(--text)]">{f.title}</p>
-                    <p className="text-[11px] text-[var(--text-secondary)]">{f.desc}</p>
-                  </div>
+          {/* Features List */}
+          <div className="px-8 py-4 space-y-3">
+            {features.map((feature, i) => (
+              <div 
+                key={i} 
+                className="flex items-center gap-3.5 p-2.5 -mx-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-colors duration-200"
+              >
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)]/15 to-[var(--accent)]/5 text-[var(--accent)] flex items-center justify-center border border-[var(--accent)]/10">
+                  <feature.icon className="w-4 h-4" strokeWidth={1.5} />
                 </div>
-              ))}
-            </div>
-
-            <div className="p-4 rounded-xl bg-[var(--accent-subtle)] border border-[var(--accent)]/10 text-center">
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-3xl font-bold text-[var(--text)]">$20</span>
-                <span className="text-[var(--text-secondary)]">/month</span>
+                <span className="text-[13px] text-[var(--text)] font-medium">{feature.title}</span>
+                <Check className="w-4 h-4 text-emerald-500 ml-auto flex-shrink-0" strokeWidth={2.5} />
               </div>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">Cancel anytime</p>
+            ))}
+          </div>
+
+          {/* Pricing + CTA */}
+          <div className="px-8 pt-2 pb-8">
+            <div className="relative p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] overflow-hidden mb-5">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--accent)]/60 to-transparent" />
+              <div className="flex items-baseline justify-center gap-1.5">
+                <span className="text-4xl font-serif font-bold text-[var(--text)] tracking-tight">$20</span>
+                <span className="text-[var(--text-secondary)] text-sm">/month</span>
+              </div>
+              <p className="text-[11px] text-[var(--text-tertiary)] text-center mt-1.5 tracking-wide">Cancel anytime — no questions asked</p>
             </div>
 
-            <div className="space-y-2.5">
-              <SafeSignedOut>
-                <SafeSignInButton mode="modal">
-                  <button className="w-full btn btn-primary btn-lg">Sign in to upgrade</button>
-                </SafeSignInButton>
-              </SafeSignedOut>
-              
-              {user && (
-                <>
-                  <button onClick={handleUpgrade} disabled={isUpgrading} className={`w-full btn btn-lg ${isUpgrading ? 'opacity-50 cursor-not-allowed bg-[var(--bg-sunken)]' : 'btn-primary'}`}>
-                    {isUpgrading ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                        </svg>
-                        Loading...
-                      </>
-                    ) : 'Upgrade to Premium'}
-                  </button>
-                  
-                  <button onClick={onClose} className="w-full btn btn-secondary">Maybe later</button>
-                </>
-              )}
-            </div>
+            <SafeSignedOut>
+              <SafeSignInButton mode="modal">
+                <button className="w-full h-12 rounded-xl bg-[var(--accent)] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-xl shadow-[var(--accent)]/20 hover:shadow-[var(--accent)]/30 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200">
+                  <Crown className="w-4 h-4" strokeWidth={2} />
+                  Sign in to upgrade
+                </button>
+              </SafeSignInButton>
+            </SafeSignedOut>
+
+            {user && (
+              <div className="space-y-2.5">
+                <button
+                  onClick={handleUpgrade}
+                  disabled={isUpgrading}
+                  className="w-full h-12 rounded-xl bg-[var(--accent)] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-xl shadow-[var(--accent)]/20 hover:shadow-[var(--accent)]/30 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none"
+                >
+                  {isUpgrading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      Redirecting to Stripe...
+                    </>
+                  ) : (
+                    <>
+                      <Crown className="w-4 h-4" strokeWidth={2} />
+                      Upgrade to Pro
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={onClose}
+                  className="w-full h-10 rounded-xl text-[var(--text-tertiary)] text-[13px] font-medium hover:text-[var(--text-secondary)] hover:bg-[var(--bg-sunken)] transition-all duration-200"
+                >
+                  Not now
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

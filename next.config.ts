@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   // Disable dev indicator (the orange loading bar at top)
   devIndicators: false,
 
+  // Allow Tailscale IP for dev server access
+  allowedDevOrigins: ['100.92.182.16'],
+
   // Image optimization - serve modern formats
   images: {
     formats: ['image/avif', 'image/webp'],

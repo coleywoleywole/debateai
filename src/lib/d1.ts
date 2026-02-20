@@ -49,6 +49,7 @@ class D1Client {
             'Authorization': `Bearer ${this.apiToken}`,
           },
           body: JSON.stringify({ sql, params }),
+          signal: AbortSignal.timeout(8000),
         }
       );
 
@@ -282,7 +283,10 @@ class D1Client {
   
   async getDebate(debateId: string) {
     const result = await this.query(
-      `SELECT * FROM debates WHERE id = ?`,
+      `SELECT d.*, u.username, u.display_name AS author_display_name
+       FROM debates d
+       LEFT JOIN users u ON d.user_id = u.user_id
+       WHERE d.id = ?`,
       [debateId]
     );
     
@@ -305,9 +309,17 @@ class D1Client {
           }
         }
       }
+      // Add author info
+      debate.author = {
+        username: debate.username || null,
+        displayName: debate.author_display_name || 'Debater',
+      };
+      delete debate.username;
+      delete debate.author_display_name;
+
       return { success: true, debate };
     }
-    
+
     return { success: false, error: 'Debate not found' };
   }
 

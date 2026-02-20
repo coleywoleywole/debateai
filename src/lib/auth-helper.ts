@@ -5,11 +5,9 @@ import { cookies } from 'next/headers';
  * Gets the user ID, supporting test mode in development and guest users
  */
 export async function getUserId(): Promise<string | null> {
-  const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === 'true';
-  
-  if (isTestMode && process.env.NODE_ENV === 'development') {
-    // Use test user ID in test mode
-    return 'test-user-123';
+  // Dev bypass: use a real user ID for local development
+  if (process.env.NODE_ENV === 'development' && process.env.DEV_USER_ID) {
+    return process.env.DEV_USER_ID;
   }
   
   // Use real auth

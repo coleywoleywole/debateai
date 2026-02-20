@@ -129,6 +129,7 @@ Sketch is a design-focused agent that handles UI/visual work. It operates in the
 ### How to talk to Sketch
 - **Require mention**: You MUST mention `<@1465238762807099440>` in your message or Sketch won't respond
 - **Channel**: `#sketch` (ID: `1468692375042785424`)
+- **CRITICAL — Correct file path**: Sketch works in its own workspace at `~/.openclaw/debateai/`, NOT `/Users/spud/debateai/`. Always tell Sketch to work on files at `/Users/spud/debateai/` (the real project directory). Include this in every message: "IMPORTANT: Work directly on files in /Users/spud/debateai/ — do NOT use ~/.openclaw/debateai/ or any other copy."
 - **Don't give design direction**: Tell Sketch WHAT needs fixing (the problem, broken behavior, which file/component), but do NOT tell it HOW to design or style it. Sketch has better design instincts — let it decide the visual approach.
 - **Tell it to run tests**: Remind Sketch to run `npx playwright test tests/e2e/critical-journeys.spec.ts --project=chromium` after changes
 - **CRITICAL — Tell Sketch NOT to change API calls or business logic**: Sketch is a design agent and must ONLY modify CSS, classes, HTML structure, and visual presentation. It must NOT change: API endpoint URLs (`fetch('/api/...')`), request/response handling, SSE/streaming logic, sessionStorage keys, state management logic, or any non-visual JavaScript. If Sketch needs backend changes, it should flag them for you to handle.

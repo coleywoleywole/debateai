@@ -1,381 +1,170 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-type Tab = 'rankings' | 'recent';
-type Period = 'alltime' | 'weekly';
-type Sort = 'points' | 'streak' | 'debates' | 'avg_score';
-
-interface Entry {
-  rank: number;
-  userId: string;
-  displayName: string | null;
-  username: string | null;
-  totalDebates: number;
-  totalWins: number;
-  currentStreak: number;
-  longestStreak: number;
-  avgScore: number;
-  totalPoints: number;
-}
+import { HistoryPageSkeleton } from '@/components/Skeleton';
 
 interface PublicDebate {
-  id: string;
-  opponent: string;
-  topic: string;
-  createdAt: string;
-  author: {
-    username: string | null;
-    displayName: string;
-  };
+	id: string;
+	opponent: string;
+	topic: string;
+	status: string;
+	createdAt: string;
+	author: {
+		username: string | null;
+		displayName: string;
+	};
 }
 
-const SORT_OPTIONS: { value: Sort; label: string; icon: string }[] = [
-  { value: 'points', label: 'Points', icon: '⭐' },
-  { value: 'streak', label: 'Streak', icon: '🔥' },
-  { value: 'debates', label: 'Debates', icon: '💬' },
-  { value: 'avg_score', label: 'Avg Score', icon: '📊' },
-];
+function timeAgo(dateStr: string): string {
+	const now = Date.now();
+	const then = new Date(dateStr).getTime();
+	const diffMs = now - then;
+	const diffMin = Math.floor(diffMs / 60_000);
+	if (diffMin < 1) return 'just now';
+	if (diffMin < 60) return `${diffMin}m ago`;
+	const diffHr = Math.floor(diffMin / 60);
+	if (diffHr < 24) return `${diffHr}h ago`;
+	const diffDays = Math.floor(diffHr / 24);
+	if (diffDays < 7) return `${diffDays}d ago`;
+	return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
-function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-lg">🥇</span>;
-  if (rank === 2) return <span className="text-lg">🥈</span>;
-  if (rank === 3) return <span className="text-lg">🥉</span>;
-  return (
-    <span className="w-7 h-7 rounded-full bg-[var(--bg-sunken)] flex items-center justify-center text-xs font-semibold text-[var(--text-secondary)] tabular-nums">
-      {rank}
-    </span>
-  );
+function isLive(debate: PublicDebate): boolean {
+	if (debate.status !== 'active') return false;
+	const createdAt = new Date(debate.createdAt).getTime();
+	const thirtyMinAgo = Date.now() - 30 * 60_000;
+	return createdAt > thirtyMinAgo;
 }
 
 export default function ExploreClient() {
-  const [activeTab, setActiveTab] = useState<Tab>('rankings');
-  const [period, setPeriod] = useState<Period>('alltime');
-  const [sort, setSort] = useState<Sort>('points');
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [publicDebates, setPublicDebates] = useState<PublicDebate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+	const router = useRouter();
+	const [debates, setDebates] = useState<PublicDebate[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (activeTab === 'rankings') {
-        const res = await fetch(`/api/explore?period=${period}&sort=${sort}&limit=50`);
-        if (!res.ok) throw new Error('Failed to load');
-        const data = await res.json();
-        setEntries(data.entries);
-      } else {
-        const res = await fetch(`/api/debates/public?limit=30`);
-        if (!res.ok) throw new Error('Failed to load');
-        const data = await res.json();
-        setPublicDebates(data.debates);
-      }
-    } catch {
-      setError('Failed to load data');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, period, sort]);
+	const fetchData = useCallback(async () => {
+		setLoading(true);
+		setError(null);
+		try {
+			const res = await fetch('/api/debates/public?limit=30');
+			if (!res.ok) throw new Error('Failed to load');
+			const data = await res.json();
+			setDebates(data.debates);
+		} catch {
+			setError('Failed to load debates');
+		} finally {
+			setLoading(false);
+		}
+	}, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+	useEffect(() => {
+		fetchData();
+	}, [fetchData]);
 
-  return (
-    <div>
-      {/* Top Tabs */}
-      <div className="flex p-1 bg-[var(--bg-sunken)] rounded-xl mb-6 max-w-sm mx-auto">
-        <button
-          onClick={() => setActiveTab('rankings')}
-          className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-            activeTab === 'rankings'
-              ? 'bg-[var(--bg)] text-[var(--accent)] shadow-sm'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
-          }`}
-        >
-          Rankings
-        </button>
-        <button
-          onClick={() => setActiveTab('recent')}
-          className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-            activeTab === 'recent'
-              ? 'bg-[var(--bg)] text-[var(--accent)] shadow-sm'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
-          }`}
-        >
-          Recent
-        </button>
-      </div>
+	if (loading) {
+		return <HistoryPageSkeleton />;
+	}
 
-      {activeTab === 'rankings' && (
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          {/* Period toggle */}
-          <div className="flex rounded-lg border border-[var(--border)] overflow-hidden">
-            {(['alltime', 'weekly'] as Period[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  period === p
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text)]'
-                }`}
-              >
-                {p === 'alltime' ? 'All Time' : 'This Week'}
-              </button>
-            ))}
-          </div>
+	if (error) {
+		return (
+			<div className="text-center py-12">
+				<div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+					<svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+					</svg>
+				</div>
+				<p className="text-sm text-[var(--text-secondary)] mb-4">{error}</p>
+				<button
+					onClick={() => { setLoading(true); fetchData(); }}
+					className="h-9 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors"
+				>
+					Try Again
+				</button>
+			</div>
+		);
+	}
 
-          {/* Sort options */}
-          <div className="flex gap-1.5 flex-wrap">
-            {SORT_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setSort(opt.value)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  sort === opt.value
-                    ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30'
-                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/30'
-                }`}
-              >
-                <span>{opt.icon}</span>
-                <span>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+	if (debates.length === 0) {
+		return (
+			<div className="text-center py-16">
+				<div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)]/30 flex items-center justify-center">
+					<svg className="w-6 h-6 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+					</svg>
+				</div>
+				<h3 className="text-base font-medium text-[var(--text)] mb-1">No debates yet</h3>
+				<p className="text-sm text-[var(--text-secondary)] mb-5">Be the first to start a debate and share it with the community</p>
+				<Link
+					href="/"
+					className="h-9 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium inline-flex items-center gap-2 shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/40 transition-all"
+				>
+					Start Your First Debate
+				</Link>
+			</div>
+		);
+	}
 
-      {/* Content Area with min-height to prevent layout shift */}
-      <div className="min-h-[200px] sm:min-h-[400px]">
-        {/* Error */}
-        {error && (
-          <div className="text-center py-12">
-            <p className="text-sm text-[var(--error)]">{error}</p>
-            <button onClick={fetchData} className="mt-2 text-xs text-[var(--accent)] hover:underline">
-              Try again
-            </button>
-          </div>
-        )}
+	return (
+		<div className="space-y-3">
+			{debates.map((debate, index) => (
+				<div
+					key={debate.id}
+					onClick={() => router.push(`/debate/${debate.id}`)}
+					className="group relative cursor-pointer animate-fade-up"
+					style={{ animationDelay: `${index * 50}ms` }}
+				>
+					{/* Glow on hover */}
+					<div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--accent)]/0 to-[var(--accent)]/0 group-hover:from-[var(--accent)]/10 group-hover:to-[var(--accent-light)]/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition-all duration-300" />
 
-        {/* Loading */}
-        {loading && !error && (
-          <div className="space-y-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div 
-                key={i} 
-                className="flex items-center gap-3 p-3.5 sm:p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]/50"
-              >
-                <div className="flex-shrink-0 w-8 flex justify-center">
-                  <div className="w-7 h-7 rounded-full bg-[var(--bg-sunken)] animate-pulse" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="h-4 bg-[var(--bg-sunken)] rounded animate-pulse w-32 mb-1.5" />
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-3 bg-[var(--bg-sunken)] rounded animate-pulse w-16" />
-                    <span className="text-[var(--text-tertiary)]">·</span>
-                    <div className="h-3 bg-[var(--bg-sunken)] rounded animate-pulse w-8" />
-                    <span className="text-[var(--text-tertiary)]">·</span>
-                    <div className="h-3 bg-[var(--bg-sunken)] rounded animate-pulse w-12" />
-                  </div>
-                </div>
-                <div className="flex-shrink-0 text-right w-16">
-                  <div className="h-5 bg-[var(--bg-sunken)] rounded animate-pulse w-12 ml-auto" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+					<div className="relative artistic-card p-4 hover:border-[var(--accent)]/30 transition-all duration-300">
+						<div className="flex items-start justify-between gap-4">
+							<div className="flex-1 min-w-0">
+								<h3 className="font-medium text-[var(--text)] text-sm mb-1.5 line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+									{debate.topic}
+								</h3>
 
-        {/* Empty state */}
-        {!loading && !error && activeTab === 'rankings' && entries.length === 0 && (
-          <div className="text-center py-16 px-4">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-sunken)] border border-[var(--border)] flex items-center justify-center">
-              <span className="text-3xl">🏆</span>
-            </div>
-            <h3 className="text-lg font-semibold text-[var(--text)] mb-2">No debaters yet</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm mx-auto">
-              {period === 'weekly'
-                ? 'No debates completed this week. Be the first to climb the rankings!'
-                : 'Complete a debate to appear on the rankings and earn points.'}
-            </p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors"
-            >
-              <span>Start Debating</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
-          </div>
-        )}
+								<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-secondary)]">
+									{isLive(debate) && (
+										<span className="inline-flex items-center gap-1.5 text-emerald-600 font-medium">
+											<span className="relative flex h-1.5 w-1.5">
+												<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+												<span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+											</span>
+											LIVE
+										</span>
+									)}
+									<span className="inline-flex items-center gap-1.5">
+										<span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+										vs {debate.opponent}
+									</span>
+									<span className="flex items-center gap-1">
+										<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+										</svg>
+										{debate.author.displayName}
+									</span>
+									<span className="flex items-center gap-1">
+										<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+										</svg>
+										{timeAgo(debate.createdAt)}
+									</span>
+								</div>
+							</div>
 
-        {/* Empty state Recent */}
-        {!loading && !error && activeTab === 'recent' && publicDebates.length === 0 && (
-          <div className="text-center py-16 px-4">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bg-sunken)] border border-[var(--border)] flex items-center justify-center">
-              <span className="text-3xl">💬</span>
-            </div>
-            <h3 className="text-lg font-semibold text-[var(--text)] mb-2">No public debates yet</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm mx-auto">
-              Be the first to share your convictions with the world.
-            </p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white font-medium text-sm hover:bg-[var(--accent-hover)] transition-colors"
-            >
-              <span>Start Debating</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </Link>
-          </div>
-        )}
-
-        {/* Rankings entries */}
-        {!loading && !error && activeTab === 'rankings' && entries.length > 0 && (
-          <div className="space-y-2">
-            {entries.map((entry) => (
-              <div
-                key={entry.userId}
-                className={`flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border transition-colors ${
-                  entry.rank <= 3
-                    ? 'bg-[var(--accent)]/3 border-[var(--accent)]/15'
-                    : 'bg-[var(--bg-elevated)] border-[var(--border)]/50'
-                }`}
-              >
-                {/* Rank */}
-                <div className="flex-shrink-0 w-8 flex justify-center">
-                  <RankBadge rank={entry.rank} />
-                </div>
-
-                {/* Name + stats */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {entry.username ? (
-                      <Link
-                        href={`/profile/${entry.username}`}
-                        className="text-sm font-semibold text-[var(--text)] hover:text-[var(--accent)] transition-colors truncate"
-                      >
-                        {entry.displayName || `Debater ${entry.userId.slice(-4)}`}
-                      </Link>
-                    ) : (
-                      <span className="text-sm font-semibold text-[var(--text)] truncate">
-                        {entry.displayName || `Debater ${entry.userId.slice(-4)}`}
-                      </span>
-                    )}
-                    {entry.currentStreak > 0 && (
-                      <span className="text-xs text-orange-500 font-medium flex items-center gap-0.5">
-                        🔥 {entry.currentStreak}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)] mt-0.5">
-                    <span>{entry.totalDebates} {entry.totalDebates === 1 ? 'debate' : 'debates'}</span>
-                    <span>·</span>
-                    <span>{entry.totalWins}W</span>
-                    <span>·</span>
-                    <span>Avg {entry.avgScore}</span>
-                  </div>
-                </div>
-
-                {/* Key stat (based on sort) */}
-                <div className="flex-shrink-0 text-right">
-                  {sort === 'points' && (
-                    <div>
-                      <span className="text-sm font-bold text-[var(--accent)] tabular-nums">{entry.totalPoints}</span>
-                      <span className="text-[10px] text-[var(--text-tertiary)] ml-1">pts</span>
-                    </div>
-                  )}
-                  {sort === 'streak' && (
-                    <div>
-                      <span className="text-sm font-bold text-orange-500 tabular-nums">{entry.currentStreak}</span>
-                      <span className="text-[10px] text-[var(--text-tertiary)] ml-1">day{entry.currentStreak !== 1 ? 's' : ''}</span>
-                    </div>
-                  )}
-                  {sort === 'debates' && (
-                    <div>
-                      <span className="text-sm font-bold text-[var(--accent)] tabular-nums">{entry.totalDebates}</span>
-                    </div>
-                  )}
-                  {sort === 'avg_score' && (
-                    <div>
-                      <span className="text-sm font-bold text-[var(--accent)] tabular-nums">{entry.avgScore}</span>
-                      <span className="text-[10px] text-[var(--text-tertiary)] ml-1">avg</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Recent entries */}
-        {!loading && !error && activeTab === 'recent' && publicDebates.length > 0 && (
-          <div className="grid grid-cols-1 gap-4">
-            {publicDebates.map((debate) => (
-              <Link
-                key={debate.id}
-                href={`/debate/${debate.id}`}
-                className="group p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)]/50 hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/[0.02] transition-all"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">
-                    {debate.opponent}
-                  </span>
-                  <span className="text-[var(--text-tertiary)] text-xs">·</span>
-                  <span className="text-[var(--text-secondary)] text-xs">
-                    {new Date(debate.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-                <h4 className="text-base font-semibold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors mb-2 line-clamp-2">
-                  {debate.topic}
-                </h4>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded bg-[var(--bg-sunken)] flex items-center justify-center text-[10px]">
-                      👤
-                    </div>
-                    <span className="text-xs text-[var(--text-secondary)]">
-                      {debate.author.displayName}
-                    </span>
-                  </div>
-                  <div className="text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Points legend */}
-      {activeTab === 'rankings' && (
-        <div className="mt-8 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)]">
-          <h4 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">How Points Work</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { icon: '✅', label: 'Complete', value: '+10' },
-              { icon: '🏆', label: 'Win', value: '+5' },
-              { icon: '🔥', label: 'Streak/day', value: '+2' },
-              { icon: '📤', label: 'Share', value: '+3' },
-            ].map((item) => (
-              <div key={item.label} className="text-center">
-                <div className="text-lg mb-0.5">{item.icon}</div>
-                <div className="text-xs font-semibold text-[var(--accent)]">{item.value}</div>
-                <div className="text-[10px] text-[var(--text-tertiary)]">{item.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+							<div className="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
+								<div className="w-7 h-7 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
+									<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+									</svg>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			))}
+		</div>
+	);
 }

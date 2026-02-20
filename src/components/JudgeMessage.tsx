@@ -77,7 +77,7 @@ export default function JudgeMessage({
             </div>
 
             {/* Score Breakdown */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            {score.categories && <div className="grid grid-cols-3 gap-2 mb-3">
               {Object.entries(score.categories).slice(0, 3).map(([key, val]) => (
                 <div
                   key={key}
@@ -91,7 +91,7 @@ export default function JudgeMessage({
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
 
             {/* Commentary */}
             <p className="text-[14px] leading-relaxed text-[var(--text-secondary)] mb-3">
@@ -134,7 +134,7 @@ export default function JudgeMessage({
                 </div>
 
                 {/* All Categories */}
-                <div className="space-y-2">
+                {score.categories && <div className="space-y-2">
                   {Object.entries(score.categories).map(([key, val]) => (
                     <div key={key} className="flex items-center gap-3">
                       <span className="text-xs text-[var(--text-secondary)] w-20">{CATEGORY_LABELS[key]}</span>
@@ -159,7 +159,7 @@ export default function JudgeMessage({
                       </div>
                     </div>
                   ))}
-                </div>
+                </div>}
 
                 {/* Strengths & Key Moment */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">

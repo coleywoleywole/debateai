@@ -8,14 +8,8 @@ import { getOpponentById } from "@/lib/opponents";
 import Header from "@/components/Header";
 import { track } from "@/lib/analytics";
 import { useToast } from "@/components/Toast";
-import ShareButtons from "@/components/ShareButtons";
-import StickyShareButton from "@/components/StickyShareButton";
-import JudgeMessage from "@/components/JudgeMessage";
-import DebateVoting from "@/components/DebateVoting";
 import PostDebateEngagement from "@/components/PostDebateEngagement";
-import GuestModeWall from "@/components/GuestModeWall";
 import { DebatePageSkeleton } from "@/components/Skeleton";
-import ShareCard from "@/components/ShareCard";
 import { LiveJudgePanel } from "@/components/LiveJudgePanel";
 import type { DebateScore } from "@/lib/scoring";
 import type { LiveJudgeFeedback, LiveJudgeHighlight } from "@/lib/live-judge";
@@ -23,7 +17,6 @@ import type { LiveJudgeFeedback, LiveJudgeHighlight } from "@/lib/live-judge";
 // Lazy load modals - they're only shown on user interaction
 const UpgradeModal = lazy(() => import("@/components/UpgradeModal"));
 const ShareModal = lazy(() => import("@/components/ShareModal"));
-const GuestLimitModal = lazy(() => import("@/components/GuestLimitModal"));
 
 export interface DebateClientProps {
   initialDebate?: {
@@ -332,8 +325,11 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [debate, setDebate] = useState<any>(initialDebate);
   const [messages, setMessages] = useState<any[]>(initialMessages);
   const [isOwner, setIsOwner] = useState<boolean>(initialIsOwner);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [debateAuthor, setDebateAuthor] = useState<{ username: string | null; displayName: string } | null>(null);
   const [userInput, setUserInput] = useState("");
   const instantDebateActiveRef = useRef(false);
+  const hasUserSentMessage = useRef(false);
   const [isLoadingDebate, setIsLoadingDebate] = useState(!initialDebate);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isAILoading, setIsAILoading] = useState(false);
@@ -342,20 +338,28 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [showShareCard, setShowShareCard] = useState(false);
   const [rateLimitData, setRateLimitData] = useState<{ current: number; limit: number } | undefined>();
   const [debateScore, setDebateScore] = useState<DebateScore | null>(null);
-  const [variant, setVariant] = useState<'default' | 'aggressive'>('default');
+  const variant: 'default' | 'aggressive' = 'default';
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
-  const [guestWallDismissed, setGuestWallDismissed] = useState(false);
   const [isGuestOwner, setIsGuestOwner] = useState(false);
   const [isJudging, setIsJudging] = useState(false);
   const isDevMode = searchParams.get('dev') === 'true';
+
+  // Resizable coach panel
+  const [coachWidth, setCoachWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 360;
+    const saved = sessionStorage.getItem('coachPanelWidth');
+    return saved ? Math.max(240, Math.min(600, Number(saved))) : 360;
+  });
+  const isResizing = useRef(false);
 
   // Live Judge state
   const [liveFeedbackHistory, setLiveFeedbackHistory] = useState<LiveJudgeFeedback[]>([]);
   const [runningSummary, setRunningSummary] = useState<string>('');
   const [isLiveJudgeLoading, setIsLiveJudgeLoading] = useState(false);
+  // Cross-highlight: which exchange (feedback index) is being hovered
+  const [highlightedExchange, setHighlightedExchange] = useState<number | null>(null);
   const [showLiveJudgeDrawer, setShowLiveJudgeDrawer] = useState(false);
   const liveJudgeAbortRef = useRef<AbortController | null>(null);
 
@@ -384,7 +388,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       const data = await response.json();
       setDebateScore(data.score);
-      setShowShareCard(true);
       track('debate_scored', { debateId, userScore: data.score.userScore, aiScore: data.score.aiScore, winner: data.score.winner });
     } catch (e) {
       console.error('Failed to request judgment:', e);
@@ -481,14 +484,28 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         const res = await fetch(`/api/debate/${debateId}`);
         if (!res.ok) throw new Error('Failed to load debate');
         const data = await res.json();
-        // Always update ownership from authenticated API call
+        // Always update ownership and auth state from authenticated API call
         setIsOwner(data.isOwner);
-        // Always update debate data from the API — SSR/ISR data may be stale
-        // (e.g., page was pre-rendered or ISR-cached before all messages were added)
-        setDebate(data.debate);
-        setMessages(data.debate.messages || []);
-        if (data.debate.score_data) {
-          setDebateScore(data.debate.score_data);
+        setIsAuthenticated(data.isAuthenticated);
+        if (data.debate.author) {
+          setDebateAuthor(data.debate.author);
+        }
+        // Only update debate/messages if the user hasn't started sending messages.
+        // Otherwise this fetch can resolve after handleSend and clobber optimistic state.
+        if (!hasUserSentMessage.current) {
+          setDebate(data.debate);
+          setMessages(data.debate.messages || []);
+          if (data.debate.score_data?.debateScore) {
+            setDebateScore(data.debate.score_data.debateScore);
+          }
+          // Restore coach feedback history from D1
+          if (Array.isArray(data.debate.score_data?.coachFeedback) && data.debate.score_data.coachFeedback.length > 0) {
+            setLiveFeedbackHistory(data.debate.score_data.coachFeedback);
+            const lastFeedback = data.debate.score_data.coachFeedback[data.debate.score_data.coachFeedback.length - 1];
+            if (lastFeedback.debateSummarySoFar) {
+              setRunningSummary(lastFeedback.debateSummarySoFar);
+            }
+          }
         }
       } catch (e) {
         // Only set error if we don't have SSR data to fall back on
@@ -503,6 +520,38 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     loadDebate();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- initialDebate is from SSR and never changes; we intentionally always fetch fresh data
   }, [debateId, isDevMode]);
+
+  // Poll for new messages when viewing someone else's debate (view-only mode)
+  useEffect(() => {
+    if (isOwner || isGuestOwner || isDevMode || isLoadingDebate) return;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/debate/${debateId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.debate) {
+          const newMessages = data.debate.messages || [];
+          // Only update if message count changed
+          if (newMessages.length !== messages.length) {
+            setMessages(newMessages);
+            setDebate(data.debate);
+            if (data.debate.score_data?.debateScore) {
+              setDebateScore(data.debate.score_data.debateScore);
+            }
+            if (Array.isArray(data.debate.score_data?.coachFeedback) && data.debate.score_data.coachFeedback.length > 0) {
+              setLiveFeedbackHistory(data.debate.score_data.coachFeedback);
+            }
+          }
+        }
+      } catch {
+        // Silently ignore polling errors
+      }
+    };
+
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [debateId, isOwner, isGuestOwner, isDevMode, isLoadingDebate, messages.length]);
 
   // Dev mode mock data
   useEffect(() => {
@@ -554,6 +603,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     if (!inputToSend.trim() || isUserLoading || isAILoading) return;
 
     hasUserInteracted.current = false;
+    hasUserSentMessage.current = true;
     setIsAutoScrollEnabled(true);
 
     // Add user message immediately
@@ -747,8 +797,42 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     }
   }, [isAuthLoaded, isLoadingDebate, debate]);
 
+  // Coach panel resize handler
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    const startX = e.clientX;
+    const startWidth = coachWidth;
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+      // Dragging left = wider coach, dragging right = narrower coach
+      const delta = startX - e.clientX;
+      const newWidth = Math.max(240, Math.min(600, startWidth + delta));
+      setCoachWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Persist to sessionStorage
+      setCoachWidth(w => {
+        sessionStorage.setItem('coachPanelWidth', String(w));
+        return w;
+      });
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [coachWidth]);
+
   const effectiveIsOwner = isOwner || isGuestOwner;
-  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && !isJudging && effectiveIsOwner;
+  const canSend = userInput.trim().length > 0 && !isUserLoading && !isAILoading && !isAITakeoverLoading && !isLiveJudgeLoading && !isJudging && effectiveIsOwner;
   const canRequestVerdict = effectiveIsOwner && messages.filter(m => m.role === 'user').length >= 2 && messages.filter(m => m.role === 'ai').length >= 2 && !isAILoading && !isUserLoading;
 
   if (loadError) {
@@ -790,57 +874,77 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 <span>vs</span>
                 <span className="font-medium text-[var(--text)]">{debate.opponentStyle || opponent?.name}</span>
               </div>
+              {!effectiveIsOwner && debateAuthor && (
+                <>
+                  <div className="hidden sm:block w-px h-4 bg-[var(--border)]" />
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <span className="text-[var(--text-tertiary)]">by</span>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--bg-sunken)] border border-[var(--border)] text-[var(--text)]">
+                      <svg className="w-3 h-3 text-[var(--text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      {debateAuthor.displayName}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Main Content - Always split on desktop */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden justify-center">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden justify-center">
         {/* Left: Chat Area */}
-        <div className="flex-1 lg:flex-[7] lg:max-w-4xl flex flex-col min-h-0 border-l border-r border-[var(--border)]/50">
+        <div className={`flex-1 flex flex-col min-h-0 border-l border-r border-[var(--border)]/50 ${effectiveIsOwner ? 'md:flex-[7] md:max-w-4xl' : 'md:max-w-5xl'}`}>
           {/* Chat messages — always visible */}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto" onScroll={handleScroll}>
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden" onScroll={handleScroll}>
             <div className="pb-4">
-              {messages.filter(m => m?.role).map((msg, idx) => {
-                const isUserMsg = msg.role === 'user';
-                const latestFeedback = liveFeedbackHistory.length > 0 ? liveFeedbackHistory[liveFeedbackHistory.length - 1] : null;
-                const msgHighlights = isUserMsg && latestFeedback
-                  ? latestFeedback.highlights.filter(h => msg.content.includes(h.text))
-                  : undefined;
-                return (
-                  <Message key={idx} msg={msg} opponent={opponent} debate={debate}
-                    isAILoading={!debateScore && isAILoading && idx === messages.length - 1}
-                    isUserLoading={!debateScore && isUserLoading && idx === messages.length - 1}
-                    onRetry={!debateScore && msg.failed ? () => {
-                      setMessages(prev => prev.filter((_, i) => i !== idx));
-                      setUserInput(msg.content);
-                    } : undefined}
-                    messageIndex={idx} isHighlighted={highlightedMessageIndex === idx} debateId={debateId} variant={variant}
-                    highlights={msgHighlights} />
-                );
-              })}
+              {(() => {
+                let userMsgCount = 0;
+                return messages.filter(m => m?.role).map((msg, idx) => {
+                  const isUserMsg = msg.role === 'user';
+                  if (isUserMsg) userMsgCount++;
+                  // feedback[0] maps to user message #2, feedback[i] maps to user message #(i+2)
+                  const exchangeIndex = isUserMsg ? userMsgCount - 2 : -1;
+                  const hasFeedback = exchangeIndex >= 0 && exchangeIndex < liveFeedbackHistory.length;
+                  const feedback = hasFeedback ? liveFeedbackHistory[exchangeIndex] : null;
+                  const latestFeedback = liveFeedbackHistory.length > 0 ? liveFeedbackHistory[liveFeedbackHistory.length - 1] : null;
+                  const msgHighlights = isUserMsg && latestFeedback
+                    ? latestFeedback.highlights.filter(h => msg.content.includes(h.text))
+                    : undefined;
+                  const isExchangeHighlighted = highlightedExchange !== null && exchangeIndex === highlightedExchange;
+                  return (
+                    <div
+                      key={idx}
+                      onMouseEnter={hasFeedback ? () => setHighlightedExchange(exchangeIndex) : undefined}
+                      onMouseLeave={hasFeedback ? () => setHighlightedExchange(null) : undefined}
+                      className="relative"
+                    >
+                      <div className={`absolute -inset-x-3 -inset-y-1 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10 pointer-events-none transition-opacity duration-200 ${isExchangeHighlighted ? 'opacity-100' : 'opacity-0'}`} />
+                      <Message msg={msg} opponent={opponent} debate={debate}
+                        isAILoading={!debateScore && isAILoading && idx === messages.length - 1}
+                        isUserLoading={!debateScore && isUserLoading && idx === messages.length - 1}
+                        onRetry={!debateScore && msg.failed ? () => {
+                          setMessages(prev => prev.filter((_, i) => i !== idx));
+                          setUserInput(msg.content);
+                        } : undefined}
+                        messageIndex={idx} isHighlighted={highlightedMessageIndex === idx} debateId={debateId} variant={variant}
+                        highlights={msgHighlights} />
+                    </div>
+                  );
+                });
+              })()}
 
-              {/* Final verdict inline in chat */}
+              {/* Post-debate actions (rematch, share, try next) */}
               {debateScore && (
                 <div className="py-6 animate-message-in">
-                  <div className="max-w-3xl mx-auto px-4 sm:px-6">
-                    <JudgeMessage score={debateScore} opponentName={opponent?.name || debate?.opponentStyle || "AI"} experiment_variant={variant} />
-                    <div className="mt-4">
-                      <DebateVoting debateId={debateId} userSideName="You" opponentSideName={opponent?.name || debate?.opponentStyle || "AI"} variant={variant} />
-                    </div>
-                    <div className="mt-4">
-                      <PostDebateEngagement debateId={debateId} topic={debate?.topic || ""} opponentName={opponent?.name || debate?.opponentStyle || "AI"} opponentId={opponent?.id} variant={variant} />
-                    </div>
-                  </div>
+                  <PostDebateEngagement debateId={debateId} topic={debate?.topic || ""} opponentName={opponent?.name || debate?.opponentStyle || "AI"} variant={variant} />
                 </div>
               )}
 
               <div ref={messagesEndRef} />
 
-              {!isSignedIn && !guestWallDismissed && messages.filter(m => m.role === 'user').length >= 5 && (
-                <GuestModeWall isOpen={true} messageCount={messages.filter(m => m.role === 'user').length} onClose={() => setGuestWallDismissed(true)} />
-              )}
             </div>
           </div>
 
@@ -849,7 +953,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
             <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)] px-4 py-3">
               <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/5 border border-[var(--accent)]/10 flex items-center justify-center">
                     <svg className="w-4 h-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
@@ -867,16 +971,46 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                 </a>
               </div>
             </div>
+          ) : !effectiveIsOwner ? (
+            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg-elevated)]/50">
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-[var(--text)]">
+                        {debateAuthor ? `Viewing ${debateAuthor.displayName}'s debate` : 'Viewing debate'}
+                      </p>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        {!isAuthenticated 
+                          ? 'Sign in to start your own debate' 
+                          : 'You can watch but not participate'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {!isAuthenticated && (
+                    <a 
+                      href="/sign-in" 
+                      className="flex-shrink-0 px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors"
+                    >
+                      Sign In
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg)]">
               <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
                 <div className="flex gap-3 items-end">
                   <div className="flex-1 relative">
-                    {!effectiveIsOwner && (
-                      <div className="absolute inset-0 bg-[var(--bg)]/80 backdrop-blur rounded-2xl flex items-center justify-center z-10">
-                        <span className="text-sm text-[var(--text-secondary)]">Sign in to contribute</span>
-                      </div>
-                    )}
                     <textarea
                       ref={textareaRef}
                       value={userInput}
@@ -902,7 +1036,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
                   <div className="flex items-center gap-2 pb-1">
                     <button
                       onClick={handleAITakeover}
-                      disabled={isAITakeoverLoading || isAILoading || isJudging || !effectiveIsOwner}
+                      disabled={isAITakeoverLoading || isAILoading || isLiveJudgeLoading || isJudging || !effectiveIsOwner}
                       title="Let AI argue for you"
                       className="w-12 h-12 rounded-xl border-2 border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 transition-all disabled:opacity-40 disabled:hover:bg-transparent"
                     >
@@ -933,8 +1067,16 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
           )}
         </div>
 
-        {/* Right: Live Judge Panel — always coach, never verdict */}
-        <div className="hidden lg:flex lg:flex-[3] lg:max-w-md flex-col min-h-0 border-l border-r border-[var(--border)]/50">
+        {/* Resize handle */}
+        <div
+          onMouseDown={handleResizeStart}
+          className="hidden md:flex items-center justify-center w-1.5 cursor-col-resize hover:bg-[var(--accent)]/20 active:bg-[var(--accent)]/30 transition-colors group"
+        >
+          <div className="w-0.5 h-8 rounded-full bg-[var(--border)] group-hover:bg-[var(--accent)]/50 transition-colors" />
+        </div>
+
+        {/* Right: Live Judge Panel */}
+        <div className="hidden md:flex flex-col min-h-0 border-r border-[var(--border)]/50" style={{ width: coachWidth, flexShrink: 0 }}>
           <LiveJudgePanel
               feedbackHistory={liveFeedbackHistory}
               isLoading={isLiveJudgeLoading}
@@ -944,24 +1086,30 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               canRequestVerdict={canRequestVerdict && !debateScore}
               isJudging={isJudging}
               onRequestVerdict={requestJudgment}
+              highlightedExchange={highlightedExchange}
+              onHighlightExchange={setHighlightedExchange}
+              debateScore={debateScore}
+              opponentName={opponent?.name || debate?.opponentStyle || "AI"}
             />
         </div>
 
-        {/* Mobile Live Judge - only shown during active debate on small screens */}
-        {!debateScore && (
-          <div className="lg:hidden">
-            <LiveJudgePanel
-              feedbackHistory={liveFeedbackHistory}
-              isLoading={isLiveJudgeLoading}
-              currentScore={liveFeedbackHistory.length > 0 ? liveFeedbackHistory[liveFeedbackHistory.length - 1].overallScore : null}
-              isMobileDrawerOpen={showLiveJudgeDrawer}
-              onMobileDrawerToggle={() => setShowLiveJudgeDrawer(!showLiveJudgeDrawer)}
-              canRequestVerdict={canRequestVerdict}
-              isJudging={isJudging}
-              onRequestVerdict={requestJudgment}
-            />
-          </div>
-        )}
+        {/* Mobile Live Judge */}
+        <div className="md:hidden">
+          <LiveJudgePanel
+            feedbackHistory={liveFeedbackHistory}
+            isLoading={isLiveJudgeLoading}
+            currentScore={liveFeedbackHistory.length > 0 ? liveFeedbackHistory[liveFeedbackHistory.length - 1].overallScore : null}
+            isMobileDrawerOpen={showLiveJudgeDrawer}
+            onMobileDrawerToggle={() => setShowLiveJudgeDrawer(!showLiveJudgeDrawer)}
+            canRequestVerdict={canRequestVerdict && !debateScore}
+            isJudging={isJudging}
+            onRequestVerdict={requestJudgment}
+            highlightedExchange={highlightedExchange}
+            onHighlightExchange={setHighlightedExchange}
+            debateScore={debateScore}
+            opponentName={opponent?.name || debate?.opponentStyle || "AI"}
+          />
+        </div>
       </div>
 
       {showUpgradeModal && <Suspense fallback={null}><UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} /></Suspense>}

@@ -3,31 +3,30 @@ import ExploreClient from './ExploreClient';
 import Header from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: 'Explore & Leaderboard — DebateAI',
-  description: 'Discover top debates and ranked debaters. See who is leading the charts in logic and persuasion.',
-  openGraph: {
-    title: 'Explore & Leaderboard — DebateAI',
-    description: 'See the best debates and top debaters. Rankings, streaks, and community highlights.',
-  },
+	title: 'Community — DebateAI',
+	description: 'Browse recent debates from the DebateAI community.',
 };
 
 export default function ExplorePage() {
-  return (
-    <div className="min-h-dvh flex flex-col">
-      <Header />
-      <main className="flex-1 px-5 py-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-[var(--text)] mb-2 px-1 break-words">
-              🏆 Explore
-            </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Rankings, streaks, and top debates from the community.
-            </p>
-          </div>
-          <ExploreClient />
-        </div>
-      </main>
-    </div>
-  );
+	return (
+		<div className="min-h-dvh flex flex-col relative overflow-hidden">
+			<Header />
+			<main className="flex-1 px-5 py-6 overflow-y-auto">
+				<div className="max-w-2xl mx-auto">
+					{/* Header */}
+					<div className="mb-6">
+						<div className="inline-flex items-center gap-2 mb-2">
+							<span className="h-px w-4 bg-gradient-to-r from-transparent to-[var(--accent)] opacity-50" />
+							<span className="text-[10px] font-medium text-[var(--accent)] uppercase tracking-[0.2em]">
+								Public Debates
+							</span>
+						</div>
+						<h1 className="text-2xl font-serif font-semibold text-[var(--text)]">Community</h1>
+						<p className="text-xs text-[var(--text-secondary)] mt-1">Discover debates from around the world</p>
+					</div>
+					<ExploreClient />
+				</div>
+			</main>
+		</div>
+	);
 }

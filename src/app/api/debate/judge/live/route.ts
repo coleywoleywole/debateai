@@ -4,6 +4,7 @@ import { createRateLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-li
 import { errors } from '@/lib/api-errors';
 import { logger } from '@/lib/logger';
 import { getGeminiModel } from '@/lib/vertex';
+import { d1 } from '@/lib/d1';
 import { z } from 'zod';
 import {
   getLiveJudgeSystemPrompt,
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    const { topic, latestExchange, runningSummary } = parsed.data;
+    const { debateId, topic, latestExchange, runningSummary } = parsed.data;
 
     const systemPrompt = getLiveJudgeSystemPrompt();
     const userPrompt = getLiveJudgeUserPrompt(
@@ -98,6 +99,27 @@ export async function POST(request: Request) {
 
     // Clamp score
     feedback.overallScore = Math.max(0, Math.min(100, Math.round(feedback.overallScore)));
+
+    // Persist coach feedback to D1 (non-blocking — don't fail the response)
+    try {
+      const debateResult = await d1.getDebate(debateId);
+      if (debateResult.success && debateResult.debate) {
+        const existingScoreData = (debateResult.debate.score_data as Record<string, unknown>) || {};
+        const existingFeedback = Array.isArray(existingScoreData.coachFeedback)
+          ? existingScoreData.coachFeedback
+          : [];
+        const updatedScoreData = {
+          ...existingScoreData,
+          coachFeedback: [...existingFeedback, feedback],
+        };
+        await d1.query(
+          'UPDATE debates SET score_data = ? WHERE id = ?',
+          [JSON.stringify(updatedScoreData), debateId],
+        );
+      }
+    } catch (err) {
+      log.error('persist.failed', { debateId, error: err instanceof Error ? err.message : String(err) });
+    }
 
     return NextResponse.json({ feedback });
   } catch (error) {

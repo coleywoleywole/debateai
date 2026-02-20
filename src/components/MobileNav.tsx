@@ -188,11 +188,11 @@ export default function MobileNav() {
             {/* Links */}
             <div className="px-3 py-4 overflow-y-auto flex-1">
               <ul className="space-y-1">
-                {filteredItems.map((item) => {
+                {filteredItems.map((item, idx) => {
                   const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
 
                   return (
-                    <li key={item.href}>
+                    <li key={`${item.href}-${item.label}`}>
                       <Link
                         href={item.href}
                         className={`flex items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-all duration-150 cursor-pointer

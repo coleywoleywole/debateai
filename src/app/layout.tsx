@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import localFont from "next/font/local";
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ToastProvider } from '@/components/Toast';
 import ArtisticBackground from '@/components/backgrounds/ArtisticBackground';
@@ -46,21 +48,18 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
+const playfair = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource-variable/playfair-display/files/playfair-display-latin-wght-italic.woff2",
+      style: "italic",
+    },
+  ],
   variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -112,7 +111,6 @@ export default function RootLayout({
           {/* Preconnect to external services for faster resource loading */}
           <link rel="preconnect" href="https://clerk.debateai.org" crossOrigin="anonymous" />
           <link rel="dns-prefetch" href="https://clerk.debateai.org" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           
           <script
             type="application/ld+json"
@@ -125,7 +123,7 @@ export default function RootLayout({
           <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
+          className={`${GeistSans.variable} ${GeistMono.variable} ${playfair.variable} antialiased`}
         >
           <ArtisticBackground />
           <a href="#main-content" className="skip-link">

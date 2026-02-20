@@ -33,6 +33,7 @@ function checkClerkAvailability(): boolean {
 
   // In development, skip Clerk entirely — production keys don't work on
   // non-debateai.org origins (localhost, Tailscale, etc.) and cause infinite loading.
+  // Dev bypass in auth-helper.ts handles server-side auth; client-side uses mock user below.
   if (process.env.NODE_ENV === 'development') {
     clerkAvailabilityCache = false;
     return false;
@@ -70,11 +71,27 @@ export function useSafeUser() {
   // the condition is stable (env var) and never changes at runtime, it is safe.
   // We do this to avoid try/catch around hooks which causes issues in Next.js 15 SSR.
   if (clerkAvailable) {
-     
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useClerkUser();
   }
-  
+
+  // Dev bypass: return a mock signed-in user when DEV_USER_ID is set
+  if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEV_AUTH === 'true') {
+    return {
+      isSignedIn: true as const,
+      isLoaded: true,
+      user: {
+        id: 'dev-user',
+        firstName: process.env.NEXT_PUBLIC_DEV_USER_NAME || 'Dev',
+        lastName: null,
+        fullName: process.env.NEXT_PUBLIC_DEV_USER_NAME || 'Dev User',
+        primaryEmailAddress: { emailAddress: process.env.NEXT_PUBLIC_DEV_USER_EMAIL || 'dev@local' },
+        imageUrl: '',
+      } as any,
+    };
+  }
+
   return { isSignedIn: false as const, isLoaded: true, user: undefined };
 }
 
@@ -107,13 +124,12 @@ export function useSafeClerk() {
  * Safe SignedIn component that renders nothing when Clerk is unavailable.
  */
 export function SafeSignedIn({ children }: { children: React.ReactNode }) {
-  const clerkAvailable = useClerkAvailable();
   const { isSignedIn } = useSafeUser();
-  
-  if (!clerkAvailable || !isSignedIn) {
+
+  if (!isSignedIn) {
     return null;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -121,20 +137,12 @@ export function SafeSignedIn({ children }: { children: React.ReactNode }) {
  * Safe SignedOut component that renders children when Clerk is unavailable or user is signed out.
  */
 export function SafeSignedOut({ children }: { children: React.ReactNode }) {
-  const clerkAvailable = useClerkAvailable();
   const { isSignedIn } = useSafeUser();
-  
-  // If Clerk isn't available, render children (as if signed out)
-  if (!clerkAvailable) {
-    return <>{children}</>;
-  }
-  
-  // If Clerk is available and user is signed in, don't render
+
   if (isSignedIn) {
     return null;
   }
-  
-  // User is signed out, render children
+
   return <>{children}</>;
 }
 
@@ -156,10 +164,21 @@ export function SafeSignInButton({ children, mode }: { children: React.ReactNode
  */
 export function SafeUserButton({ appearance }: { appearance?: Record<string, unknown> }) {
   const clerkAvailable = useClerkAvailable();
-  
-  if (!clerkAvailable) {
-    return null;
+  const { isSignedIn, user } = useSafeUser();
+
+  if (clerkAvailable) {
+    return <ClerkUserButton appearance={appearance} />;
   }
-  
-  return <ClerkUserButton appearance={appearance} />;
+
+  // Dev bypass: show a simple avatar
+  if (isSignedIn && user) {
+    const name = user.firstName || 'Dev';
+    return (
+      <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium" title={name}>
+        {name.charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return null;
 }

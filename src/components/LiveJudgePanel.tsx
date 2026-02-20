@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { LiveJudgeFeedback } from "@/lib/live-judge";
+import type { DebateScore } from "@/lib/scoring";
 
 interface LiveJudgePanelProps {
   feedbackHistory: LiveJudgeFeedback[];
@@ -9,10 +10,13 @@ interface LiveJudgePanelProps {
   currentScore: number | null;
   isMobileDrawerOpen: boolean;
   onMobileDrawerToggle: () => void;
-  // Optional props for backward compatibility
   canRequestVerdict?: boolean;
   isJudging?: boolean;
   onRequestVerdict?: () => void;
+  highlightedExchange?: number | null;
+  onHighlightExchange?: (index: number | null) => void;
+  debateScore?: DebateScore | null;
+  opponentName?: string;
 }
 
 // Simple inline icons
@@ -53,9 +57,21 @@ function ScoreBadge({ score }: { score: number }) {
 }
 
 // Single feedback bubble - chat style
-function FeedbackBubble({ feedback, isLatest }: { feedback: LiveJudgeFeedback; isLatest?: boolean }) {
+function FeedbackBubble({ feedback, isLatest, isHighlighted, onMouseEnter, onMouseLeave }: {
+  feedback: LiveJudgeFeedback;
+  isLatest?: boolean;
+  isHighlighted?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+}) {
   return (
-    <div className={`flex gap-3 ${isLatest ? 'animate-fade-in' : ''}`}>
+    <div
+      className={`flex gap-3 relative ${isLatest ? 'animate-fade-in' : ''}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {/* Highlight overlay — extends beyond content edges */}
+      <div className={`absolute -inset-x-3 -inset-y-2 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10 pointer-events-none transition-opacity duration-200 ${isHighlighted ? 'opacity-100' : 'opacity-0'}`} />
       <div className="flex-shrink-0">
         <CoachAvatar />
       </div>
@@ -150,6 +166,63 @@ function VerdictPrompt({ isJudging, onRequestVerdict, canRequestVerdict }: {
   );
 }
 
+// Final verdict shown as a coach message
+function VerdictMessage({ score, opponentName }: { score: DebateScore; opponentName: string }) {
+  const winnerEmoji = score.winner === "user" ? "🏆" : score.winner === "ai" ? "😤" : "🤝";
+  const winnerText =
+    score.winner === "user"
+      ? "You won this debate!"
+      : score.winner === "ai"
+        ? `${opponentName} won this one.`
+        : "This debate is a draw.";
+
+  return (
+    <div className="flex gap-3 animate-fade-in">
+      <div className="flex-shrink-0">
+        <CoachAvatar />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="bg-[var(--bg-elevated)] rounded-2xl rounded-tl-md px-4 py-3 shadow-sm border border-[var(--accent)]/30">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-semibold text-sm text-[var(--text)]">Coach</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] font-medium">
+              Final Verdict
+            </span>
+          </div>
+
+          {/* Winner */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">{winnerEmoji}</span>
+            <span className="font-semibold text-[var(--text)]">{winnerText}</span>
+          </div>
+
+          {/* Summary */}
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-3">
+            {score.summary}
+          </p>
+
+          {/* Your strength */}
+          {score.userStrength && (
+            <div className="flex items-start gap-2 text-xs mb-1.5">
+              <span className="text-emerald-500 mt-0.5"><CheckIcon /></span>
+              <span className="text-[var(--text-secondary)]"><span className="font-medium text-[var(--text)]">Your strength:</span> {score.userStrength}</span>
+            </div>
+          )}
+
+          {/* Key moment */}
+          {score.keyMoment && (
+            <div className="flex items-start gap-2 text-xs">
+              <span className="text-amber-500 mt-0.5"><SparkleIcon /></span>
+              <span className="text-[var(--text-secondary)]"><span className="font-medium text-[var(--text)]">Key moment:</span> {score.keyMoment}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Empty state - waiting for coach
 function EmptyState() {
   return (
@@ -187,21 +260,25 @@ export function LiveJudgePanel({
   canRequestVerdict,
   isJudging,
   onRequestVerdict,
+  highlightedExchange,
+  onHighlightExchange,
+  debateScore,
+  opponentName = "AI",
 }: LiveJudgePanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasFeedback = feedbackHistory.length > 0;
 
-  // Auto-scroll to bottom when new feedback arrives
+  // Auto-scroll to bottom when new feedback arrives, typing indicator shows, or verdict lands
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [feedbackHistory.length]);
+  }, [feedbackHistory.length, isLoading, isJudging, debateScore]);
 
   return (
     <>
       {/* Desktop Panel */}
-      <div className="hidden lg:flex flex-col h-full bg-[var(--bg-elevated)]/20">
+      <div className="hidden md:flex flex-col h-full bg-[var(--bg-elevated)]/20">
         {/* Header */}
         <div className="flex-shrink-0 border-b border-[var(--border)]/50 bg-[var(--bg)] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -227,21 +304,29 @@ export function LiveJudgePanel({
                   key={idx}
                   feedback={feedback}
                   isLatest={idx === feedbackHistory.length - 1}
+                  isHighlighted={highlightedExchange === idx}
+                  onMouseEnter={() => onHighlightExchange?.(idx)}
+                  onMouseLeave={() => onHighlightExchange?.(null)}
                 />
               ))}
               {isLoading && <TypingIndicator />}
-              <VerdictPrompt
-                isJudging={isJudging}
-                onRequestVerdict={onRequestVerdict}
-                canRequestVerdict={canRequestVerdict}
-              />
+              {!debateScore && (
+                <VerdictPrompt
+                  isJudging={isJudging}
+                  onRequestVerdict={onRequestVerdict}
+                  canRequestVerdict={canRequestVerdict}
+                />
+              )}
+              {debateScore && (
+                <VerdictMessage score={debateScore} opponentName={opponentName} />
+              )}
             </>
           )}
         </div>
       </div>
 
       {/* Mobile Floating Button */}
-      <div className="lg:hidden">
+      <div className="md:hidden">
         {!isMobileDrawerOpen && (
           <button
             onClick={onMobileDrawerToggle}
@@ -300,14 +385,22 @@ export function LiveJudgePanel({
                         key={idx}
                         feedback={feedback}
                         isLatest={idx === feedbackHistory.length - 1}
+                        isHighlighted={highlightedExchange === idx}
+                        onMouseEnter={() => onHighlightExchange?.(idx)}
+                        onMouseLeave={() => onHighlightExchange?.(null)}
                       />
                     ))}
                     {isLoading && <TypingIndicator />}
-                    <VerdictPrompt
-                      isJudging={isJudging}
-                      onRequestVerdict={onRequestVerdict}
-                      canRequestVerdict={canRequestVerdict}
-                    />
+                    {!debateScore && (
+                      <VerdictPrompt
+                        isJudging={isJudging}
+                        onRequestVerdict={onRequestVerdict}
+                        canRequestVerdict={canRequestVerdict}
+                      />
+                    )}
+                    {debateScore && (
+                      <VerdictMessage score={debateScore} opponentName={opponentName} />
+                    )}
                   </>
                 )}
               </div>

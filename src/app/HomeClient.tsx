@@ -7,18 +7,10 @@ import Header from '@/components/Header';
 import Spinner from '@/components/Spinner';
 import UpgradeModal from '@/components/UpgradeModal';
 import OnboardingOverlay from '@/components/OnboardingOverlay';
-import StreakIndicator from '@/components/StreakIndicator';
-import StreakUrgencyBanner from '@/components/StreakUrgencyBanner';
 import { useSubscription } from '@/lib/useSubscription';
 import { markOnboarded } from '@/lib/onboarding';
 import { track } from '@/lib/analytics';
 import { v4 as uuidv4 } from 'uuid';
-
-const QUICK_STARTS = [
-  { topic: "Free will is an illusion", persona: "Sam Harris" },
-  { topic: "Social media does more harm than good", persona: "Jonathan Haidt" },
-  { topic: "Privacy is a human right", persona: "Edward Snowden" },
-];
 
 interface DailyDebateData {
   topic: string;
@@ -30,8 +22,10 @@ interface DailyDebateData {
 
 export default function HomeClient({
   initialDebate,
+  quickStarts,
 }: {
   initialDebate: DailyDebateData;
+  quickStarts: DailyDebateData[];
 }) {
   const router = useRouter();
   const { isSignedIn } = useSafeUser();
@@ -42,6 +36,12 @@ export default function HomeClient({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [shakeInput, setShakeInput] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Clear stale debate state on fresh page load (browser refresh)
+  useEffect(() => {
+    sessionStorage.removeItem('firstArgument');
+    sessionStorage.removeItem('isInstantDebate');
+  }, []);
 
   // Handle pending debate from sign-in redirect
   useEffect(() => {
@@ -180,19 +180,15 @@ export default function HomeClient({
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-[var(--text)] leading-tight px-1">
                 The AI that fights back.
               </h1>
-              <StreakIndicator />
             </div>
             <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-md mx-auto">
               Defend your position. Get challenged. Think harder.
             </p>
           </div>
 
-          {/* Streak urgency banner */}
-          <StreakUrgencyBanner />
-
           {/* Today's Debate Card — compact */}
           <div className="mb-4 animate-fade-up" style={{ animationDelay: '100ms' }} data-onboarding="topic">
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 sm:p-5 shadow-sm">
+            <div className="rounded-xl bg-[var(--bg-elevated)] p-4 sm:p-5 shadow-sm">
               {/* Topic label with shuffle button */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 flex-1">
@@ -207,7 +203,7 @@ export default function HomeClient({
                 <button
                   type="button"
                   onClick={() => {
-                    const others = QUICK_STARTS.filter(q => q.topic !== dailyDebate.topic);
+                    const others = quickStarts.filter(q => q.topic !== dailyDebate.topic);
                     const random = others[Math.floor(Math.random() * others.length)];
                     setDailyDebate({
                       topic: random.topic,
@@ -255,11 +251,8 @@ export default function HomeClient({
             <div
               data-onboarding="input"
               className={`
-                rounded-xl bg-[var(--bg-elevated)] transition-all duration-200 border
-                ${shakeInput
-                  ? 'animate-shake border-[var(--error)] ring-2 ring-[var(--error)]/20'
-                  : 'border-[var(--border)] hover:border-[var(--border-strong)]'
-                }
+                rounded-xl bg-[var(--bg-elevated)] transition-all duration-200
+                ${shakeInput ? 'animate-shake' : ''}
               `}
             >
               <div className="p-4">
@@ -375,7 +368,7 @@ export default function HomeClient({
               <div className="h-px flex-1 bg-[var(--border)]" />
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
-              {QUICK_STARTS.map((option, i) => (
+              {quickStarts.map((option, i) => (
                 <button
                   key={i}
                   onClick={() => {

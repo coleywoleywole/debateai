@@ -2,10 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useSafeUser, useSafeClerk } from '@/lib/useSafeClerk';
-import { getRelatedTopics } from '@/lib/topics';
-import { PERSONAS } from '@/lib/personas';
+import { CURATED_DAILY_DEBATES } from '@/lib/daily-debates';
 import { track } from '@/lib/analytics';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from './Toast';
@@ -14,7 +12,6 @@ interface PostDebateEngagementProps {
   debateId: string;
   topic: string;
   opponentName?: string;
-  opponentId?: string;
   variant?: 'default' | 'aggressive';
 }
 
@@ -26,7 +23,6 @@ export default function PostDebateEngagement({
   debateId,
   topic,
   opponentName = 'AI',
-  opponentId,
   variant,
 }: PostDebateEngagementProps) {
   const router = useRouter();
@@ -35,14 +31,12 @@ export default function PostDebateEngagement({
   const { showToast } = useToast();
   const [isStarting, setIsStarting] = useState<string | null>(null); // tracks which button is loading
 
-  // Generate related topics once (stable across re-renders)
-  const relatedTopics = useMemo(() => getRelatedTopics(topic, 3), [topic]);
-
-  // Pick a stable random opponent per topic (doesn't change on re-render)
-  const topicOpponents = useMemo(() => {
-    const others = PERSONAS.filter(p => p.id !== opponentId);
-    return relatedTopics.map(() => others[Math.floor(Math.random() * others.length)]);
-  }, [relatedTopics, opponentId]);
+  // Pick 3 random curated debates (same pool as landing page), excluding current topic
+  const suggestions = useMemo(() => {
+    const others = CURATED_DAILY_DEBATES.filter(d => d.topic !== topic);
+    const shuffled = [...others].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  }, [topic]);
 
   const startDebate = async (newTopic: string, persona: string, source: string) => {
     if (isStarting) return;
@@ -103,9 +97,8 @@ export default function PostDebateEngagement({
   };
 
   const handleShare = async () => {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://debateai.org';
-    const shareUrl = `${baseUrl}/debate/${debateId}`;
-    const shareText = `I just debated "${topic}" on DebateAI — think you can do better?`;
+    const shareUrl = `https://debateai.org/debate/${debateId}`;
+    const shareText = `I just debated "${topic}" on DebateAI — think you can do better?\n${shareUrl}`;
 
     // Try native share first (mobile)
     if (typeof navigator !== 'undefined' && navigator.share) {
@@ -118,12 +111,31 @@ export default function PostDebateEngagement({
       }
     }
 
-    // Fallback: copy to clipboard
+    // Try clipboard API first, then fallback to execCommand
+    let copied = false;
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      await navigator.clipboard.writeText(shareText);
+      copied = true;
+    } catch {
+      // Clipboard API failed (non-HTTPS) — use legacy fallback
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = shareText;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch {
+        // Both methods failed
+      }
+    }
+
+    if (copied) {
       track('debate_shared', { debateId, method: 'copy_link', source: 'post_debate', experiment_variant: variant });
       showToast('Challenge link copied!', 'success');
-    } catch {
+    } else {
       showToast('Could not copy link', 'error');
     }
   };
@@ -175,8 +187,8 @@ export default function PostDebateEngagement({
         </button>
       </div>
 
-      {/* Related Topics */}
-      {relatedTopics.length > 0 && (
+      {/* Try Next - curated debates from same pool as landing page */}
+      {suggestions.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--text-secondary)]">
@@ -186,14 +198,13 @@ export default function PostDebateEngagement({
           </div>
 
           <div className="space-y-2">
-            {relatedTopics.map((rt, idx) => {
-              const randomOpp = topicOpponents[idx];
-              const key = `topic-${rt.id}`;
+            {suggestions.map((s, idx) => {
+              const key = `topic-${s.topicId}-${idx}`;
 
               return (
                 <button
-                  key={rt.id}
-                  onClick={() => startDebate(rt.question, randomOpp.name, key)}
+                  key={key}
+                  onClick={() => startDebate(s.topic, s.persona, key)}
                   disabled={isStarting !== null}
                   className={`
                     w-full group flex items-center gap-3 p-3.5 rounded-xl border transition-all text-left
@@ -206,10 +217,10 @@ export default function PostDebateEngagement({
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[var(--text)] group-hover:text-[var(--accent)] transition-colors leading-snug">
-                      {rt.question}
+                      {s.topic}
                     </p>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                      vs. {randomOpp.name}
+                      vs. {s.persona}
                     </p>
                   </div>
 
@@ -231,19 +242,6 @@ export default function PostDebateEngagement({
           </div>
         </div>
       )}
-
-      {/* Leaderboard link */}
-      <div className="mt-4 text-center">
-        <Link
-          href="/explore"
-          className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-          View Leaderboard →
-        </Link>
-      </div>
     </div>
   );
 }

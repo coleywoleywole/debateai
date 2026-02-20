@@ -1,5 +1,5 @@
 import { getCurrentDailyTopic } from '@/lib/daily-topics-db';
-import { getDailyDebate } from '@/lib/daily-debates';
+import { getDailyDebate, CURATED_DAILY_DEBATES } from '@/lib/daily-debates';
 import HomeClient from './HomeClient';
 
 export const runtime = 'nodejs';
@@ -46,5 +46,15 @@ export default async function Home() {
     };
   }
 
-  return <HomeClient initialDebate={dailyDebate} />;
+  // Pick 3 random "Or try" suggestions from the curated pool, excluding today's topic
+  const otherTopics = CURATED_DAILY_DEBATES.filter(d => d.topic !== dailyDebate.topic);
+  const shuffled = otherTopics.sort(() => Math.random() - 0.5);
+  const quickStarts = shuffled.slice(0, 3).map(d => ({
+    topic: d.topic,
+    persona: d.persona,
+    personaId: d.personaId,
+    category: d.category,
+  }));
+
+  return <HomeClient initialDebate={dailyDebate} quickStarts={quickStarts} />;
 }
