@@ -39,13 +39,9 @@ export const POST = withErrorHandler(async (request: Request) => {
     throw errors.unauthorized();
   }
 
-  // Skip user rate limit for guests (IP limit still applies)
-  let userRl;
-  if (!userId.startsWith('guest_')) {
-    userRl = userLimiter.check(`user:${userId}`);
-    if (!userRl.allowed) {
-      return rateLimitResponse(userRl) as unknown as NextResponse;
-    }
+  const userRl = userLimiter.check(`user:${userId}`);
+  if (!userRl.allowed) {
+    return rateLimitResponse(userRl) as unknown as NextResponse;
   }
 
   const { debateId } = await validateBody(request, scoreRequestSchema);

@@ -13,13 +13,13 @@ const opponentSchema = z.string().max(100).optional();
 const opponentStyleSchema = z.string().max(200).optional();
 const messageSchema = z.object({
   role: z.enum(['user', 'ai', 'system']),
-  content: z.string(),
+  content: z.string().max(15000),
   aiAssisted: z.boolean().optional(),
   citations: z.array(z.object({
     id: z.number(),
     url: z.string().url(),
-    title: z.string(),
-  })).optional(),
+    title: z.string().max(500),
+  })).max(20).optional(),
 });
 
 /**
@@ -42,7 +42,7 @@ export const sendMessageSchema = z.object({
   opponentStyle: opponentStyleSchema,
   topic: topicSchema,
   userArgument: z.string().min(1, 'Argument is required').max(10000),
-  previousMessages: z.array(messageSchema).optional().default([]),
+  previousMessages: z.array(messageSchema).max(30).optional().default([]),
   isAIAssisted: z.boolean().optional().default(false),
   promptVariant: z.enum(['aggressive', 'default']).optional(),
   // New Mechanics
@@ -59,7 +59,7 @@ export const takeoverSchema = z.object({
   debateId: debateIdSchema,
   topic: topicSchema,
   opponentStyle: opponentStyleSchema,
-  previousMessages: z.array(messageSchema).optional().default([]),
+  previousMessages: z.array(messageSchema).max(30).optional().default([]),
 });
 export type TakeoverInput = z.infer<typeof takeoverSchema>;
 
@@ -69,8 +69,8 @@ export type TakeoverInput = z.infer<typeof takeoverSchema>;
 export const scoreDebateSchema = z.object({
   debateId: debateIdSchema,
   topic: topicSchema,
-  messages: z.array(messageSchema).min(2, 'At least 2 messages required for scoring'),
-  opponentName: z.string().optional(),
+  messages: z.array(messageSchema).min(2, 'At least 2 messages required for scoring').max(30),
+  opponentName: z.string().max(200).optional(),
 });
 export type ScoreDebateInput = z.infer<typeof scoreDebateSchema>;
 
@@ -80,7 +80,7 @@ export type ScoreDebateInput = z.infer<typeof scoreDebateSchema>;
 export const judgeDebateSchema = z.object({
   debateId: debateIdSchema,
   topic: topicSchema,
-  messages: z.array(messageSchema).min(2, 'At least 2 messages required for judging'),
+  messages: z.array(messageSchema).min(2, 'At least 2 messages required for judging').max(30),
 });
 export type JudgeDebateInput = z.infer<typeof judgeDebateSchema>;
 
@@ -103,7 +103,7 @@ export type ListDebatesQuery = z.infer<typeof listDebatesQuerySchema>;
  * POST /api/stripe/create-checkout
  */
 export const createCheckoutSchema = z.object({
-  priceId: z.string().min(1, 'Price ID is required'),
+  priceId: z.string().min(1, 'Price ID is required').max(200),
   successUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional(),
 });

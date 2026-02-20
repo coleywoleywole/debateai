@@ -6,12 +6,17 @@ import { errors, validateBody } from '@/lib/api-errors';
 import { trackEvent } from '@/lib/posthog-server';
 import { GUEST_MESSAGE_LIMIT } from '@/lib/limits';
 import { calculateRound, isDebateCompleted } from '@/lib/debate-state';
+import { createRateLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 // Schema for POST body
 const addMessageSchema = z.object({
   message: z.string().min(1, 'Message is required').max(10000),
   aiTakeover: z.boolean().optional().default(false),
 });
+
+// Rate limiting for message posting (calls AI)
+const ipLimiter = createRateLimiter({ maxRequests: 20, windowMs: 60_000 });
+const userLimiter = createRateLimiter({ maxRequests: 10, windowMs: 60_000 });
 
 // In-memory fallback for when D1 is not configured
 const memoryDebates = new Map<string, unknown>();
@@ -91,10 +96,21 @@ export async function POST(
   let debateId = '';
 
   try {
+    // Rate limiting
+    const ipRl = ipLimiter.check(getClientIp(request));
+    if (!ipRl.allowed) {
+      return rateLimitResponse(ipRl) as unknown as NextResponse;
+    }
+
     const resolvedParams = await params;
     debateId = resolvedParams.debateId;
     const authUserId = await getUserId();
     if (authUserId) userId = authUserId;
+
+    const userRl = userLimiter.check(`user:${userId}`);
+    if (!userRl.allowed) {
+      return rateLimitResponse(userRl) as unknown as NextResponse;
+    }
 
     if (!debateId) {
       return errors.badRequest('Debate ID required');

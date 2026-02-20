@@ -30,13 +30,9 @@ export async function POST(request: Request) {
       return errors.unauthorized();
     }
 
-    // Skip user rate limit for guests (IP limit still applies)
-    let userRl;
-    if (!userId.startsWith('guest_')) {
-      userRl = userLimiter.check(`user:${userId}`);
-      if (!userRl.allowed) {
-        return rateLimitResponse(userRl);
-      }
+    const userRl = userLimiter.check(`user:${userId}`);
+    if (!userRl.allowed) {
+      return rateLimitResponse(userRl);
     }
 
     // Validate request body
