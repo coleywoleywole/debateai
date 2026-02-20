@@ -4,10 +4,8 @@ import { d1 } from '@/lib/d1';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const key = searchParams.get('key');
-
-  if (!process.env.ADMIN_SECRET || key !== process.env.ADMIN_SECRET) {
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

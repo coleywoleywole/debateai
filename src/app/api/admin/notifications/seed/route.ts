@@ -9,15 +9,9 @@ import { withErrorHandler, errors } from '@/lib/api-errors';
  * Protected by admin secret or dev mode.
  */
 export const POST = withErrorHandler(async (request: Request) => {
-  // Simple admin protection
-  const authHeader = request.headers.get('authorization');
-  const adminSecret = process.env.ADMIN_SECRET;
-
-  if (adminSecret && authHeader !== `Bearer ${adminSecret}`) {
-    // Also allow in dev mode
-    if (process.env.NODE_ENV !== 'development') {
-      throw errors.unauthorized('Admin access required');
-    }
+  const secret = request.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   await createNotificationTables();

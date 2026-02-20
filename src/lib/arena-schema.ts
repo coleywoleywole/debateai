@@ -26,7 +26,7 @@ export interface ArenaState {
 export const statusEffectSchema = z.object({
   type: z.enum(['stunned', 'enraged', 'silenced', 'shielded', 'burning', 'frozen']),
   duration: z.number().int().min(1),
-  intensity: z.number().optional(),
+  intensity: z.number().min(0).max(1000).optional(),
 });
 
 export const arenaStateSchema = z.object({
@@ -37,7 +37,7 @@ export const arenaStateSchema = z.object({
   userEffects: z.array(statusEffectSchema).default([]),
   aiEffects: z.array(statusEffectSchema).default([]),
   turnCount: z.number().int().min(0).default(0),
-  lastAction: z.string().optional(),
+  lastAction: z.string().max(200).optional(),
 });
 
 export type ArenaStateInput = z.infer<typeof arenaStateSchema>;

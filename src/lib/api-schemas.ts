@@ -38,7 +38,7 @@ export type CreateDebateInput = z.infer<typeof createDebateSchema>;
  */
 export const sendMessageSchema = z.object({
   debateId: debateIdSchema.optional(), // Optional for new debates
-  character: z.string().min(1, 'Character is required'),
+  character: z.string().min(1, 'Character is required').max(200),
   opponentStyle: opponentStyleSchema,
   topic: topicSchema,
   userArgument: z.string().min(1, 'Argument is required').max(10000),
@@ -46,9 +46,9 @@ export const sendMessageSchema = z.object({
   isAIAssisted: z.boolean().optional().default(false),
   promptVariant: z.enum(['aggressive', 'default']).optional(),
   // New Mechanics
-  activePowerup: z.string().optional(),
-  comboCount: z.number().optional().default(0),
-  currentMood: z.string().optional().default('neutral'),
+  activePowerup: z.string().max(100).optional(),
+  comboCount: z.number().int().min(0).max(1000).optional().default(0),
+  currentMood: z.string().max(50).optional().default('neutral'),
 });
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 
