@@ -1,10 +1,11 @@
 /**
- * Email templates — inline-styled HTML for maximum compatibility.
+ * Email templates — table-based HTML for maximum email client compatibility.
  *
  * All templates include:
  * - Unsubscribe link (CAN-SPAM compliant)
- * - Physical mailing address placeholder
- * - Mobile-responsive layout
+ * - Table-based layouts (no flexbox/grid)
+ * - Inline styles only (no CSS variables)
+ * - Mobile-responsive design
  */
 
 import { getUnsubscribeUrl, getDebateUrl } from './email';
@@ -19,49 +20,78 @@ function emailLayout(content: string, unsubscribeToken: string): string {
   const unsubscribeUrl = getUnsubscribeUrl(unsubscribeToken);
   const preferencesUrl = `${BASE_URL}/settings/email`;
 
-  return `<!DOCTYPE html>
-<html lang="en">
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DebateAI</title>
 </head>
-<body style="margin:0;padding:0;background-color:#0c0a09;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-  <!-- Main wrapper with subtle gradient border effect -->
-  <div style="background:linear-gradient(180deg,#1c1917 0%,#0c0a09 100%);min-height:100vh;padding:40px 16px;">
-    <div style="max-width:600px;margin:0 auto;">
-      
-      <!-- Logo header -->
-      <div style="text-align:center;margin-bottom:32px;padding:0 0 24px 0;">
-        <a href="${BASE_URL}" style="text-decoration:none;display:inline-block;">
-          <span style="font-size:24px;font-weight:800;color:#fafaf9;letter-spacing:-0.03em;background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">DebateAI</span>
-        </a>
-        <div style="width:40px;height:2px;background:linear-gradient(90deg,transparent,#f59e0b,transparent);margin:12px auto 0;"></div>
-      </div>
+<body style="margin:0;padding:0;background-color:#fafaf9;">
+  <!-- Wrapper table -->
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#fafaf9;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <!-- Main container -->
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;">
+          
+          <!-- Logo header -->
+          <tr>
+            <td align="center" style="padding-bottom:32px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom:12px;">
+                    <a href="${BASE_URL}" style="text-decoration:none;">
+                      <span style="font-size:28px;font-weight:700;color:#1c1917;letter-spacing:-0.02em;font-family:Georgia,'Times New Roman',serif;">DebateAI</span>
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <table border="0" cellpadding="0" cellspacing="0" width="48" style="width:48px;">
+                      <tr><td height="3" style="background-color:#b54d30;font-size:0;line-height:0;">&nbsp;</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-      <!-- Content card -->
-      <div style="background:linear-gradient(180deg,#1c1917 0%,#181412 100%);border:1px solid #292524;border-radius:20px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5),0 0 0 1px rgba(245,158,11,0.05);overflow:hidden;">
-        <div style="padding:40px 32px;">
-          ${content}
-        </div>
-      </div>
+          <!-- Content card -->
+          <tr>
+            <td style="background-color:#ffffff;border:1px solid #e7e5e4;border-radius:16px;padding:48px 40px;">
+              ${content}
+            </td>
+          </tr>
 
-      <!-- Footer -->
-      <div style="margin-top:32px;padding-top:24px;text-align:center;">
-        <p style="font-size:13px;color:#78716c;line-height:1.6;margin:0 0 12px;">
-          <a href="${preferencesUrl}" style="color:#a8a29e;text-decoration:none;transition:color 0.2s;">Email preferences</a>
-          <span style="color:#44403c;margin:0 8px;">·</span>
-          <a href="${unsubscribeUrl}" style="color:#a8a29e;text-decoration:none;transition:color 0.2s;">Unsubscribe</a>
-        </p>
-        <p style="font-size:12px;color:#57534e;margin:0;line-height:1.5;">
-          DebateAI · Challenge your convictions
-        </p>
-        <p style="font-size:11px;color:#44403c;margin:8px 0 0;">
-          Sent with 💡 from San Francisco
-        </p>
-      </div>
-    </div>
-  </div>
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top:32px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-bottom:8px;">
+                    <p style="font-size:13px;color:#78716c;line-height:1.6;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                      <a href="${preferencesUrl}" style="color:#b54d30;text-decoration:underline;">Email preferences</a>
+                      <span style="color:#e7e5e4;margin:0 8px;">·</span>
+                      <a href="${unsubscribeUrl}" style="color:#b54d30;text-decoration:underline;">Unsubscribe</a>
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom:4px;">
+                    <p style="font-size:12px;color:#78716c;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                      DebateAI · Challenge your convictions
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 }
@@ -95,38 +125,82 @@ export function dailyTopicEmail(opts: {
 
   const content = `
     <!-- Category badge -->
-    <div style="text-align:center;margin-bottom:24px;">
-      <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);border-radius:100px;padding:8px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#fbbf24;">
-        ${emoji} Today's Debate
-      </span>
-    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:100px;padding:8px 16px;">
+                <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#b54d30;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  ${emoji} Today's Debate
+                </span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
     <!-- Topic heading -->
-    <h1 style="font-size:28px;font-weight:700;color:#fafaf9;margin:0 0 20px;line-height:1.25;text-align:center;font-family:Georgia,'Times New Roman',serif;letter-spacing:-0.01em;">
-      ${escapeHtml(opts.topic)}
-    </h1>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <h1 style="font-size:32px;font-weight:700;color:#1c1917;margin:0;line-height:1.2;font-family:Georgia,'Times New Roman',serif;letter-spacing:-0.01em;">
+            ${escapeHtml(opts.topic)}
+          </h1>
+        </td>
+      </tr>
+    </table>
 
     <!-- Divider -->
-    <div style="width:60px;height:2px;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:2px;margin:0 auto 24px;"></div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0" width="60">
+            <tr><td height="2" style="background-color:#b54d30;font-size:0;line-height:0;">&nbsp;</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
     <!-- Opponent info -->
-    <div style="background:rgba(28,25,23,0.5);border:1px solid #292524;border-radius:12px;padding:16px 20px;margin-bottom:28px;text-align:center;">
-      <p style="font-size:14px;color:#a8a29e;margin:0;">
-        Your opponent: <span style="color:#fbbf24;font-weight:600;">${escapeHtml(opts.persona)}</span>
-      </p>
-    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:32px;">
+      <tr>
+        <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:12px;padding:16px 20px;">
+          <p style="font-size:14px;color:#1c1917;margin:0;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            You're debating <span style="color:#b54d30;font-weight:600;">${escapeHtml(opts.persona)}</span>
+          </p>
+        </td>
+      </tr>
+    </table>
 
     <!-- CTA Button -->
-    <div style="text-align:center;margin-bottom:24px;">
-      <a href="${debateUrl}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);color:#0c0a09;font-size:15px;font-weight:700;padding:16px 32px;border-radius:12px;text-decoration:none;box-shadow:0 10px 40px -10px rgba(245,158,11,0.4),inset 0 1px 0 rgba(255,255,255,0.2);transition:transform 0.2s;">
-        Start Debating →
-      </a>
-    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#b54d30;border-radius:12px;">
+                <a href="${debateUrl}" style="display:block;color:#ffffff;font-size:15px;font-weight:600;padding:16px 32px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  Start Debating →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
     <!-- Teaser text -->
-    <p style="font-size:14px;color:#78716c;text-align:center;line-height:1.6;margin:0;font-style:italic;">
-      Think you can win? The AI won't go easy on you.
-    </p>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center">
+          <p style="font-size:14px;color:#78716c;line-height:1.6;margin:0;font-style:italic;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            Think you can win? The AI won't go easy on you.
+          </p>
+        </td>
+      </tr>
+    </table>
   `;
 
   return {
@@ -146,47 +220,101 @@ export function welcomeEmail(opts: {
   const greeting = opts.name ? `Hey ${escapeHtml(opts.name)}` : 'Welcome';
 
   const content = `
-    <!-- Welcome icon -->
-    <div style="text-align:center;margin-bottom:24px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.05));border:1px solid rgba(245,158,11,0.2);border-radius:16px;font-size:28px;">
-        🎯
-      </div>
-    </div>
+    <!-- Icon header -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#f9ebe6;border:2px solid #b54d30;border-radius:16px;padding:20px;width:64px;height:64px;">
+                <span style="font-size:32px;">🎯</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-    <h1 style="font-size:28px;font-weight:700;color:#fafaf9;margin:0 0 16px;text-align:center;font-family:Georgia,'Times New Roman',serif;line-height:1.2;">
-      ${greeting}, you're in.
-    </h1>
-    
-    <p style="font-size:16px;color:#a8a29e;text-align:center;line-height:1.7;margin:0 0 28px;">
-      Every morning at 9am, we'll send you a fresh debate topic with an AI opponent ready to fight.
-      No prep needed — just show up with an opinion.
-    </p>
+    <!-- Heading -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+      <tr>
+        <td align="center">
+          <h1 style="font-size:32px;font-weight:700;color:#1c1917;margin:0;line-height:1.2;font-family:Georgia,'Times New Roman',serif;">
+            ${greeting}, you're in.
+          </h1>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Description -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:32px;">
+      <tr>
+        <td align="center">
+          <p style="font-size:16px;color:#78716c;line-height:1.7;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            Every morning at 9am, we'll send you a fresh debate topic with an AI opponent ready to fight.
+            No prep needed — just show up with an opinion.
+          </p>
+        </td>
+      </tr>
+    </table>
 
     <!-- Feature highlights -->
-    <div style="background:rgba(28,25,23,0.3);border:1px solid #292524;border-radius:12px;padding:20px 24px;margin-bottom:28px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <span style="font-size:18px;">🧠</span>
-        <span style="font-size:14px;color:#d6d3d1;">AI opponents that research & cite real sources</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <span style="font-size:18px;">📊</span>
-        <span style="font-size:14px;color:#d6d3d1;">Detailed scoring and performance tracking</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <span style="font-size:18px;">🔥</span>
-        <span style="font-size:14px;color:#d6d3d1;">Daily streaks to keep you sharp</span>
-      </div>
-    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:32px;">
+      <tr>
+        <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:12px;padding:24px;">
+          
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+            <tr>
+              <td width="36" style="padding-right:12px;"><span style="font-size:20px;">🧠</span></td>
+              <td><span style="font-size:15px;color:#1c1917;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">AI opponents that research & cite real sources</span></td>
+            </tr>
+          </table>
 
-    <div style="text-align:center;margin-bottom:24px;">
-      <a href="${BASE_URL}/debate" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);color:#0c0a09;font-size:15px;font-weight:700;padding:16px 32px;border-radius:12px;text-decoration:none;box-shadow:0 10px 40px -10px rgba(245,158,11,0.4),inset 0 1px 0 rgba(255,255,255,0.2);">
-        Start Your First Debate
-      </a>
-    </div>
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+            <tr>
+              <td width="36" style="padding-right:12px;"><span style="font-size:20px;">📊</span></td>
+              <td><span style="font-size:15px;color:#1c1917;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Detailed scoring and performance tracking</span></td>
+            </tr>
+          </table>
 
-    <p style="font-size:13px;color:#78716c;text-align:center;line-height:1.6;margin:0;">
-      You'll also get weekly recaps of your debate stats and notifications when someone challenges your debates.
-    </p>
+          <table border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td width="36" style="padding-right:12px;"><span style="font-size:20px;">🔥</span></td>
+              <td><span style="font-size:15px;color:#1c1917;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Daily streaks to keep you sharp</span></td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+
+    <!-- CTA Button -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#b54d30;border-radius:12px;">
+                <a href="${BASE_URL}/debate" style="display:block;color:#ffffff;font-size:15px;font-weight:600;padding:16px 32px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  Start Your First Debate
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Footer text -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center">
+          <p style="font-size:13px;color:#78716c;line-height:1.6;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            You'll also get weekly recaps of your debate stats and notifications when someone challenges your debates.
+          </p>
+        </td>
+      </tr>
+    </table>
   `;
 
   return {
@@ -206,24 +334,40 @@ export function unsubscribeConfirmationEmail(opts: {
   const resubscribeUrl = `${BASE_URL}/settings/email`;
 
   const content = `
-    <div style="text-align:center;padding:20px 0;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:rgba(120,113,108,0.1);border:1px solid rgba(120,113,108,0.2);border-radius:16px;font-size:24px;margin-bottom:20px;">
-        👋
-      </div>
-      
-      <h1 style="font-size:24px;font-weight:700;color:#fafaf9;margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;">
-        You've been unsubscribed
-      </h1>
-      
-      <p style="font-size:15px;color:#a8a29e;line-height:1.7;margin:0 0 24px;">
-        You won't receive any more emails from DebateAI.<br>
-        Changed your mind? You can always re-subscribe.
-      </p>
-      
-      <a href="${resubscribeUrl}" style="display:inline-block;background:transparent;border:1px solid #44403c;color:#d6d3d1;font-size:14px;font-weight:500;padding:12px 24px;border-radius:10px;text-decoration:none;transition:all 0.2s;">
-        Re-subscribe →
-      </a>
-    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center" style="padding:20px 0;">
+          
+          <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr>
+              <td align="center" style="background-color:#f9ebe6;border:2px solid #b54d30;border-radius:16px;padding:20px;width:64px;height:64px;">
+                <span style="font-size:32px;">👋</span>
+              </td>
+            </tr>
+          </table>
+
+          <h1 style="font-size:28px;font-weight:700;color:#1c1917;margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;">
+            You've been unsubscribed
+          </h1>
+
+          <p style="font-size:15px;color:#78716c;line-height:1.7;margin:0 0 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            You won't receive any more emails from DebateAI.<br />
+            Changed your mind? You can always re-subscribe.
+          </p>
+
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:transparent;border:2px solid #b54d30;border-radius:10px;">
+                <a href="${resubscribeUrl}" style="display:block;color:#b54d30;font-size:14px;font-weight:600;padding:12px 24px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  Re-subscribe →
+                </a>
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
   `;
 
   return {
@@ -257,71 +401,122 @@ export function weeklyRecapEmail(opts: {
 
   if (stats.totalDebates === 0) {
     content = `
-      <div style="text-align:center;margin-bottom:24px;">
-        <div style="font-size:48px;margin-bottom:8px;">😴</div>
-      </div>
-      
-      <h1 style="font-size:24px;font-weight:700;color:#fafaf9;margin:0 0 16px;line-height:1.3;text-align:center;font-family:Georgia,'Times New Roman',serif;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;">
+        <tr>
+          <td align="center" style="font-size:48px;padding-bottom:8px;">😴</td>
+        </tr>
+      </table>
+
+      <h1 style="font-size:28px;font-weight:700;color:#1c1917;margin:0 0 16px;text-align:center;font-family:Georgia,'Times New Roman',serif;">
         You took the week off.
       </h1>
-      
-      <p style="font-size:15px;color:#a8a29e;line-height:1.7;margin:0 0 28px;text-align:center;">
+
+      <p style="font-size:15px;color:#78716c;line-height:1.7;margin:0 0 28px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
         It's been preparing new arguments. Ready to test them?
       </p>
     `;
   } else {
     content = `
-      <div style="text-align:center;margin-bottom:8px;">
-        <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:100px;padding:6px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#34d399;">
-          📊 Weekly Recap
-        </span>
-      </div>
+      <!-- Badge -->
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;">
+        <tr>
+          <td align="center">
+            <table border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:100px;padding:8px 16px;">
+                  <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#b54d30;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                    📊 Weekly Recap
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
 
-      <h1 style="font-size:26px;font-weight:700;color:#fafaf9;margin:0 0 28px;line-height:1.2;text-align:center;font-family:Georgia,'Times New Roman',serif;">
+      <h1 style="font-size:28px;font-weight:700;color:#1c1917;margin:0 0 28px;text-align:center;font-family:Georgia,'Times New Roman',serif;">
         Your week on DebateAI
       </h1>
 
-      <!-- Stats grid -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
-        <div style="background:rgba(28,25,23,0.5);border:1px solid #292524;border-radius:12px;padding:20px;text-align:center;">
-          <div style="font-size:32px;font-weight:800;color:#fbbf24;margin-bottom:4px;">${stats.totalDebates}</div>
-          <div style="font-size:12px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;">Debates</div>
-        </div>
-        <div style="background:rgba(28,25,23,0.5);border:1px solid #292524;border-radius:12px;padding:20px;text-align:center;">
-          <div style="font-size:32px;font-weight:800;color:#fbbf24;margin-bottom:4px;">${stats.streakCount}</div>
-          <div style="font-size:12px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;">Day Streak</div>
-        </div>
-      </div>
+      <!-- Stats grid (2 columns using tables) -->
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+        <tr>
+          <td width="50%" style="padding-right:6px;">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:12px;padding:20px;text-align:center;">
+                  <div style="font-size:32px;font-weight:700;color:#b54d30;margin-bottom:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${stats.totalDebates}</div>
+                  <div style="font-size:12px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Debates</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td width="50%" style="padding-left:6px;">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:12px;padding:20px;text-align:center;">
+                  <div style="font-size:32px;font-weight:700;color:#b54d30;margin-bottom:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${stats.streakCount}</div>
+                  <div style="font-size:12px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Day Streak</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
 
       ${stats.bestScore > 0 ? `
-      <div style="background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.02));border:1px solid rgba(245,158,11,0.15);border-radius:12px;padding:20px;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <span style="font-size:20px;">🏆</span>
-          <span style="font-size:13px;font-weight:600;color:#fbbf24;text-transform:uppercase;letter-spacing:0.05em;">Best Performance</span>
-        </div>
-        <div style="font-size:22px;font-weight:700;color:#fafaf9;margin-bottom:4px;">${stats.bestScore}%</div>
-        <div style="font-size:14px;color:#a8a29e;font-style:italic;">"${escapeHtml(stats.bestTopic)}"</div>
-      </div>
+      <!-- Best Performance -->
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+        <tr>
+          <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:12px;padding:20px;">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px;">
+              <tr>
+                <td>
+                  <span style="font-size:20px;margin-right:8px;">🏆</span>
+                  <span style="font-size:13px;font-weight:600;color:#b54d30;text-transform:uppercase;letter-spacing:0.05em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Best Performance</span>
+                </td>
+              </tr>
+            </table>
+            <div style="font-size:24px;font-weight:700;color:#1c1917;margin-bottom:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${stats.bestScore}%</div>
+            <div style="font-size:14px;color:#78716c;font-style:italic;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">"${escapeHtml(stats.bestTopic)}"</div>
+          </td>
+        </tr>
+      </table>
       ` : ''}
     `;
   }
 
   content += `
     <!-- Trending topic -->
-    <div style="background:rgba(28,25,23,0.3);border:1px solid #292524;border-radius:12px;padding:20px;margin-bottom:28px;">
-      <p style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;">
-        🔥 Trending this week
-      </p>
-      <p style="font-size:16px;color:#d6d3d1;font-weight:600;margin:0;line-height:1.4;">
-        "${escapeHtml(trendingTopic)}"
-      </p>
-    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
+      <tr>
+        <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:12px;padding:20px;">
+          <p style="font-size:12px;font-weight:600;color:#78716c;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            🔥 Trending this week
+          </p>
+          <p style="font-size:16px;color:#1c1917;font-weight:600;margin:0;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            "${escapeHtml(trendingTopic)}"
+          </p>
+        </td>
+      </tr>
+    </table>
 
-    <div style="text-align:center;">
-      <a href="${BASE_URL}/debate" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);color:#0c0a09;font-size:15px;font-weight:700;padding:16px 32px;border-radius:12px;text-decoration:none;box-shadow:0 10px 40px -10px rgba(245,158,11,0.4);">
-        Jump Back In →
-      </a>
-    </div>
+    <!-- CTA Button -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#b54d30;border-radius:12px;">
+                <a href="${BASE_URL}/debate" style="display:block;color:#ffffff;font-size:15px;font-weight:600;padding:16px 32px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  Jump Back In →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   `;
 
   return {
@@ -344,55 +539,104 @@ export function challengeNotificationEmail(opts: {
   const tied = opts.userScore === opts.opponentScore;
   
   const content = `
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border:1px solid rgba(239,68,68,0.2);border-radius:16px;font-size:24px;">
-        ⚔️
-      </div>
-    </div>
+    <!-- Icon -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:20px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#f9ebe6;border:2px solid #b54d30;border-radius:16px;padding:20px;width:64px;height:64px;">
+                <span style="font-size:28px;">⚔️</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-    <h1 style="font-size:24px;font-weight:700;color:#fafaf9;margin:0 0 16px;line-height:1.3;text-align:center;font-family:Georgia,'Times New Roman',serif;">
-      Someone challenged your position
-    </h1>
-    
-    <p style="font-size:15px;color:#a8a29e;line-height:1.7;margin:0 0 24px;text-align:center;">
-      Another debater took the opposite side on <strong style="color:#d6d3d1;">"${escapeHtml(opts.topic)}"</strong>
+    <!-- Heading -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+      <tr>
+        <td align="center">
+          <h1 style="font-size:28px;font-weight:700;color:#1c1917;margin:0;line-height:1.3;font-family:Georgia,'Times New Roman',serif;">
+            Someone challenged your position
+          </h1>
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-size:15px;color:#78716c;line-height:1.7;margin:0 0 24px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+      Another debater took the opposite side on <strong style="color:#1c1917;">"${escapeHtml(opts.topic)}"</strong>
     </p>
 
     <!-- Score comparison -->
-    <div style="background:rgba(28,25,23,0.5);border:1px solid #292524;border-radius:16px;padding:24px;margin-bottom:28px;">
-      <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:16px;">
-        <!-- Your score -->
-        <div style="text-align:center;">
-          <div style="font-size:36px;font-weight:800;color:${won ? '#34d399' : '#fbbf24'};margin-bottom:4px;">${opts.userScore}</div>
-          <div style="font-size:12px;color:#78716c;">Your Score</div>
-        </div>
-        
-        <!-- VS -->
-        <div style="font-size:14px;font-weight:700;color:#57534e;">VS</div>
-        
-        <!-- Their score -->
-        <div style="text-align:center;">
-          <div style="font-size:36px;font-weight:800;color:${!won && !tied ? '#f87171' : '#fbbf24'};margin-bottom:4px;">${opts.opponentScore}</div>
-          <div style="font-size:12px;color:#78716c;">Their Score</div>
-        </div>
-      </div>
-      
-      <div style="text-align:center;padding-top:16px;border-top:1px solid #292524;">
-        <span style="font-size:14px;font-weight:600;color:${won ? '#34d399' : tied ? '#fbbf24' : '#f87171'};">
-          ${won ? '👑 You\'re winning!' : tied ? '🤝 It\'s a tie!' : '💪 They\'re ahead'}
-        </span>
-      </div>
-    </div>
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:16px;padding:24px;">
+          
+          <!-- Scores row -->
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+            <tr>
+              <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <!-- Your score -->
+                    <td align="center" style="padding-right:20px;">
+                      <div style="font-size:36px;font-weight:700;color:${won ? '#4A7C59' : '#b54d30'};margin-bottom:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${opts.userScore}</div>
+                      <div style="font-size:12px;color:#78716c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Your Score</div>
+                    </td>
 
-    <p style="font-size:14px;color:#a8a29e;line-height:1.6;margin:0 0 24px;text-align:center;">
+                    <!-- VS -->
+                    <td align="center" style="padding:0 20px;">
+                      <div style="font-size:14px;font-weight:700;color:#9B8A6E;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">VS</div>
+                    </td>
+
+                    <!-- Their score -->
+                    <td align="center" style="padding-left:20px;">
+                      <div style="font-size:36px;font-weight:700;color:${!won && !tied ? '#C44B3F' : '#b54d30'};margin-bottom:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${opts.opponentScore}</div>
+                      <div style="font-size:12px;color:#78716c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Their Score</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Status -->
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top:1px solid #d98970;">
+            <tr>
+              <td align="center" style="padding-top:16px;">
+                <span style="font-size:14px;font-weight:600;color:${won ? '#4A7C59' : tied ? '#b54d30' : '#C44B3F'};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  ${won ? '👑 You\'re winning!' : tied ? '🤝 It\'s a tie!' : '💪 They\'re ahead'}
+                </span>
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-size:14px;color:#78716c;line-height:1.6;margin:0 0 24px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       Think you can beat both the AI <em>and</em> their score?
     </p>
 
-    <div style="text-align:center;">
-      <a href="${getDebateUrl(opts.topic)}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);color:#0c0a09;font-size:15px;font-weight:700;padding:16px 32px;border-radius:12px;text-decoration:none;box-shadow:0 10px 40px -10px rgba(245,158,11,0.4);">
-        Defend Your Position →
-      </a>
-    </div>
+    <!-- CTA Button -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#b54d30;border-radius:12px;">
+                <a href="${getDebateUrl(opts.topic)}" style="display:block;color:#ffffff;font-size:15px;font-weight:600;padding:16px 32px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  Defend Your Position →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   `;
 
   return {
@@ -412,43 +656,90 @@ export function winBackEmail(opts: {
   unsubscribeToken: string;
 }): { subject: string; html: string } {
   const content = `
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border:1px solid rgba(245,158,11,0.2);border-radius:16px;font-size:24px;">
-        🔥
-      </div>
-    </div>
+    <!-- Icon -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:20px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#f9ebe6;border:2px solid #b54d30;border-radius:16px;padding:20px;width:64px;height:64px;">
+                <span style="font-size:28px;">🔥</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-    <h1 style="font-size:24px;font-weight:700;color:#fafaf9;margin:0 0 16px;line-height:1.3;text-align:center;font-family:Georgia,'Times New Roman',serif;">
-      The debate everyone's talking about
-    </h1>
-    
-    <div style="background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.02));border:1px solid rgba(245,158,11,0.15);border-radius:16px;padding:24px;margin-bottom:24px;">
-      <p style="font-size:18px;color:#fafaf9;font-weight:600;margin:0 0 16px;line-height:1.4;text-align:center;">
-        "${escapeHtml(opts.trendingTopic)}"
-      </p>
-      
-      <div style="display:flex;justify-content:center;gap:24px;">
-        <div style="text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:#fbbf24;">${opts.count}</div>
-          <div style="font-size:11px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;">Debates</div>
-        </div>
-        <div style="width:1px;background:#292524;"></div>
-        <div style="text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:#fbbf24;">${opts.aiWinPct}%</div>
-          <div style="font-size:11px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;">AI Win Rate</div>
-        </div>
-      </div>
-    </div>
+    <!-- Heading -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+      <tr>
+        <td align="center">
+          <h1 style="font-size:28px;font-weight:700;color:#1c1917;margin:0;line-height:1.3;font-family:Georgia,'Times New Roman',serif;">
+            The debate everyone's talking about
+          </h1>
+        </td>
+      </tr>
+    </table>
 
-    <p style="font-size:15px;color:#a8a29e;line-height:1.7;margin:0 0 28px;text-align:center;">
+    <!-- Topic card -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
+      <tr>
+        <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:16px;padding:24px;">
+          
+          <p style="font-size:18px;color:#1c1917;font-weight:600;margin:0 0 16px;line-height:1.4;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            "${escapeHtml(opts.trendingTopic)}"
+          </p>
+
+          <table border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <!-- Debates -->
+                    <td align="center" style="padding-right:24px;">
+                      <div style="font-size:24px;font-weight:700;color:#b54d30;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${opts.count}</div>
+                      <div style="font-size:11px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Debates</div>
+                    </td>
+
+                    <!-- Divider -->
+                    <td style="border-left:1px solid #d98970;">&nbsp;</td>
+
+                    <!-- AI Win Rate -->
+                    <td align="center" style="padding-left:24px;">
+                      <div style="font-size:24px;font-weight:700;color:#b54d30;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${opts.aiWinPct}%</div>
+                      <div style="font-size:11px;color:#78716c;text-transform:uppercase;letter-spacing:0.05em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">AI Win Rate</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-size:15px;color:#78716c;line-height:1.7;margin:0 0 28px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       You've been quiet. The AI hasn't.
     </p>
 
-    <div style="text-align:center;">
-      <a href="${getDebateUrl(opts.trendingTopic)}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);color:#0c0a09;font-size:15px;font-weight:700;padding:16px 32px;border-radius:12px;text-decoration:none;box-shadow:0 10px 40px -10px rgba(245,158,11,0.4);">
-        See What You're Missing →
-      </a>
-    </div>
+    <!-- CTA Button -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#b54d30;border-radius:12px;">
+                <a href="${getDebateUrl(opts.trendingTopic)}" style="display:block;color:#ffffff;font-size:15px;font-weight:600;padding:16px 32px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  See What You're Missing →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   `;
 
   return {
@@ -466,38 +757,80 @@ export function streakWarningEmail(opts: {
   unsubscribeToken: string;
 }): { subject: string; html: string } {
   const content = `
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(245,158,11,0.05));border:1px solid rgba(245,158,11,0.25);border-radius:16px;font-size:28px;animation:pulse 2s infinite;">
-        🔥
-      </div>
-    </div>
+    <!-- Fire icon -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:20px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#f9ebe6;border:2px solid #b54d30;border-radius:16px;padding:24px;width:64px;height:64px;">
+                <span style="font-size:32px;">🔥</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-    <div style="text-align:center;margin-bottom:16px;">
-      <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.25);border-radius:100px;padding:8px 16px;font-size:12px;font-weight:700;color:#fbbf24;">
-        ⚠️ Streak Expires Soon
-      </span>
-    </div>
+    <!-- Urgency badge -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background-color:#f9ebe6;border:1px solid #d98970;border-radius:100px;padding:8px 16px;">
+                <span style="font-size:12px;font-weight:700;color:#b54d30;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  ⚠️ Streak Expires Soon
+                </span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-    <h1 style="font-size:26px;font-weight:700;color:#fafaf9;margin:0 0 16px;line-height:1.2;text-align:center;font-family:Georgia,'Times New Roman',serif;">
-      Your ${opts.streak}-day streak ends tonight
-    </h1>
-    
-    <p style="font-size:15px;color:#a8a29e;line-height:1.7;margin:0 0 12px;text-align:center;">
-      You've debated for <strong style="color:#fbbf24;">${opts.streak} days in a row</strong>. That's impressive dedication.
+    <!-- Heading -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+      <tr>
+        <td align="center">
+          <h1 style="font-size:28px;font-weight:700;color:#1c1917;margin:0;line-height:1.2;font-family:Georgia,'Times New Roman',serif;">
+            Your ${opts.streak}-day streak ends tonight
+          </h1>
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-size:15px;color:#78716c;line-height:1.7;margin:0 0 12px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+      You've debated for <strong style="color:#b54d30;">${opts.streak} days in a row</strong>. That's impressive dedication.
     </p>
 
-    <p style="font-size:15px;color:#a8a29e;line-height:1.7;margin:0 0 28px;text-align:center;">
+    <p style="font-size:15px;color:#78716c;line-height:1.7;margin:0 0 28px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       If you don't debate before midnight UTC, your streak resets to zero.
     </p>
 
-    <!-- Urgency bar -->
-    <div style="background:linear-gradient(90deg,#f59e0b,#fbbf24);height:4px;border-radius:2px;margin-bottom:28px;"></div>
+    <!-- Progress bar -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
+      <tr>
+        <td style="background-color:#b54d30;height:4px;border-radius:2px;font-size:0;line-height:0;">&nbsp;</td>
+      </tr>
+    </table>
 
-    <div style="text-align:center;">
-      <a href="${BASE_URL}/debate" style="display:inline-block;background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);color:#0c0a09;font-size:15px;font-weight:700;padding:16px 32px;border-radius:12px;text-decoration:none;box-shadow:0 10px 40px -10px rgba(245,158,11,0.5);">
-        Keep the Streak Alive →
-      </a>
-    </div>
+    <!-- CTA Button -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td align="center">
+          <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="background-color:#b54d30;border-radius:12px;">
+                <a href="${BASE_URL}/debate" style="display:block;color:#ffffff;font-size:15px;font-weight:600;padding:16px 32px;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  Keep the Streak Alive →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   `;
 
   return {
