@@ -18,7 +18,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://debateai.org';
 
 function emailLayout(content: string, unsubscribeToken: string): string {
   const unsubscribeUrl = getUnsubscribeUrl(unsubscribeToken);
-  const preferencesUrl = `${BASE_URL}/settings/email`;
+  const preferencesUrl = `${BASE_URL}`;
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -331,7 +331,7 @@ export function unsubscribeConfirmationEmail(opts: {
   email: string;
   unsubscribeToken: string;
 }): { subject: string; html: string } {
-  const resubscribeUrl = `${BASE_URL}/settings/email`;
+  const resubscribeUrl = `${BASE_URL}`;
 
   const content = `
     <table border="0" cellpadding="0" cellspacing="0" width="100%">

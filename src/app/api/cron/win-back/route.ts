@@ -2,39 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendBatchEmails } from '@/lib/email';
 import { winBackEmail } from '@/lib/email-templates';
 import { d1 } from '@/lib/d1';
+import { verifyCronSecret, getTrendingTopic } from '@/lib/cron-helpers';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authError = verifyCronSecret(request);
+  if (authError) return authError;
 
   try {
     // 1. Get trending topic for the email content (last 7 days)
-    const trendingResult = await d1.query(
-      `SELECT topic, COUNT(*) as count FROM debates
-       WHERE created_at >= date('now', '-7 days')
-       GROUP BY topic ORDER BY count DESC LIMIT 1`
-    );
-    
-    if (!trendingResult.success || !trendingResult.result || trendingResult.result.length === 0) {
-      // Fallback if no debates recently
+    const trending = await getTrendingTopic();
+
+    if (!trending) {
       return NextResponse.json({ message: 'No trending topics found' });
     }
 
-    const topTopicRow = trendingResult.result[0] as { topic: string, count: number };
-    const trendingTopic = topTopicRow.topic;
-    const topicCount = topTopicRow.count;
+    const trendingTopic = trending.topic;
+    const topicCount = trending.count;
 
     // 2. Get AI win % for this topic
     const statsResult = await d1.query(
       `SELECT 
          COUNT(*) as total, 
-         SUM(CASE WHEN json_extract(score_data, '$.winner') = 'ai' THEN 1 ELSE 0 END) as ai_wins 
+         SUM(CASE WHEN json_extract(score_data, '$.debateScore.winner') = 'ai' THEN 1 ELSE 0 END) as ai_wins
        FROM debates 
        WHERE topic = ? AND created_at >= date('now', '-7 days')`,
       [trendingTopic]

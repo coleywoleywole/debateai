@@ -14,7 +14,7 @@
 import { d1 } from './d1';
 import { currentUser } from '@clerk/nextjs/server';
 import { welcomeEmail } from './email-templates';
-import { sendEmail } from './email';
+import { sendEmail, syncContactToResend } from './email';
 
 export interface EmailPreferences {
   user_id: string;
@@ -115,38 +115,53 @@ export async function ensureWelcomeEmail(userId: string) {
   if (userId.startsWith('guest_')) return;
 
   try {
-    // 1. Get user details from Clerk (contains email + name)
+    // 1. Quick check — skip Clerk API call if already sent
+    const existingResult = await d1.query(
+      'SELECT welcome_email_sent FROM email_preferences WHERE user_id = ? LIMIT 1',
+      [userId],
+    );
+    if (existingResult.success && existingResult.result?.length) {
+      const row = existingResult.result[0] as Record<string, unknown>;
+      if (row.welcome_email_sent) return;
+    }
+
+    // 2. Get user details from Clerk (contains email + name)
     const user = await currentUser();
     const email = user?.emailAddresses?.[0]?.emailAddress;
     if (!email) return;
 
-    // 2. Get or create preferences (creates record if missing)
+    // 3. Get or create preferences (creates record if missing)
     const prefs = await getOrCreatePreferences(userId, email);
-
-    // 3. If already sent, skip
     if (prefs.welcome_email_sent) return;
 
-    // 4. Send the email
+    // 4. Atomically claim the send (prevents race condition with concurrent requests)
+    const claimResult = await d1.query(
+      "UPDATE email_preferences SET welcome_email_sent = 1, updated_at = datetime('now') WHERE user_id = ? AND welcome_email_sent = 0",
+      [userId],
+    );
+    // If no rows updated, another request already claimed it
+    if (!claimResult.success || (claimResult.meta?.changes ?? 0) === 0) return;
+
+    // 5. Sync contact to Resend with DebateAI segment
+    syncContactToResend({
+      email,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+    }).catch(console.error);
+
+    // 6. Send the email
     const name = user.firstName || user.username || 'there';
     const { subject, html } = welcomeEmail({
       name,
       unsubscribeToken: prefs.unsubscribe_token,
     });
 
-    const result = await sendEmail({
+    await sendEmail({
       to: email,
       subject,
       html,
       tags: [{ name: 'category', value: 'welcome' }],
     });
-
-    // 5. Mark as sent if successful
-    if (result.success) {
-      await d1.query(
-        'UPDATE email_preferences SET welcome_email_sent = 1, updated_at = datetime(\'now\') WHERE user_id = ?',
-        [userId]
-      );
-    }
   } catch (error) {
     console.error('Failed to ensure welcome email:', error);
     // Silent fail — don't block the caller
@@ -215,13 +230,14 @@ export async function unsubscribeByToken(token: string): Promise<{ success: bool
   return { success: true, email: row.email as string };
 }
 
-/**
- * Get all users opted in to daily digest (not unsubscribed).
- */
-export async function getDailyDigestRecipients(limit = 500, offset = 0): Promise<EmailPreferences[]> {
+async function getOptedInRecipients(
+  column: 'daily_digest' | 'weekly_recap',
+  limit: number,
+  offset: number,
+): Promise<EmailPreferences[]> {
   const result = await d1.query(
     `SELECT * FROM email_preferences
-     WHERE daily_digest = 1 AND unsubscribed_at IS NULL
+     WHERE ${column} = 1 AND unsubscribed_at IS NULL
      ORDER BY created_at
      LIMIT ? OFFSET ?`,
     [limit, offset],
@@ -230,19 +246,12 @@ export async function getDailyDigestRecipients(limit = 500, offset = 0): Promise
   return (result.result ?? []) as unknown as EmailPreferences[];
 }
 
-/**
- * Get all users opted in to weekly recap (not unsubscribed).
- */
-export async function getWeeklyRecapRecipients(limit = 500, offset = 0): Promise<EmailPreferences[]> {
-  const result = await d1.query(
-    `SELECT * FROM email_preferences
-     WHERE weekly_recap = 1 AND unsubscribed_at IS NULL
-     ORDER BY created_at
-     LIMIT ? OFFSET ?`,
-    [limit, offset],
-  );
+export async function getDailyDigestRecipients(limit = 500, offset = 0): Promise<EmailPreferences[]> {
+  return getOptedInRecipients('daily_digest', limit, offset);
+}
 
-  return (result.result ?? []) as unknown as EmailPreferences[];
+export async function getWeeklyRecapRecipients(limit = 500, offset = 0): Promise<EmailPreferences[]> {
+  return getOptedInRecipients('weekly_recap', limit, offset);
 }
 
 /**

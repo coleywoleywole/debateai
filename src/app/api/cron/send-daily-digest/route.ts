@@ -10,18 +10,14 @@ import { getCurrentDailyTopic } from '@/lib/daily-topics-db';
 import { getDailyDigestRecipients, getDailyDigestCount } from '@/lib/email-preferences';
 import { sendBatchEmails } from '@/lib/email';
 import { dailyTopicEmail } from '@/lib/email-templates';
+import { verifyCronSecret } from '@/lib/cron-helpers';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60s for batch sending
 
 export async function POST(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authError = verifyCronSecret(request);
+  if (authError) return authError;
 
   try {
     // 1. Get today's topic

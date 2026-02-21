@@ -192,7 +192,7 @@ export default function NotificationDropdown({
           ) : (
             <div className="py-2">
               <p className="px-4 py-2 text-xs text-[var(--text-tertiary)]">
-                Choose which notifications you receive. This controls both in-app and email notifications.
+                Choose which in-app notifications you receive.
               </p>
               {PREF_LABELS.map(({ key, label, description }) => (
                 <div

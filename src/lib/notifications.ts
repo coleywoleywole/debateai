@@ -242,6 +242,8 @@ export async function pruneOldNotifications(): Promise<void> {
 /** Milestone streak thresholds */
 const STREAK_MILESTONES = [7, 14, 30, 60, 100];
 
+const MS_PER_DAY = 86_400_000;
+
 /**
  * Fire score result notification after a debate is scored.
  */
@@ -290,14 +292,14 @@ export async function notifyStreakMilestone(userId: string, streak: number) {
  * Called by cron job.
  */
 export async function sendStreakWarnings(): Promise<number> {
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - MS_PER_DAY).toISOString().slice(0, 10);
 
   // Find users who debated yesterday but not today, with streak >= 2
-  // JOIN with users table to get email
+  // JOIN with email_preferences to get email (more reliable than users table)
   const result = await d1.query(
-    `SELECT us.user_id, us.current_streak, u.email
+    `SELECT us.user_id, us.current_streak, ep.email, ep.unsubscribe_token
      FROM user_streaks us
-     JOIN users u ON us.user_id = u.user_id
+     LEFT JOIN email_preferences ep ON us.user_id = ep.user_id
      WHERE us.last_debate_date = ? AND us.current_streak >= 2`,
     [yesterday],
   );
@@ -310,6 +312,7 @@ export async function sendStreakWarnings(): Promise<number> {
     const userId = r.user_id as string;
     const streak = (r.current_streak as number) || 0;
     const email = r.email as string | null;
+    const unsubscribeToken = (r.unsubscribe_token as string) || userId;
 
     // 1. Create in-app notification (checks preferences)
     const created = await createNotification(
@@ -319,12 +322,12 @@ export async function sendStreakWarnings(): Promise<number> {
       `Your ${streak}-day streak expires at midnight UTC! Debate now to keep it alive.`,
       '/',
     );
-    
+
     // 2. Send email if user has email and opted in (created === true)
     if (created && email) {
-      const { subject, html } = streakWarningEmail({ 
-        streak, 
-        unsubscribeToken: userId 
+      const { subject, html } = streakWarningEmail({
+        streak,
+        unsubscribeToken,
       });
       
       await sendEmail({

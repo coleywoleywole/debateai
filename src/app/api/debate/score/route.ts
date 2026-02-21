@@ -145,11 +145,14 @@ export const POST = withErrorHandler(async (request: Request) => {
       const debateResult2 = score.winner === 'user' ? 'win' : score.winner === 'ai' ? 'loss' : 'draw';
       const streakResult = await recordDebateCompletion(userId, debateResult2, score.userScore, displayName);
 
-      // Fire notifications (non-blocking)
-      await notifyScoreResult(userId, topic, debateResult2, score.userScore, debateId);
+      // Fire notifications (parallel, independently error-handled)
+      const notifPromises = [
+        notifyScoreResult(userId, topic, debateResult2, score.userScore, debateId).catch(console.error),
+      ];
       if (streakResult) {
-        await notifyStreakMilestone(userId, streakResult.currentStreak);
+        notifPromises.push(notifyStreakMilestone(userId, streakResult.currentStreak).catch(console.error));
       }
+      await Promise.all(notifPromises);
     }
   } catch (err) {
     // Non-blocking — scoring still succeeds even if streak/notification update fails

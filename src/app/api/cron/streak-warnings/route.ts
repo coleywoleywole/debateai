@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { withErrorHandler, errors } from '@/lib/api-errors';
+import { withErrorHandler } from '@/lib/api-errors';
 import { sendStreakWarnings } from '@/lib/notifications';
+import { verifyCronSecret } from '@/lib/cron-helpers';
 
 /**
  * POST /api/cron/streak-warnings
@@ -11,13 +12,8 @@ import { sendStreakWarnings } from '@/lib/notifications';
  * Schedule: daily at 22:00 UTC (gives users ~2h to debate).
  */
 export const POST = withErrorHandler(async (request: Request) => {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    throw errors.unauthorized('Invalid cron secret');
-  }
+  const authError = verifyCronSecret(request);
+  if (authError) return authError;
 
   const sent = await sendStreakWarnings();
 

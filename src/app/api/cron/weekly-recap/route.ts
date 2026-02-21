@@ -4,28 +4,22 @@ import { sendBatchEmails } from '@/lib/email';
 import { weeklyRecapEmail } from '@/lib/email-templates';
 import { d1 } from '@/lib/d1';
 import { getStreak } from '@/lib/streaks';
+import { verifyCronSecret, getTrendingTopic } from '@/lib/cron-helpers';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authError = verifyCronSecret(request);
+  if (authError) return authError;
 
   try {
     // 1. Get global trending topic (last 7 days)
-    const trendingResult = await d1.query(
-      `SELECT topic, COUNT(*) as count FROM debates
-       WHERE created_at >= date('now', '-7 days')
-       GROUP BY topic ORDER BY count DESC LIMIT 1`
-    );
-    const trendingTopic = (trendingResult.result?.[0]?.topic as string) || 'Artificial Intelligence';
+    const trending = await getTrendingTopic();
+    const trendingTopic = trending?.topic || 'Artificial Intelligence';
 
-    // 2. Get recipients (limit 50 to fit in time/batch)
-    const recipients = await getWeeklyRecapRecipients(50, 0);
+    // 2. Get recipients (paginate to cover all subscribers)
+    const recipients = await getWeeklyRecapRecipients(500, 0);
     if (recipients.length === 0) {
       return NextResponse.json({ message: 'No recipients' });
     }
@@ -41,10 +35,10 @@ export async function POST(request: NextRequest) {
           [r.user_id]
         ),
         d1.query(
-          `SELECT topic, json_extract(score_data, '$.debateScore') as score 
-           FROM debates 
-           WHERE user_id = ? AND created_at >= date('now', '-7 days') AND score_data IS NOT NULL 
-           ORDER BY score DESC LIMIT 1`,
+          `SELECT topic, json_extract(score_data, '$.debateScore.userScore') as score
+           FROM debates
+           WHERE user_id = ? AND created_at >= date('now', '-7 days') AND score_data IS NOT NULL
+           ORDER BY CAST(score AS INTEGER) DESC LIMIT 1`,
           [r.user_id]
         ),
         getStreak(r.user_id)

@@ -109,6 +109,87 @@ export async function sendBatchEmails(
   return { sent, failed, errors };
 }
 
+/* ------------------------------------------------------------------ */
+/*  Resend Contacts + Segments                                         */
+/* ------------------------------------------------------------------ */
+
+const SEGMENT_NAME = 'DebateAI';
+let cachedSegmentId: string | null = null;
+
+/**
+ * Get or create the "DebateAI" segment in Resend.
+ * Cached in-memory after first lookup.
+ */
+async function getOrCreateSegmentId(resend: Resend): Promise<string | null> {
+  if (cachedSegmentId) return cachedSegmentId;
+
+  try {
+    // Check existing segments
+    const { data: listData } = await resend.segments.list();
+    const existing = listData?.data?.find((s: { name: string }) => s.name === SEGMENT_NAME);
+    if (existing) {
+      cachedSegmentId = existing.id;
+      return cachedSegmentId;
+    }
+
+    // Create new segment
+    const { data: createData, error } = await resend.segments.create({ name: SEGMENT_NAME });
+    if (error) {
+      console.error('Failed to create Resend segment:', error);
+      return null;
+    }
+    cachedSegmentId = createData?.id ?? null;
+    return cachedSegmentId;
+  } catch (error) {
+    console.error('Resend segment error:', error);
+    return null;
+  }
+}
+
+/**
+ * Sync a user as a Resend contact in the "DebateAI" segment.
+ * Creates the contact if new, updates name if existing.
+ */
+export async function syncContactToResend(opts: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<{ success: boolean; contactId?: string }> {
+  const resend = getResend();
+  if (!resend) return { success: false };
+
+  try {
+    const segmentId = await getOrCreateSegmentId(resend);
+
+    // Try creating the contact first
+    const { data, error } = await resend.contacts.create({
+      email: opts.email,
+      firstName: opts.firstName ?? undefined,
+      lastName: opts.lastName ?? undefined,
+      ...(segmentId ? { segments: [{ id: segmentId }] } : {}),
+    });
+
+    if (error) {
+      // Contact may already exist — try updating instead
+      if (error.message?.toLowerCase().includes('already exists')) {
+        const { data: updateData } = await resend.contacts.update({
+          email: opts.email,
+          firstName: opts.firstName ?? undefined,
+          lastName: opts.lastName ?? undefined,
+        });
+        return { success: true, contactId: updateData?.id };
+      }
+      console.error('Resend contact create error:', error);
+      return { success: false };
+    }
+
+    return { success: true, contactId: data?.id };
+  } catch (error) {
+    console.error('Resend contact sync error:', error);
+    return { success: false };
+  }
+}
+
 /**
  * Generate an unsubscribe URL with the user's token.
  */
