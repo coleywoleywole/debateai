@@ -17,9 +17,9 @@ interface PriceResponse {
 
 function getFallbackPrice(error?: string): PriceResponse {
   return {
-    amount: 2000, // $20.00 in cents
+    amount: 1499, // $14.99 in cents
     currency: 'usd',
-    formatted: '$20.00',
+    formatted: '$14.99',
     interval: 'month',
     isFallback: true,
     ...(error && { error }),

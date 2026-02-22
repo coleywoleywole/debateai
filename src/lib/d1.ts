@@ -1,5 +1,5 @@
 // Cloudflare D1 REST API client for Next.js/Vercel
-import { GUEST_MESSAGE_LIMIT, FREE_USER_MESSAGE_LIMIT } from './limits';
+import { GUEST_MESSAGE_LIMIT, FREE_USER_MESSAGE_LIMIT, FREE_USER_DAILY_DEBATE_LIMIT, GUEST_DEBATE_LIMIT } from './limits';
 import { MIGRATION_003_SQL } from './migrations/003-arena-mode';
 import { MIGRATION_005_SQL } from './migrations/005-missing-users-cols';
 import { MIGRATION_006_SQL } from './migrations/006-content-review';
@@ -509,16 +509,16 @@ class D1Client {
       };
     }
 
+    // Count only today's debates (daily limit, not lifetime)
     const result = await this.query(
-      `SELECT COUNT(*) as debate_count FROM debates WHERE user_id = ?`,
+      `SELECT COUNT(*) as debate_count FROM debates WHERE user_id = ? AND created_at >= date('now')`,
       [userId]
     );
-    
+
     if (result.success && result.result && result.result.length > 0) {
       const count = (result.result[0] as Record<string, unknown>).debate_count as number;
-      // GUEST MODE: Guests get 1 debate, Free users get 3
       const isGuest = userId.startsWith('guest_');
-      const limit = isGuest ? 1 : 3;
+      const limit = isGuest ? GUEST_DEBATE_LIMIT : FREE_USER_DAILY_DEBATE_LIMIT;
       return {
         success: true,
         count,
@@ -528,8 +528,8 @@ class D1Client {
         isPremium: false
       };
     }
-    
-    return { success: false, count: 0, limit: 2, allowed: true, remaining: 2, isPremium: false };
+
+    return { success: false, count: 0, limit: FREE_USER_DAILY_DEBATE_LIMIT, allowed: true, remaining: FREE_USER_DAILY_DEBATE_LIMIT, isPremium: false };
   }
 
   async checkDebateMessageLimit(debateId: string) {

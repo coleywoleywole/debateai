@@ -28,6 +28,7 @@ export const ApiErrorCodes = {
   NOT_FOUND: 'NOT_FOUND',
   RATE_LIMITED: 'RATE_LIMITED',
   MESSAGE_LIMIT: 'MESSAGE_LIMIT',
+  DEBATE_LIMIT: 'DEBATE_LIMIT',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   APP_DISABLED: 'APP_DISABLED',
 } as const;
@@ -111,6 +112,20 @@ export const errors = {
   guestLimit: (current: number, limit: number) =>
     apiError(429, `Guest limit reached (${current}/${limit}). Sign up to continue.`, {
       code: ApiErrorCodes.MESSAGE_LIMIT,
+      details: { current, limit, signup_required: true },
+    }),
+
+  /** 429 Debate limit (upgrade prompt) */
+  debateLimit: (current: number, limit: number) =>
+    apiError(429, 'debate_limit_exceeded', {
+      code: ApiErrorCodes.DEBATE_LIMIT,
+      details: { current, limit, upgrade_required: true },
+    }),
+
+  /** 429 Guest debate limit (sign up prompt) */
+  guestDebateLimit: (current: number, limit: number) =>
+    apiError(429, 'debate_limit_exceeded', {
+      code: ApiErrorCodes.DEBATE_LIMIT,
       details: { current, limit, signup_required: true },
     }),
 

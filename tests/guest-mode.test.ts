@@ -9,10 +9,12 @@ import { NextRequest, NextResponse } from 'next/server';
 vi.mock('@/lib/d1', () => ({
   d1: {
     saveDebate: vi.fn(),
-    logAnalyticsEvent: vi.fn(),
+    logAnalyticsEvent: vi.fn().mockResolvedValue(undefined),
     getDebate: vi.fn(),
+    getUser: vi.fn(),
     addMessage: vi.fn(),
     checkDebateMessageLimit: vi.fn(),
+    checkUserDebateLimit: vi.fn(),
     query: vi.fn(),
   },
 }));
@@ -64,6 +66,9 @@ describe('Guest Mode - Debate Lifecycle', () => {
   it('should create a debate for a guest user', async () => {
     vi.mocked(authHelper.getUserId).mockResolvedValue(null);
     vi.mocked(d1.saveDebate).mockResolvedValue({ success: true, debateId: 'test-uuid' });
+    vi.mocked(d1.checkUserDebateLimit).mockResolvedValue({
+      success: true, count: 0, limit: 1, allowed: true, remaining: 1, isPremium: false,
+    });
 
     const req = new NextRequest('http://localhost/api/debate/create', {
       method: 'POST',

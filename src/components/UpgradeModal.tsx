@@ -17,8 +17,18 @@ export default function UpgradeModal({ isOpen, onClose, trigger = 'button', limi
   const { user } = useUser();
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [price, setPrice] = useState<{ formatted: string; interval: string } | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (isOpen && !price) {
+      fetch('/api/stripe/price')
+        .then(r => r.json())
+        .then(data => setPrice({ formatted: data.formatted, interval: data.interval }))
+        .catch(() => setPrice({ formatted: '$14.99', interval: 'month' }));
+    }
+  }, [isOpen, price]);
 
   useEffect(() => {
     if (isOpen) {
@@ -104,7 +114,7 @@ export default function UpgradeModal({ isOpen, onClose, trigger = 'button', limi
               {isMessageLimit
                 ? `Free accounts get ${limitData?.limit || 2} messages per debate.`
                 : isDebateLimit
-                ? `Free accounts get ${limitData?.limit || 3} debates.`
+                ? `Free accounts get ${limitData?.limit || 3} debates per day.`
                 : "Unlimited debates, web-sourced opponents, full history."
               }
             </p>
@@ -131,8 +141,8 @@ export default function UpgradeModal({ isOpen, onClose, trigger = 'button', limi
             <div className="relative p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] overflow-hidden mb-5">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--accent)]/60 to-transparent" />
               <div className="flex items-baseline justify-center gap-1.5">
-                <span className="text-4xl font-serif font-bold text-[var(--text)] tracking-tight">$20</span>
-                <span className="text-[var(--text-secondary)] text-sm">/month</span>
+                <span className="text-4xl font-serif font-bold text-[var(--text)] tracking-tight">{price?.formatted.replace(/\.00$/, '') ?? '$14.99'}</span>
+                <span className="text-[var(--text-secondary)] text-sm">/{price?.interval ?? 'month'}</span>
               </div>
               <p className="text-[11px] text-[var(--text-tertiary)] text-center mt-1.5 tracking-wide">Cancel anytime — no questions asked</p>
             </div>

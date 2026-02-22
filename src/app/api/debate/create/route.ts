@@ -54,6 +54,15 @@ export async function POST(request: Request) {
       });
     }
 
+    // Check daily debate limit
+    const debateLimitCheck = await d1.checkUserDebateLimit(userId);
+    if (debateLimitCheck.success && !debateLimitCheck.allowed) {
+      if (isGuest) {
+        return errors.guestDebateLimit(debateLimitCheck.count, debateLimitCheck.limit);
+      }
+      return errors.debateLimit(debateLimitCheck.count, debateLimitCheck.limit);
+    }
+
     // Validate request body with Zod
     const { character: opponent, opponentStyle, topic, debateId } = await validateBody(
       request,

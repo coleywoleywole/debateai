@@ -34,6 +34,7 @@ export const GET = withErrorHandler(async () => {
   }
 
   const user = await d1.getUser(userId);
+  const debateLimit = await d1.checkUserDebateLimit(userId);
 
   if (!user) {
     // No user record means free tier
@@ -43,17 +44,21 @@ export const GET = withErrorHandler(async () => {
       stripePlan: null,
       subscriptionStatus: null,
       currentPeriodEnd: null,
+      debatesUsed: debateLimit.count,
+      debatesLimit: debateLimit.limit,
     });
   }
 
+  const isPremium = user.subscription_status === 'active' && user.stripe_plan === 'premium';
+
   return NextResponse.json({
-    isPremium:
-      user.subscription_status === 'active' && user.stripe_plan === 'premium',
-    isSubscribed:
-      user.subscription_status === 'active' && user.stripe_plan === 'premium',
+    isPremium,
+    isSubscribed: isPremium,
     stripePlan: user.stripe_plan,
     subscriptionStatus: user.subscription_status,
     currentPeriodEnd: user.current_period_end,
     cancelAtPeriodEnd: user.cancel_at_period_end,
+    debatesUsed: debateLimit.count,
+    debatesLimit: debateLimit.limit,
   });
 });

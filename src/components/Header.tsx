@@ -36,6 +36,20 @@ export default function Header() {
   const { isPremium, isLoading: isSubscriptionLoading } = useSubscription();
   const { isSignedIn, isLoaded: isAuthLoaded } = useSafeUser();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isManagingPlan, setIsManagingPlan] = useState(false);
+
+  const handleManagePlan = async () => {
+    setIsManagingPlan(true);
+    try {
+      const response = await fetch('/api/stripe/manage', { method: 'POST' });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      setIsManagingPlan(false);
+    }
+  };
   
   // Determine auth state for stable rendering
   const showAuthLoading = !isAuthLoaded;
@@ -102,10 +116,22 @@ export default function Header() {
                     History
                   </Link>
 
-                  {/* Upgrade button with placeholder to prevent layout shift */}
+                  {/* Upgrade / Manage Plan button */}
                   {isSubscriptionLoading ? (
                     <UpgradeSkeleton />
-                  ) : !isPremium ? (
+                  ) : isPremium ? (
+                    <button
+                      onClick={handleManagePlan}
+                      disabled={isManagingPlan}
+                      className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text)] rounded-lg hover:bg-[var(--bg-sunken)] transition-colors ml-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                      {isManagingPlan ? 'Loading...' : 'Manage Plan'}
+                    </button>
+                  ) : (
                     <button
                       onClick={() => setShowUpgradeModal(true)}
                       className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[var(--accent)] bg-[var(--accent-subtle)] hover:bg-[var(--accent-faint)] rounded-lg transition-colors ml-1 cursor-pointer"
@@ -115,7 +141,7 @@ export default function Header() {
                       </svg>
                       Upgrade
                     </button>
-                  ) : null}
+                  )}
                 </>
               )}
 
