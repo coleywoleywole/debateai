@@ -48,6 +48,9 @@ describe('Debate Rounds API', () => {
     vi.clearAllMocks();
     vi.mocked(authHelperModule.getUserId).mockResolvedValue(userId);
     vi.mocked(d1.getUser).mockResolvedValue({ subscription_status: 'active', stripe_plan: 'premium' }); // Bypass limits
+    vi.mocked(d1.checkDebateMessageLimit).mockResolvedValue({
+      success: true, count: 0, limit: -1, allowed: true, remaining: -1, isPremium: true,
+    });
   });
 
   it('should be Round 1 for first user message', async () => {

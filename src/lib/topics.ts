@@ -282,3 +282,15 @@ export function getTopicById(id: string): Topic | null {
   }
   return null;
 }
+
+/**
+ * Get a topic by ID along with its category ID.
+ * Returns null if the topic is not found.
+ */
+export function getTopicWithCategory(id: string): { topic: Topic; categoryId: string } | null {
+  for (const category of TOPIC_CATEGORIES) {
+    const topic = category.topics.find(t => t.id === id);
+    if (topic) return { topic, categoryId: category.id };
+  }
+  return null;
+}

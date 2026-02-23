@@ -65,6 +65,12 @@ export async function POST(request: Request) {
     } catch {
       // D1 unavailable (e.g. local dev) — continue with defaults
     }
+
+    // Ownership check: only the debate owner can send messages
+    if (debateId && existingDebate.success && existingDebate.debate && existingDebate.debate.user_id !== userId) {
+      return errors.forbidden('You do not own this debate');
+    }
+
     let assignedVariant = 'default';
 
     if (existingDebate.success && (existingDebate as any).debate?.promptVariant) {

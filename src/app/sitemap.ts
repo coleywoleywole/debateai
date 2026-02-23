@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { d1 } from '@/lib/d1';
 import { getAllPosts } from '@/lib/blog';
 import { getAllPages } from '@/lib/pages';
+import { TOPIC_CATEGORIES } from '@/lib/topics';
 
 // Force Node.js runtime for file system access
 export const runtime = 'nodejs';
@@ -102,5 +103,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap: Failed to load SEO pages:', error);
   }
 
-  return [...staticPages, ...seoPages, ...blogPages, ...debatePages];
+  // Topic pages
+  const topicIndexPage: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/topics`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+  ];
+
+  const topicPages: MetadataRoute.Sitemap = TOPIC_CATEGORIES.flatMap((cat) =>
+    cat.topics.map((topic) => ({
+      url: `${baseUrl}/topics/${topic.id}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+  );
+
+  return [...staticPages, ...topicIndexPage, ...topicPages, ...seoPages, ...blogPages, ...debatePages];
 }

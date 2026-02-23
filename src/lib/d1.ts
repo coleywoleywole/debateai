@@ -7,6 +7,7 @@ import { MIGRATION_007_SQL } from './migrations/007-analytics';
 import { MIGRATION_008_SQL } from './migrations/008-welcome-email';
 import { MIGRATION_009_SQL } from './migrations/009-rounds';
 import { MIGRATION_010_SQL } from './migrations/010-fix-history-schema';
+import { MIGRATION_011_SQL } from './migrations/011-debates-category';
 import { ArenaState } from './arena-schema';
 
 interface D1Response {
@@ -221,7 +222,7 @@ class D1Client {
     `;
 
     // Combine base schema with migrations
-    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL + '\n' + MIGRATION_008_SQL + '\n' + MIGRATION_009_SQL + '\n' + MIGRATION_010_SQL;
+    const fullSchema = schema + '\n' + MIGRATION_003_SQL + '\n' + MIGRATION_005_SQL + '\n' + MIGRATION_006_SQL + '\n' + MIGRATION_007_SQL + '\n' + MIGRATION_008_SQL + '\n' + MIGRATION_009_SQL + '\n' + MIGRATION_010_SQL + '\n' + MIGRATION_011_SQL;
 
     const queries = fullSchema.split(';').filter(q => q.trim());
     const results = [];
@@ -245,38 +246,93 @@ class D1Client {
     debateId?: string;
     opponentStyle?: string;
     promptVariant?: string;
+    category?: string;
     currentRound?: number;
     totalRounds?: number;
     status?: string;
+    dailyLimit?: number;
   }) {
     // Use provided ID or generate a new one
     const debateId = data.debateId || crypto.randomUUID();
-    
+
     // Store metadata in score_data json blob
     const metadata = {
       ...data.scoreData,
       opponentStyle: data.opponentStyle,
       promptVariant: data.promptVariant,
     };
-    
-    const result = await this.query(
-      `INSERT OR REPLACE INTO debates (id, user_id, opponent, topic, messages, user_score, ai_score, score_data, current_round, total_rounds, status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        debateId,
-        data.userId,
-        data.opponent,
-        data.topic,
-        JSON.stringify(data.messages),
-        data.userScore || 0,
-        data.aiScore || 0,
-        JSON.stringify(metadata),
-        data.currentRound || 1,
-        data.totalRounds || 3,
-        data.status || 'active'
-      ]
-    );
-    
+
+    const params = [
+      debateId,
+      data.userId,
+      data.opponent,
+      data.topic,
+      JSON.stringify(data.messages),
+      data.userScore || 0,
+      data.aiScore || 0,
+      JSON.stringify(metadata),
+      data.currentRound || 1,
+      data.totalRounds || 3,
+      data.status || 'active',
+      data.category || null
+    ];
+
+    let result: D1Response;
+
+    if (data.dailyLimit !== undefined && data.dailyLimit > 0) {
+      // Atomic insert with daily limit check to prevent TOCTOU race condition
+      result = await this.query(
+        `INSERT INTO debates (id, user_id, opponent, topic, messages, user_score, ai_score, score_data, current_round, total_rounds, status, category)
+         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+         WHERE (SELECT COUNT(*) FROM debates WHERE user_id = ? AND created_at >= date('now')) < ?`,
+        [...params, data.userId, data.dailyLimit]
+      );
+
+      // If the INSERT affected 0 rows, the limit was exceeded
+      if (result.success && result.meta && (result.meta as any).changes === 0) {
+        return { success: false, debateId, error: 'debate_limit_exceeded' };
+      }
+    } else {
+      // No limit check needed (e.g. premium users or updates)
+      result = await this.query(
+        `INSERT INTO debates (id, user_id, opponent, topic, messages, user_score, ai_score, score_data, current_round, total_rounds, status, category)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        params
+      );
+
+      // If insert failed due to existing debate, update only if same user owns it
+      const isConflict = (!result.success && result.error && (
+        String(result.error).includes('UNIQUE constraint') || String(result.error).includes('PRIMARY KEY')
+      ));
+
+      if (isConflict) {
+        // Only update if the caller owns the debate (prevents overwrite attacks)
+        result = await this.query(
+          `UPDATE debates SET opponent = ?, topic = ?, messages = ?, user_score = ?, ai_score = ?, score_data = ?, current_round = ?, total_rounds = ?, status = ?, category = ?
+           WHERE id = ? AND user_id = ?`,
+          [
+            data.opponent,
+            data.topic,
+            JSON.stringify(data.messages),
+            data.userScore || 0,
+            data.aiScore || 0,
+            JSON.stringify(metadata),
+            data.currentRound || 1,
+            data.totalRounds || 3,
+            data.status || 'active',
+            data.category || null,
+            debateId,
+            data.userId
+          ]
+        );
+
+        // If no rows were updated, the debate exists but belongs to another user
+        if (result.success && result.meta && (result.meta as any).changes === 0) {
+          return { success: false, debateId, error: 'Debate already exists' };
+        }
+      }
+    }
+
     // Return the debate ID along with the result
     return { ...result, debateId };
   }

@@ -83,6 +83,49 @@ export function debateJsonLd(debate: {
 }
 
 /**
+ * DiscussionForumPosting schema for topic pages.
+ * Makes topic pages eligible for rich results.
+ */
+export function topicJsonLd(topic: {
+  slug: string;
+  question: string;
+  category: string;
+  categoryName: string;
+  debateCount?: number;
+  description?: string;
+}) {
+  const topicUrl = `${BASE_URL}/topics/${topic.slug}`;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'DiscussionForumPosting',
+    headline: topic.question,
+    url: topicUrl,
+    about: {
+      '@type': 'Thing',
+      name: topic.categoryName,
+    },
+    description:
+      topic.description ||
+      `Debate the topic "${topic.question}" with AI on DebateAI. Challenge your thinking and sharpen your arguments.`,
+    interactionStatistic: topic.debateCount
+      ? [
+          {
+            '@type': 'InteractionCounter',
+            interactionType: 'https://schema.org/CommentAction',
+            userInteractionCount: topic.debateCount,
+          },
+        ]
+      : undefined,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'DebateAI',
+      url: BASE_URL,
+    },
+  };
+}
+
+/**
  * Article schema for blog posts and SEO pages.
  * Enables rich results for articles in Google Search.
  *

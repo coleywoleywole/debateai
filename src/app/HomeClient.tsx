@@ -44,6 +44,22 @@ export default function HomeClient({
     sessionStorage.removeItem('isInstantDebate');
   }, []);
 
+  // Read query params to allow topic history links (/?topic=...&persona=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const topicParam = params.get('topic');
+    const personaParam = params.get('persona');
+    if (topicParam) {
+      setDailyDebate({
+        topic: topicParam,
+        persona: personaParam || dailyDebate.persona,
+      });
+      // Clean URL without reload
+      window.history.replaceState({}, '', '/');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Handle pending debate from sign-in redirect
   useEffect(() => {
     if (!isSignedIn || !dailyDebate) return;

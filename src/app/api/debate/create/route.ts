@@ -9,6 +9,9 @@ import { createDebateSchema } from '@/lib/api-schemas';
 import { logger } from '@/lib/logger';
 import { track } from '@/lib/analytics';
 import { signGuestId } from '@/lib/guest-token';
+import { FREE_USER_DAILY_DEBATE_LIMIT, GUEST_DEBATE_LIMIT } from '@/lib/limits';
+import { resolveCategory } from '@/lib/categories';
+import { TOPIC_CATEGORIES } from '@/lib/topics';
 
 const log = logger.scope('debate');
 
@@ -16,6 +19,8 @@ const log = logger.scope('debate');
 const userLimiter = createRateLimiter({ maxRequests: 10, windowMs: 60_000 });
 // 30 per minute per IP as a fallback for pre-auth requests
 const ipLimiter = createRateLimiter({ maxRequests: 30, windowMs: 60_000 });
+// Guest-specific IP rate limiter: 3 guest debates per day per IP
+const guestIpLimiter = createRateLimiter({ maxRequests: 3, windowMs: 86_400_000 });
 
 export async function POST(request: Request) {
   // Check if app is disabled
@@ -35,13 +40,19 @@ export async function POST(request: Request) {
   try {
     let userId = await getUserId();
     let isGuest = false;
-    
+
     let guestUuid = '';
     if (!userId) {
       // Guest mode: generate a signed guest ID
       guestUuid = crypto.randomUUID();
       userId = `guest_${guestUuid}`;
       isGuest = true;
+
+      // IP-based guest debate limit (prevents discarding cookie to bypass per-user limit)
+      const guestIpRl = guestIpLimiter.check(getClientIp(request));
+      if (!guestIpRl.allowed) {
+        return errors.guestDebateLimit(guestIpRl.remaining + 1, 3);
+      }
     }
 
     // Per-user rate limit
@@ -54,13 +65,15 @@ export async function POST(request: Request) {
       });
     }
 
-    // Check daily debate limit
-    const debateLimitCheck = await d1.checkUserDebateLimit(userId);
-    if (debateLimitCheck.success && !debateLimitCheck.allowed) {
-      if (isGuest) {
-        return errors.guestDebateLimit(debateLimitCheck.count, debateLimitCheck.limit);
+    // Check if user is premium (premium users skip daily limit)
+    let isPremium = false;
+    if (!isGuest) {
+      const premiumCheck = await d1.checkUserDebateLimit(userId);
+      if (premiumCheck.isPremium) {
+        isPremium = true;
+      } else if (premiumCheck.success && !premiumCheck.allowed) {
+        return errors.debateLimit(premiumCheck.count, premiumCheck.limit);
       }
-      return errors.debateLimit(debateLimitCheck.count, debateLimitCheck.limit);
     }
 
     // Validate request body with Zod
@@ -83,6 +96,18 @@ export async function POST(request: Request) {
     const lastChar = userId.slice(-1);
     const experimentVariant = lastChar.charCodeAt(0) % 2 === 0 ? 'aggressive' : 'default';
 
+    // Resolve category from topic (match against curated topics)
+    let category: string | undefined;
+    for (const cat of TOPIC_CATEGORIES) {
+      if (cat.topics.some(t => t.question === topic)) {
+        category = resolveCategory(cat.id);
+        break;
+      }
+    }
+
+    // Determine the daily limit for the atomic insert
+    const dailyLimit = isPremium ? undefined : (isGuest ? GUEST_DEBATE_LIMIT : FREE_USER_DAILY_DEBATE_LIMIT);
+
     // Save the debate to the database with custom opponent info
     let saveResult: { success: boolean; debateId?: string; error?: string };
     try {
@@ -94,9 +119,17 @@ export async function POST(request: Request) {
         debateId,
         opponentStyle, // Save the custom style for later use
         promptVariant: experimentVariant, // Save the experiment variant
+        category,
+        dailyLimit,
       } as any);
 
       if (!saveResult.success) {
+        if (saveResult.error === 'debate_limit_exceeded') {
+          if (isGuest) {
+            return errors.guestDebateLimit(dailyLimit || 1, dailyLimit || 1);
+          }
+          return errors.debateLimit(dailyLimit || 3, dailyLimit || 3);
+        }
         throw new Error(saveResult.error || 'Failed to create debate');
       }
     } catch (dbError) {

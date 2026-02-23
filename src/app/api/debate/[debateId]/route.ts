@@ -4,7 +4,6 @@ import { d1 } from '@/lib/d1';
 import { getUserId } from '@/lib/auth-helper';
 import { errors, validateBody } from '@/lib/api-errors';
 import { trackEvent } from '@/lib/posthog-server';
-import { GUEST_MESSAGE_LIMIT } from '@/lib/limits';
 import { calculateRound, isDebateCompleted } from '@/lib/debate-state';
 import { createRateLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
@@ -147,6 +146,11 @@ export async function POST(
       memoryDebates.set(debateId, debate);
     }
 
+    // Ownership check: only the debate owner can send messages
+    if (debate.user_id !== userId) {
+      return errors.forbidden('You do not own this debate');
+    }
+
     // Check if debate is completed
     if (debate.status === 'completed') {
       return NextResponse.json({
@@ -156,22 +160,13 @@ export async function POST(
       });
     }
 
-    // Check for guest message limit
-    const debateOwnerId = (debate.user_id as string) || '';
-    const isGuest = debateOwnerId.startsWith('guest_');
-    
-    if (isGuest) {
-      const messages = Array.isArray(debate.messages) ? debate.messages as any[] : [];
-      const userMessageCount = messages.filter(m => m.role === 'user').length;
-      // Limit: GUEST_MESSAGE_LIMIT user messages
-      if (userMessageCount >= GUEST_MESSAGE_LIMIT) {
-        return NextResponse.json({
-          success: false,
-          error: 'guest_limit_reached',
-          message: 'You have reached the free limit. Please sign up to continue.',
-          limit: GUEST_MESSAGE_LIMIT
-        }, { status: 403 });
+    // Check message limit for all non-premium users (guests and free users)
+    const limitCheck = await d1.checkDebateMessageLimit(debateId);
+    if (limitCheck.success && !limitCheck.allowed && !limitCheck.isPremium) {
+      if (userId.startsWith('guest_')) {
+        return errors.guestLimit(limitCheck.count, limitCheck.limit);
       }
+      return errors.messageLimit(limitCheck.count, limitCheck.limit);
     }
 
     // Determine current round

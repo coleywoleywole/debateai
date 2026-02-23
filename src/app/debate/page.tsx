@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSafeUser, useSafeClerk } from '@/lib/useSafeClerk';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,6 +8,7 @@ import UpgradeModal from '@/components/UpgradeModal';
 import Header from '@/components/Header';
 import { useSubscription } from '@/lib/useSubscription';
 import { v4 as uuidv4 } from 'uuid';
+import { TOPIC_CATEGORIES } from '@/lib/topics';
 
 export default function DebatePage() {
   const { isSignedIn } = useSafeUser();
@@ -18,6 +19,15 @@ export default function DebatePage() {
   const [topic, setTopic] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   
+  // Pick 6 random suggestions from curated topics on mount
+  const suggestions = useMemo(() => {
+    const all = TOPIC_CATEGORIES.flatMap(c =>
+      c.topics.map(t => ({ question: t.question, categoryId: c.id }))
+    );
+    const shuffled = [...all].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 6);
+  }, []);
+
   const [upgradeModal, setUpgradeModal] = useState<{
     isOpen: boolean;
     trigger: 'rate-limit-debate' | 'rate-limit-message' | 'button';
@@ -199,6 +209,35 @@ export default function DebatePage() {
               </div>
             </div>
           </div>
+
+          {/* Suggestions */}
+          {suggestions.length > 0 && (
+            <div className="mt-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-px flex-1 bg-[var(--border)]" />
+                <p className="text-[10px] text-center text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
+                  Need inspiration?
+                </p>
+                <div className="h-px flex-1 bg-[var(--border)]" />
+              </div>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setTopic(s.question);
+                      if (!opponentStyle.trim()) {
+                        setOpponentStyle('Devil\'s advocate');
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-all"
+                  >
+                    {s.question}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Footer Links */}
           <div className="mt-8 flex items-center justify-center gap-6 text-xs text-[var(--text-secondary)]">

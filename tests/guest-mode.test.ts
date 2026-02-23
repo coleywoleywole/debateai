@@ -91,7 +91,7 @@ describe('Guest Mode - Debate Lifecycle', () => {
   it('should enforce guest message limit', async () => {
     const guestId = 'guest_123';
     vi.mocked(authHelper.getUserId).mockResolvedValue(guestId);
-    
+
     vi.mocked(d1.getDebate).mockResolvedValue({
       success: true,
       debate: {
@@ -122,8 +122,8 @@ describe('Guest Mode - Debate Lifecycle', () => {
     const res = await messagePOST(req, { params: Promise.resolve({ debateId: 'debate_123' }) });
     const data = await res.json();
 
-    expect(res.status).toBe(403);
-    expect(data.error).toBe('guest_limit_reached');
+    expect(res.status).toBe(429);
+    expect(data.code).toBe('MESSAGE_LIMIT');
   });
 
   it('should allow scoring for guests but skip streaks', async () => {
