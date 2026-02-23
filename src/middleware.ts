@@ -24,7 +24,8 @@ const isPublicRoute = createRouteMatcher([
   '/compare/(.*)',    // SEO comparison pages
   '/tools/(.*)',      // SEO tools pages
   '/guides/(.*)',     // SEO guide pages
-  '/topics/(.*)',     // Topic history page
+  '/topics',          // Public topics browse page
+  '/topics/(.*)',     // Topic pages + history
   '/explore',    // Public explore page
   '/api/explore', // Public explore API
   '/api/debates/public', // Public debates feed for explore Recent tab
