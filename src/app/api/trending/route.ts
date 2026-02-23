@@ -3,7 +3,7 @@ import { createRateLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-li
 import { withErrorHandler } from '@/lib/api-errors';
 import { getGeminiModel } from '@/lib/vertex';
 
-// 10 requests per minute per IP (calls Gemini API when cache is cold)
+// 10 requests per minute per IP (calls external APIs when cache is cold)
 const limiter = createRateLimiter({ maxRequests: 10, windowMs: 60_000 });
 
 // Cache trending topics for 1 hour
@@ -20,69 +20,79 @@ export interface TrendingTopic {
   heat: 1 | 2 | 3; // How hot/controversial
 }
 
-interface NewsItem {
+interface TavilyResult {
   title: string;
-  description?: string;
   url: string;
-  source?: string;
+  content: string;
+  score: number;
 }
 
-async function fetchTrendingNews(): Promise<NewsItem[]> {
+async function fetchTrendingNews(): Promise<TavilyResult[]> {
+  const apiKey = process.env.TAVILY_API_KEY;
+  if (!apiKey) {
+    console.warn('[trending] No TAVILY_API_KEY configured');
+    return [];
+  }
+
   const queries = [
-    'controversial news today',
-    'debate politics 2024',
-    'tech controversy',
-    'viral social media debate',
+    'controversial debate topics today 2026',
+    'viral social media argument this week',
+    'polarizing news stories today',
   ];
-  
-  const allNews: NewsItem[] = [];
-  
+
+  const allResults: TavilyResult[] = [];
+
   for (const query of queries.slice(0, 2)) {
     try {
-      const response = await fetch(
-        `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(query)}&count=5`,
-        {
-          headers: {
-            'Accept': 'application/json',
-            'X-Subscription-Token': process.env.BRAVE_SEARCH_API_KEY || '',
-          },
-        }
-      );
-      
+      const response = await fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: apiKey,
+          query,
+          search_depth: 'basic',
+          include_answer: false,
+          max_results: 5,
+        }),
+      });
+
       if (response.ok) {
         const data = await response.json();
         if (data.results) {
-          allNews.push(...data.results.map((r: { title: string; description?: string; url: string; meta_url?: { hostname?: string } }) => ({
-            title: r.title,
-            description: r.description,
-            url: r.url,
-            source: r.meta_url?.hostname || 'news',
-          })));
+          allResults.push(
+            ...data.results.map((r: TavilyResult) => ({
+              title: r.title,
+              url: r.url,
+              content: r.content,
+              score: r.score,
+            }))
+          );
         }
       }
     } catch (e) {
-      console.error('Error fetching news:', e);
+      console.error('[trending] Tavily search error:', e);
     }
   }
-  
-  return allNews;
+
+  return allResults;
 }
 
-async function convertToDebateTopics(news: NewsItem[]): Promise<TrendingTopic[]> {
-  if (news.length === 0) return [];
-  
-  const newsText = news.slice(0, 10).map((n, i) => 
-    `${i + 1}. "${n.title}" - ${n.description || ''} (${n.source})`
-  ).join('\n');
-  
+async function convertToDebateTopics(results: TavilyResult[]): Promise<TrendingTopic[]> {
+  if (results.length === 0) return [];
+
+  const newsText = results
+    .slice(0, 10)
+    .map((r, i) => `${i + 1}. "${r.title}" — ${r.content?.slice(0, 200) || ''}`)
+    .join('\n');
+
   try {
     const model = getGeminiModel('gemini-2.5-flash', {
       generationConfig: {
-        responseMimeType: 'application/json'
-      }
+        responseMimeType: 'application/json',
+      },
     });
 
-    const prompt = `Convert these news headlines into 5-6 provocative debate questions. Each should be a yes/no or "which side" question that people would actually argue about.
+    const prompt = `Convert these news stories into 5-6 provocative debate questions. Each should be a yes/no or "which side" question that people would actually argue about.
 
 NEWS:
 ${newsText}
@@ -104,20 +114,22 @@ Make questions punchy and debatable. Avoid boring policy questions. Go for takes
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
     });
-    
+
     const response = await result.response;
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
+
     let jsonText = text.trim();
     if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/```json?\n?/g, '').replace(/```$/g, '').trim();
+      jsonText = jsonText
+        .replace(/```json?\n?/g, '')
+        .replace(/```$/g, '')
+        .trim();
     }
-    
+
     const topics = JSON.parse(jsonText) as TrendingTopic[];
-    return topics.filter(t => t.question && t.id);
-    
+    return topics.filter((t) => t.question && t.id);
   } catch (e) {
-    console.error('Error converting to topics:', e);
+    console.error('[trending] Gemini conversion error:', e);
     return [];
   }
 }
@@ -130,7 +142,7 @@ function getFallbackTopics(): TrendingTopic[] {
       context: 'Tech layoffs continue while AI tools proliferate',
       source: 'Tech News',
       category: 'tech',
-      heat: 3
+      heat: 3,
     },
     {
       id: 'social-media-teens',
@@ -138,7 +150,7 @@ function getFallbackTopics(): TrendingTopic[] {
       context: 'Multiple states considering age restrictions',
       source: 'Politics',
       category: 'culture',
-      heat: 2
+      heat: 2,
     },
     {
       id: 'remote-work-over',
@@ -146,7 +158,7 @@ function getFallbackTopics(): TrendingTopic[] {
       context: 'Return-to-office mandates spreading across industries',
       source: 'Business',
       category: 'business',
-      heat: 2
+      heat: 2,
     },
     {
       id: 'tipping-out-of-control',
@@ -154,7 +166,7 @@ function getFallbackTopics(): TrendingTopic[] {
       context: 'Tip prompts now appearing everywhere from self-checkout to takeout',
       source: 'Culture',
       category: 'culture',
-      heat: 2
+      heat: 2,
     },
     {
       id: 'college-worth-it',
@@ -162,7 +174,7 @@ function getFallbackTopics(): TrendingTopic[] {
       context: 'Student loan debates continue as tuition rises',
       source: 'Education',
       category: 'culture',
-      heat: 2
+      heat: 2,
     },
   ];
 }
@@ -175,37 +187,37 @@ export const GET = withErrorHandler(async (request: Request) => {
 
   // Check cache
   if (cachedTopics && Date.now() - cacheTime < CACHE_DURATION) {
-    return NextResponse.json({ 
-      topics: cachedTopics, 
+    return NextResponse.json({
+      topics: cachedTopics,
       cached: true,
-      cacheAge: Math.floor((Date.now() - cacheTime) / 1000 / 60) + ' minutes'
+      cacheAge: Math.floor((Date.now() - cacheTime) / 1000 / 60) + ' minutes',
     });
   }
-  
-  // Fetch news
-  const news = await fetchTrendingNews();
-  
-  if (news.length === 0) {
-    return NextResponse.json({ 
+
+  // Fetch news via Tavily
+  const results = await fetchTrendingNews();
+
+  if (results.length === 0) {
+    return NextResponse.json({
       topics: getFallbackTopics(),
       cached: false,
-      fallback: true
+      fallback: true,
     });
   }
-  
-  // Convert to debate topics
-  const topics = await convertToDebateTopics(news);
-  
+
+  // Convert to debate topics via Gemini
+  const topics = await convertToDebateTopics(results);
+
   if (topics.length > 0) {
     cachedTopics = topics;
     cacheTime = Date.now();
-    
+
     return NextResponse.json({ topics, cached: false });
   } else {
-    return NextResponse.json({ 
+    return NextResponse.json({
       topics: getFallbackTopics(),
       cached: false,
-      fallback: true
+      fallback: true,
     });
   }
 });

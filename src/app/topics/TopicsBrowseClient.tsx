@@ -141,11 +141,19 @@ export default function TopicsBrowseClient() {
 
           {/* Trending Now */}
           {!trendingLoading && trendingTopics.length > 0 && (
-            <section className="mb-10 animate-fade-up">
-              <h2 className="text-sm font-semibold text-[var(--text)] uppercase tracking-wider mb-4 flex items-center gap-2">
-                <span className="text-base">📈</span> Trending Now
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <section className="mb-12 animate-fade-up">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-[var(--text)]">Trending Now</h2>
+                  <p className="text-xs text-[var(--text-tertiary)]">Most popular topics this week</p>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {trendingTopics.slice(0, 6).map((t) => (
                   <TrendingCard
                     key={t.id}
@@ -160,23 +168,31 @@ export default function TopicsBrowseClient() {
 
           {/* Most Debated */}
           {mostDebated.length > 0 && (
-            <section className="mb-10 animate-fade-up" style={{ animationDelay: '100ms' }}>
-              <h2 className="text-sm font-semibold text-[var(--text)] uppercase tracking-wider mb-4 flex items-center gap-2">
-                <span className="text-base">🏆</span> Most Debated
-              </h2>
+            <section className="mb-12 animate-fade-up" style={{ animationDelay: '100ms' }}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-[var(--text)]">Most Debated</h2>
+                  <p className="text-xs text-[var(--text-tertiary)]">Topics with the most activity</p>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {mostDebated.slice(0, 10).map((t, i) => (
                   <button
                     key={i}
                     onClick={() => startDebate(t.topic)}
                     disabled={startingId === t.topic}
-                    className="group flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]/30 hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/5 transition-all text-left"
+                    className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition-all text-left"
                   >
-                    <span className="text-sm text-[var(--text)] group-hover:text-[var(--accent)] transition-colors line-clamp-1">
+                    <span className="text-sm text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
                       {t.topic}
                     </span>
-                    <span className="text-[10px] font-mono text-[var(--text-tertiary)] shrink-0">
-                      {t.count}x
+                    <span className="text-xs font-medium text-[var(--text-tertiary)] bg-[var(--border)]/50 px-2 py-0.5 rounded-full">
+                      {t.count}
                     </span>
                   </button>
                 ))}
@@ -184,29 +200,29 @@ export default function TopicsBrowseClient() {
             </section>
           )}
 
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap gap-2 mb-6">
+          {/* Category Filter */}
+          <div className="flex flex-wrap gap-2 mb-8 pb-6 border-b border-[var(--border)]">
             <button
               onClick={() => setActiveCategory('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 activeCategory === 'all'
                   ? 'bg-[var(--accent)] text-white shadow-sm'
-                  : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]'
+                  : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--bg-elevated)]'
               }`}
             >
-              All
+              All Topics
             </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeCategory === cat.id
                     ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]'
+                    : 'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--bg-elevated)]'
                 }`}
               >
-                {cat.emoji} {cat.name}
+                {cat.name}
               </button>
             ))}
           </div>
@@ -221,19 +237,18 @@ export default function TopicsBrowseClient() {
               No topics found.
             </div>
           ) : (
-            <div className="space-y-10">
+            <div className="space-y-12">
               {filteredCategories.map((cat) => (
                 <section key={cat.id} className="animate-fade-up">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xl">{cat.emoji}</span>
-                    <h2 className="text-lg font-serif font-semibold text-[var(--text)]">
+                  <div className="flex items-center gap-3 mb-5">
+                    <h2 className="text-lg font-semibold text-[var(--text)]">
                       {cat.name}
                     </h2>
-                    <span className="text-xs text-[var(--text-tertiary)] font-mono">
+                    <span className="text-xs font-medium text-[var(--text-tertiary)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded-full">
                       {cat.topics.length}
                     </span>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {cat.topics.map((topic) => (
                       <TopicCard
                         key={topic.id}
@@ -249,12 +264,12 @@ export default function TopicsBrowseClient() {
           )}
 
           {/* Footer */}
-          <div className="mt-12 flex items-center justify-center gap-6 text-xs text-[var(--text-secondary)]">
-            <Link href="/" className="hover:text-[var(--text)] transition-colors flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mt-16 pt-8 border-t border-[var(--border)] flex items-center justify-center gap-6 text-sm text-[var(--text-secondary)]">
+            <Link href="/" className="hover:text-[var(--text)] transition-colors flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
               </svg>
-              Today&apos;s Debate
+              Today's Debate
             </Link>
             <span className="w-1 h-1 rounded-full bg-[var(--border-strong)]" />
             <Link href="/debate" className="hover:text-[var(--text)] transition-colors">
@@ -283,39 +298,42 @@ function TopicCard({
   isStarting: boolean;
 }) {
   return (
-    <div className="group rounded-xl border border-[var(--border)]/30 bg-[var(--bg-elevated)]/50 p-4 hover:border-[var(--accent)]/30 transition-all flex flex-col">
+    <div className="group rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)]/30 p-5 hover:border-[var(--accent)]/30 hover:bg-[var(--bg-elevated)] transition-all flex flex-col h-full">
       <div className="flex-1">
-        <p className="text-sm font-semibold text-[var(--text)] leading-snug mb-2">
+        <p className="text-sm font-medium text-[var(--text)] leading-relaxed mb-3">
           {topic.question}
         </p>
         {topic.persona && (
-          <p className="text-xs text-[var(--text-secondary)]">
+          <p className="text-xs text-[var(--text-secondary)] mb-2">
             vs. <span className="font-medium text-[var(--accent)]">{topic.persona}</span>
           </p>
         )}
         {topic.spicyLevel && topic.spicyLevel >= 3 && (
-          <span className="inline-block mt-1.5 text-[10px] font-semibold text-orange-500">
-            🌶️ Spicy
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-orange-500 bg-orange-500/10 px-2 py-1 rounded-full">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
+            </svg>
+            Spicy
           </span>
         )}
       </div>
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-4 pt-4 border-t border-[var(--border)]/50 flex items-center justify-between">
         <Link
           href={`/topics/${topic.id}`}
-          className="text-[10px] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+          className="text-xs text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
         >
           Details
         </Link>
         <button
           onClick={onDebate}
           disabled={isStarting}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50"
         >
           {isStarting ? (
             <Spinner className="w-3 h-3" />
           ) : (
             <>
-              Debate This
+              Debate
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -336,30 +354,34 @@ function TrendingCard({
   onDebate: () => void;
   isStarting: boolean;
 }) {
-  const heatLabel = topic.heat === 3 ? '🔥🔥🔥' : topic.heat === 2 ? '🔥🔥' : '🔥';
+  const heatColor = topic.heat === 3 ? 'text-red-500' : topic.heat === 2 ? 'text-orange-500' : 'text-amber-500';
 
   return (
-    <div className="group rounded-xl border border-[var(--border)]/30 bg-[var(--bg-elevated)]/50 p-4 hover:border-[var(--accent)]/30 transition-all flex flex-col">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs">{heatLabel}</span>
-        <span className="text-[10px] font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+    <div className="group rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)]/30 p-5 hover:border-[var(--accent)]/30 hover:bg-[var(--bg-elevated)] transition-all flex flex-col h-full">
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`text-xs font-medium ${heatColor} flex items-center gap-1`}>
+          {topic.heat === 3 && 'Hot'}
+          {topic.heat === 2 && 'Warm'}
+          {topic.heat === 1 && 'New'}
+        </span>
+        <span className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">
           {topic.category}
         </span>
       </div>
-      <p className="text-sm font-semibold text-[var(--text)] leading-snug mb-1.5 flex-1">
+      <p className="text-sm font-medium text-[var(--text)] leading-relaxed mb-2 flex-1">
         {topic.question}
       </p>
-      <p className="text-xs text-[var(--text-tertiary)] mb-3 line-clamp-2">{topic.context}</p>
+      <p className="text-xs text-[var(--text-secondary)] mb-4 line-clamp-2">{topic.context}</p>
       <button
         onClick={onDebate}
         disabled={isStarting}
-        className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 transition-colors disabled:opacity-50"
+        className="self-start flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50"
       >
         {isStarting ? (
           <Spinner className="w-3 h-3" />
         ) : (
           <>
-            Debate This
+            Debate
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
