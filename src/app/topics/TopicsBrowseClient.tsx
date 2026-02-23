@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Spinner from '@/components/Spinner';
 import UpgradeModal from '@/components/UpgradeModal';
-import { useTrending, type TrendingTopic } from '@/lib/useTrending';
+import { useTrending } from '@/lib/useTrending';
 import { v4 as uuidv4 } from 'uuid';
 
 interface BrowseTopic {
@@ -139,66 +139,54 @@ export default function TopicsBrowseClient() {
             </p>
           </div>
 
-          {/* Trending Now */}
-          {!trendingLoading && trendingTopics.length > 0 && (
-            <section className="mb-12 animate-fade-up">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-[var(--text)]">Trending Now</h2>
-                  <p className="text-xs text-[var(--text-tertiary)]">Most popular topics this week</p>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {trendingTopics.slice(0, 6).map((t) => (
-                  <TrendingCard
-                    key={t.id}
-                    topic={t}
-                    onDebate={() => startDebate(t.question)}
-                    isStarting={startingId === t.question}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+          {/* Trending + Most Debated — compact side-by-side */}
+          {(!trendingLoading && trendingTopics.length > 0) || mostDebated.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 mb-10 animate-fade-up">
+              {/* Trending Now */}
+              {!trendingLoading && trendingTopics.length > 0 && (
+                <section>
+                  <h2 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">Trending</h2>
+                  <div className="space-y-1">
+                    {trendingTopics.slice(0, 5).map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => startDebate(t.question)}
+                        disabled={startingId === t.question}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors group flex items-center gap-2"
+                      >
+                        <span className="text-sm text-[var(--text)] group-hover:text-[var(--accent)] transition-colors flex-1 truncate">
+                          {t.question}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-tertiary)] shrink-0">{t.category}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-          {/* Most Debated */}
-          {mostDebated.length > 0 && (
-            <section className="mb-12 animate-fade-up" style={{ animationDelay: '100ms' }}>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-[var(--text)]">Most Debated</h2>
-                  <p className="text-xs text-[var(--text-tertiary)]">Topics with the most activity</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {mostDebated.slice(0, 10).map((t, i) => (
-                  <button
-                    key={i}
-                    onClick={() => startDebate(t.topic)}
-                    disabled={startingId === t.topic}
-                    className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-elevated)] border border-[var(--border)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent)]/5 transition-all text-left"
-                  >
-                    <span className="text-sm text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
-                      {t.topic}
-                    </span>
-                    <span className="text-xs font-medium text-[var(--text-tertiary)] bg-[var(--border)]/50 px-2 py-0.5 rounded-full">
-                      {t.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
+              {/* Most Debated */}
+              {mostDebated.length > 0 && (
+                <section>
+                  <h2 className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">Most Debated</h2>
+                  <div className="space-y-1">
+                    {mostDebated.slice(0, 5).map((t, i) => (
+                      <button
+                        key={i}
+                        onClick={() => startDebate(t.topic)}
+                        disabled={startingId === t.topic}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors group flex items-center gap-2"
+                      >
+                        <span className="text-sm text-[var(--text)] group-hover:text-[var(--accent)] transition-colors flex-1 truncate">
+                          {t.topic}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-tertiary)] tabular-nums shrink-0">{t.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          ) : null}
 
           {/* Category Filter */}
           <div className="flex flex-wrap gap-2 mb-8 pb-6 border-b border-[var(--border)]">
@@ -345,49 +333,3 @@ function TopicCard({
   );
 }
 
-function TrendingCard({
-  topic,
-  onDebate,
-  isStarting,
-}: {
-  topic: TrendingTopic;
-  onDebate: () => void;
-  isStarting: boolean;
-}) {
-  const heatColor = topic.heat === 3 ? 'text-red-500' : topic.heat === 2 ? 'text-orange-500' : 'text-amber-500';
-
-  return (
-    <div className="group rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)]/30 p-5 hover:border-[var(--accent)]/30 hover:bg-[var(--bg-elevated)] transition-all flex flex-col h-full">
-      <div className="flex items-center gap-2 mb-3">
-        <span className={`text-xs font-medium ${heatColor} flex items-center gap-1`}>
-          {topic.heat === 3 && 'Hot'}
-          {topic.heat === 2 && 'Warm'}
-          {topic.heat === 1 && 'New'}
-        </span>
-        <span className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">
-          {topic.category}
-        </span>
-      </div>
-      <p className="text-sm font-medium text-[var(--text)] leading-relaxed mb-2 flex-1">
-        {topic.question}
-      </p>
-      <p className="text-xs text-[var(--text-secondary)] mb-4 line-clamp-2">{topic.context}</p>
-      <button
-        onClick={onDebate}
-        disabled={isStarting}
-        className="self-start flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50"
-      >
-        {isStarting ? (
-          <Spinner className="w-3 h-3" />
-        ) : (
-          <>
-            Debate
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </>
-        )}
-      </button>
-    </div>
-  );
-}
