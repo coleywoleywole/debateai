@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     }).catch(() => {});
 
     // Return success with rate limit headers
-    const signedToken = isGuest ? signGuestId(guestUuid) : undefined;
+    const signedToken = isGuest ? await signGuestId(guestUuid) : undefined;
     const response = NextResponse.json({
       success: true,
       debateId: saveResult.debateId || debateId,

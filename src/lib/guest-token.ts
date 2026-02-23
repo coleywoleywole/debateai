@@ -6,10 +6,8 @@
  *
  * Token format: `{uuid}.{signature}`
  *
- * Uses HMAC-SHA256 for cryptographic signing with constant-time comparison.
+ * Uses HMAC-SHA256 via Web Crypto API (works in both Node and Edge runtimes).
  */
-
-import crypto from 'crypto';
 
 const SECRET = process.env.GUEST_TOKEN_SECRET || process.env.ADMIN_SECRET || '';
 
@@ -20,15 +18,49 @@ if (!SECRET) {
   );
 }
 
-function hmacSign(data: string): string {
-  return crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+// Cache the CryptoKey so we don't re-import on every call
+let cachedKey: CryptoKey | null = null;
+
+async function getKey(): Promise<CryptoKey> {
+  if (cachedKey) return cachedKey;
+  const encoder = new TextEncoder();
+  cachedKey = await globalThis.crypto.subtle.importKey(
+    'raw',
+    encoder.encode(SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  return cachedKey;
+}
+
+async function hmacSign(data: string): Promise<string> {
+  const key = await getKey();
+  const encoder = new TextEncoder();
+  const signature = await globalThis.crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  // Convert ArrayBuffer to hex string
+  return Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
 }
 
 /**
  * Create a signed guest token from a UUID.
  */
-export function signGuestId(uuid: string): string {
-  const signature = hmacSign(uuid);
+export async function signGuestId(uuid: string): Promise<string> {
+  const signature = await hmacSign(uuid);
   return `${uuid}.${signature}`;
 }
 
@@ -36,7 +68,7 @@ export function signGuestId(uuid: string): string {
  * Verify and extract the guest UUID from a signed token.
  * Returns the UUID if valid, null if forged/invalid.
  */
-export function verifyGuestId(token: string): string | null {
+export async function verifyGuestId(token: string): Promise<string | null> {
   const dotIndex = token.indexOf('.');
   if (dotIndex === -1) return null;
 
@@ -45,13 +77,9 @@ export function verifyGuestId(token: string): string | null {
 
   if (!uuid || !signature) return null;
 
-  const expected = hmacSign(uuid);
+  const expected = await hmacSign(uuid);
 
-  // Constant-time comparison to prevent timing attacks
-  if (signature.length !== expected.length) return null;
-  const a = Buffer.from(signature);
-  const b = Buffer.from(expected);
-  if (!crypto.timingSafeEqual(a, b)) return null;
+  if (!timingSafeEqual(signature, expected)) return null;
 
   return uuid;
 }

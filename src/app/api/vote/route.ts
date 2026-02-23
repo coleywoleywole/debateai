@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({ success: true, ...counts });
 
     if (setCookie) {
-      response.cookies.set('guest_id', signGuestId(guestUuid), {
+      response.cookies.set('guest_id', await signGuestId(guestUuid), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         path: '/',

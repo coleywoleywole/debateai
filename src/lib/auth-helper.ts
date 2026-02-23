@@ -23,7 +23,7 @@ export async function getUserId(): Promise<string | null> {
     const cookieStore = await cookies();
     const guestToken = cookieStore.get('guest_id')?.value;
     if (guestToken) {
-      const guestId = verifyGuestId(guestToken);
+      const guestId = await verifyGuestId(guestToken);
       if (guestId) {
         return `guest_${guestId}`;
       }
