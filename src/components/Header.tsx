@@ -45,6 +45,9 @@ export default function Header() {
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        console.error('Manage plan error:', data);
+        setIsManagingPlan(false);
       }
     } catch {
       setIsManagingPlan(false);

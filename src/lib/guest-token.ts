@@ -9,12 +9,12 @@
  * Uses HMAC-SHA256 via Web Crypto API (works in both Node and Edge runtimes).
  */
 
-const SECRET = process.env.GUEST_TOKEN_SECRET || process.env.ADMIN_SECRET || '';
+const SECRET = process.env.GUEST_TOKEN_SECRET || process.env.ADMIN_SECRET || 'debateai-default-guest-secret';
 
-if (!SECRET) {
+if (!process.env.GUEST_TOKEN_SECRET && !process.env.ADMIN_SECRET) {
   console.warn(
     '[guest-token] No GUEST_TOKEN_SECRET or ADMIN_SECRET configured. ' +
-    'Guest tokens will use an empty key — set GUEST_TOKEN_SECRET in production.'
+    'Using fallback key — set GUEST_TOKEN_SECRET in production.'
   );
 }
 
