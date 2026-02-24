@@ -182,7 +182,7 @@ export default function BlogIndex() {
                             )}
                           </div>
 
-                          <div className="p-6 flex-1 flex flex-col">
+                          <div className="p-6 flex-1 flex flex-col overflow-hidden">
                             {/* Tags */}
                             {post.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mb-3">
@@ -200,11 +200,11 @@ export default function BlogIndex() {
                             <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text)] mb-2 group-hover:text-[var(--accent)] transition-colors leading-snug">
                               {post.title}
                             </h2>
-                            <p className="text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 flex-1">
+                            <p className="text-sm text-[var(--text-secondary)] line-clamp-2 mb-4 overflow-hidden">
                               {post.description}
                             </p>
 
-                            <div className="flex items-center gap-2 text-[10px] text-[var(--text-tertiary)] pt-4 border-t border-[var(--border)]/30 uppercase font-medium tracking-wide">
+                            <div className="flex items-center gap-2 text-[10px] text-[var(--text-tertiary)] pt-4 border-t border-[var(--border)]/30 uppercase font-medium tracking-wide mt-auto">
                               <span>{post.author}</span>
                               <span className="w-1 h-1 rounded-full bg-[var(--border-strong)]" />
                               <time dateTime={post.date}>
