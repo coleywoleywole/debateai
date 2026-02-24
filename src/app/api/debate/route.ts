@@ -120,6 +120,9 @@ export async function POST(request: Request) {
       const messageLimit = await d1.checkDebateMessageLimit(debateId);
       if (!messageLimit.allowed) {
         log.info('debate.limit_reached', { debateId, variant: assignedVariant });
+        if (userId.startsWith('guest_')) {
+          return errors.guestLimit(messageLimit.count, messageLimit.limit);
+        }
         return errors.messageLimit(messageLimit.count, messageLimit.limit);
       }
     }

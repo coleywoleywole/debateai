@@ -628,8 +628,10 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       if (res.status === 429) {
         const data = await res.json();
-        setRateLimitData({ current: data.current, limit: data.limit });
-        if (data.isGuest) {
+        const current = data.details?.current ?? data.current;
+        const limit = data.details?.limit ?? data.limit;
+        setRateLimitData({ current, limit });
+        if (data.details?.signup_required || data.isGuest) {
           setShowGuestLimitModal(true);
         } else {
           setShowUpgradeModal(true);
@@ -740,8 +742,10 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
 
       if (res.status === 429) {
         const data = await res.json();
-        setRateLimitData({ current: data.current, limit: data.limit });
-        if (data.isGuest) {
+        const current = data.details?.current ?? data.current;
+        const limit = data.details?.limit ?? data.limit;
+        setRateLimitData({ current, limit });
+        if (data.details?.signup_required || data.isGuest) {
           setShowGuestLimitModal(true);
         } else {
           setShowUpgradeModal(true);
