@@ -15,6 +15,7 @@ export const GET = withErrorHandler(async (request: Request) => {
       d.opponent,
       d.topic,
       d.score_data,
+      d.messages,
       d.created_at,
       u.username,
       u.display_name
@@ -37,11 +38,21 @@ export const GET = withErrorHandler(async (request: Request) => {
         try { sd = typeof d.score_data === 'string' ? JSON.parse(d.score_data) : d.score_data; } catch {}
       }
 
+      let messageCount = 0;
+      if (d.messages) {
+        try {
+          const msgs = typeof d.messages === 'string' ? JSON.parse(d.messages) : d.messages;
+          // Count only user + ai messages (exclude system)
+          messageCount = Array.isArray(msgs) ? msgs.filter((m: any) => m.role === 'user' || m.role === 'ai').length : 0;
+        } catch {}
+      }
+
       return {
         id: d.id,
         opponent: sd?.opponentStyle || d.opponent,
         topic: d.topic,
         status: sd?.debateScore ? 'completed' : 'active',
+        messageCount,
         createdAt: d.created_at,
         author: {
           username: d.username,

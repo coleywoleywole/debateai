@@ -681,7 +681,7 @@ class D1Client {
     const updatedMessages = [...existingMessages, message];
     
     // Update the debate with new messages and optional state
-    let sql = `UPDATE debates SET messages = ?, updated_at = CURRENT_TIMESTAMP`;
+    let sql = `UPDATE debates SET messages = ?`;
     const params: any[] = [JSON.stringify(updatedMessages)];
 
     if (newState) {
