@@ -3,7 +3,7 @@ import ExploreClient from './ExploreClient';
 import Header from '@/components/Header';
 
 export const metadata: Metadata = {
-	title: 'Community — DebateAI',
+	title: 'Explore — DebateAI',
 	description: 'Browse recent debates from the DebateAI community.',
 };
 
@@ -21,7 +21,7 @@ export default function ExplorePage() {
 								Public Debates
 							</span>
 						</div>
-						<h1 className="text-2xl font-serif font-semibold text-[var(--text)]">Community</h1>
+						<h1 className="text-2xl font-serif font-semibold text-[var(--text)]">Explore</h1>
 						<p className="text-xs text-[var(--text-secondary)] mt-1">Discover debates from around the world</p>
 					</div>
 					<ExploreClient />
