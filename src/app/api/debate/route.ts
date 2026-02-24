@@ -347,8 +347,8 @@ export async function POST(request: Request) {
                   promptVariant: assignedVariant,
                 });
               }
-            } catch {
-              // D1 unavailable — debate still works, just not persisted
+            } catch (error) {
+              captureError(error, { route: 'POST /api/debate', action: 'save_debate_turn', extra: { debateId } });
             }
           }
 

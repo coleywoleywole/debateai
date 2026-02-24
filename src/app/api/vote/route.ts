@@ -3,6 +3,7 @@ import { d1 } from '@/lib/d1';
 import { getUserId } from '@/lib/auth-helper';
 import { signGuestId } from '@/lib/guest-token';
 import { logger } from '@/lib/logger';
+import { captureError } from '@/lib/sentry';
 
 const log = logger.scope('vote');
 
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error('Vote error:', error);
+    captureError(error, { route: 'POST /api/vote', action: 'cast_vote' });
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

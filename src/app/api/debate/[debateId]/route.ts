@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { d1 } from '@/lib/d1';
 import { getUserId } from '@/lib/auth-helper';
 import { errors, validateBody } from '@/lib/api-errors';
+import { captureError } from '@/lib/sentry';
 import { trackEvent } from '@/lib/posthog-server';
 import { calculateRound, isDebateCompleted } from '@/lib/debate-state';
 import { createRateLimiter, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
@@ -46,7 +47,7 @@ export async function GET(
     let result: { success: boolean; debate?: any } = { success: false };
     try {
       result = await d1.getDebate(debateId);
-    } catch {
+    } catch (error) {
       // D1 unavailable (local dev) — return empty debate shell
       if (process.env.NODE_ENV === 'development') {
         return NextResponse.json({
@@ -204,8 +205,8 @@ export async function POST(
     // Try to save to D1 (update round info)
     try {
       await d1.addMessage(debateId, userMessage, { currentRound });
-    } catch {
-      console.log('D1 save failed, using memory only');
+    } catch (error) {
+      captureError(error, { route: 'POST /api/debate/[debateId]', action: 'save_user_message', debateId });
     }
 
     // Generate AI response
@@ -273,8 +274,8 @@ export async function POST(
         currentRound: nextRound,
         winner
       });
-    } catch {
-      console.log('D1 save failed for AI message, using memory only');
+    } catch (error) {
+      captureError(error, { route: 'POST /api/debate/[debateId]', action: 'save_ai_message', debateId });
     }
 
     return NextResponse.json({

@@ -7,6 +7,7 @@ import { createRateLimiter, getClientIp } from '@/lib/rate-limit';
 import { errors, validateBody, withRateLimitHeaders } from '@/lib/api-errors';
 import { createDebateSchema } from '@/lib/api-schemas';
 import { logger } from '@/lib/logger';
+import { captureError } from '@/lib/sentry';
 import { track } from '@/lib/analytics';
 import { signGuestId } from '@/lib/guest-token';
 import { FREE_USER_DAILY_DEBATE_LIMIT, GUEST_DEBATE_LIMIT } from '@/lib/limits';
@@ -204,7 +205,7 @@ export async function POST(request: Request) {
       return error;
     }
 
-    console.error('Create debate error:', error);
+    captureError(error, { route: 'POST /api/debate/create', action: 'create_debate' });
     return errors.internal('Failed to create debate');
   }
 }
