@@ -286,7 +286,7 @@ export default function HomeClient({
                     }
                   }}
                   placeholder="Type your opening argument here to begin..."
-                  className="w-full bg-transparent resize-none outline-none text-[var(--text)] placeholder-[var(--text-secondary)]/60 min-h-[80px] sm:min-h-[60px] text-base leading-relaxed"
+                  className="w-full bg-transparent resize-none outline-none focus-visible:outline-none text-[var(--text)] placeholder-[var(--text-secondary)]/60 min-h-[80px] sm:min-h-[60px] text-base leading-relaxed"
                   disabled={isStarting}
                   autoFocus
                 />

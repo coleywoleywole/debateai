@@ -345,6 +345,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
   const [isGuestOwner, setIsGuestOwner] = useState(false);
   const [isJudging, setIsJudging] = useState(false);
   const isDevMode = searchParams.get('dev') === 'true';
+  const pendingTakeoverCitations = useRef<any[]>([]);
 
   // Resizable coach panel
   const [coachWidth, setCoachWidth] = useState<number>(() => {
@@ -606,8 +607,13 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     hasUserSentMessage.current = true;
     setIsAutoScrollEnabled(true);
 
-    // Add user message immediately
-    const userMessage = { role: "user", content: inputToSend };
+    // Add user message immediately (attach takeover citations if present)
+    const takeoverCits = pendingTakeoverCitations.current;
+    pendingTakeoverCitations.current = [];
+    const userMessage: any = { role: "user", content: inputToSend };
+    if (takeoverCits.length > 0) {
+      userMessage.citations = takeoverCits;
+    }
     setMessages(prev => [...prev, userMessage]);
     setUserInput("");
     setIsUserLoading(true);
@@ -762,6 +768,7 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
       if (!reader) throw new Error('No body');
       const decoder = new TextDecoder();
       let accumulated = '';
+      let takeoverCitations: any[] = [];
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -773,11 +780,19 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
               if (data.type === 'chunk') {
                 accumulated += data.content;
                 setUserInput(accumulated);
+              } else if (data.type === 'citations' && data.citations) {
+                takeoverCitations = data.citations;
+              } else if (data.type === 'complete' && data.content) {
+                // Use annotated content with inline [1], [2] markers
+                accumulated = data.content;
+                setUserInput(data.content);
               }
             } catch {}
           }
         });
       }
+      // Store citations so handleSend attaches them to the AI-assisted message
+      pendingTakeoverCitations.current = takeoverCitations;
 
     } catch (error) {
       console.error("AI takeover failed:", error);
