@@ -613,6 +613,15 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
     setIsUserLoading(true);
 
     try {
+      // Fire live judge in parallel with the AI stream (exchange 2+)
+      // The judge evaluates the user's argument against the opponent's previous response,
+      // so it can run while the AI is still generating its current response.
+      const previousAiMessages = messages.filter(m => m.role === 'ai');
+      const lastAiMessage = previousAiMessages[previousAiMessages.length - 1]?.content;
+      if (previousAiMessages.length >= 1 && lastAiMessage) {
+        fetchLiveJudgeFeedback(inputToSend, lastAiMessage);
+      }
+
       const res = await fetch('/api/debate', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -697,12 +706,6 @@ export default function DebateClient({ initialDebate = null, initialMessages = [
         };
         return newMessages;
       });
-
-      // Trigger live judge after exchange 2+
-      const newUserCount = messages.filter(m => m.role === 'user').length + 1;
-      if (newUserCount >= 2) {
-        fetchLiveJudgeFeedback(inputToSend, aiContent);
-      }
 
     } catch (error) {
       console.error("Failed to send message:", error);
