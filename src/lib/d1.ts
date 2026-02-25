@@ -302,8 +302,10 @@ class D1Client {
       );
 
       // If insert failed due to existing debate, update only if same user owns it
-      const isConflict = (!result.success && result.error && (
-        String(result.error).includes('UNIQUE constraint') || String(result.error).includes('PRIMARY KEY')
+      // Note: result.error from D1 API is an array of objects, so use JSON.stringify
+      const errorStr = result.error ? JSON.stringify(result.error) : '';
+      const isConflict = (!result.success && errorStr && (
+        errorStr.includes('UNIQUE constraint') || errorStr.includes('PRIMARY KEY')
       ));
 
       if (isConflict) {
