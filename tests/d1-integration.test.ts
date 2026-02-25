@@ -29,15 +29,15 @@ function d1Ok(rows: Record<string, unknown>[], meta?: Record<string, unknown>) {
   };
 }
 
-/** Build a failed D1 API response.
- *  Uses `error` (string) so that String(result.error) contains the error text.
+/** Build a failed D1 API response matching real Cloudflare D1 format.
+ *  D1 returns errors as an array of objects: { success: false, errors: [{code, message}] }
  *  The D1Client.query() method does: error: data.errors || data.error
- *  And saveDebate checks: String(result.error).includes('UNIQUE constraint')
+ *  So result.error ends up as an array of objects, NOT a plain string.
  */
-function d1Fail(errorMsg: string) {
+function d1Fail(errorMsg: string, code = 7500) {
   return {
     success: false,
-    error: errorMsg,
+    errors: [{ code, message: errorMsg }],
   };
 }
 
@@ -377,6 +377,50 @@ describe('Debate creation flows', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Debate already exists');
+  });
+
+  it('saveDebate detects UNIQUE conflict from real D1 error array format (regression)', async () => {
+    // This is the exact format D1 returns: errors as array of {code, message} objects
+    // Previously, String([{code: 7500, message: "..."}]) gave "[object Object]"
+    // which never matched "UNIQUE constraint", so the UPDATE branch was never taken.
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: false,
+        errors: [{ code: 7500, message: 'UNIQUE constraint failed: debates.id at offset 169: SQLITE_ERROR' }],
+      }),
+    });
+
+    // The UPDATE fallback should fire
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => d1Ok([], { changes: 1 }),
+    });
+
+    const result = await d1.saveDebate({
+      debateId: 'debate-regression',
+      userId: 'user-1',
+      opponent: 'socratic',
+      topic: 'Regression test',
+      messages: [
+        { role: 'system', content: 'Welcome' },
+        { role: 'user', content: 'My argument' },
+        { role: 'ai', content: 'AI response' },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+
+    // Verify UPDATE was actually issued (not silently skipped)
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const updateCall = getCalls()[1];
+    expect(updateCall.sql).toContain('UPDATE debates SET');
+    expect(updateCall.sql).toContain('WHERE id = ? AND user_id = ?');
+
+    // Verify messages were passed to the UPDATE
+    const messagesParam = JSON.parse(updateCall.params[2] as string);
+    expect(messagesParam).toHaveLength(3);
+    expect(messagesParam[2].content).toBe('AI response');
   });
 
   it('findRecentDuplicate returns found=true when a match exists', async () => {
